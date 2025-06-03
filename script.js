@@ -743,7 +743,7 @@ function processExcelData() {
     console.log(`Usuários processados: ${usuarios.length}`);
     console.log('Top 5 usuários:', usuarios.slice(0, 5));
     
-    const totalMinutas = Math.round(usuarios.reduce((sum, u) => sum + u.minutas, 0));
+    const totalMinutas = Math.round(filteredData.length);
     const usuariosAtivos = usuarios.length;
     const mediaUsuario = usuarios.length > 0 ? usuarios.reduce((sum, u) => sum + u.minutas, 0) / usuarios.length : 0;
     
@@ -1469,9 +1469,10 @@ function renderizarTabelaPesos() {
 }
 
 function atualizarPeso(tipo, novoValor) {
-    const valor = parseFloat(novoValor);
-    if (!isNaN(valor) && valor >= 0) {
+    const valor = parseInt(novoValor);
+    if (!isNaN(valor) && valor >= 0 && valor <= 10) {
         pesosAtuais[tipo] = valor;
+        console.log(`Peso atualizado: ${tipo} = ${valor}`);
     }
 }
 
@@ -1479,6 +1480,7 @@ function decrementarPeso(tipo) {
     if (pesosAtuais[tipo] > 0) {
         pesosAtuais[tipo] = Math.max(0, pesosAtuais[tipo] - 1);
         renderizarTabelaPesos();
+        console.log(`Peso decrementado: ${tipo} = ${pesosAtuais[tipo]}`);
     }
 }
 
@@ -1486,6 +1488,7 @@ function incrementarPeso(tipo) {
     if (pesosAtuais[tipo] < 10) {
         pesosAtuais[tipo] = Math.min(10, pesosAtuais[tipo] + 1);
         renderizarTabelaPesos();
+        console.log(`Peso incrementado: ${tipo} = ${pesosAtuais[tipo]}`);
     }
 }
 
@@ -1517,22 +1520,47 @@ function aplicarPesos() {
         return;
     }
 
+    console.log('Aplicando pesos aos dados...');
+    console.log('Pesos atuais:', pesosAtuais);
+    
+    let pesosAplicados = 0;
+    
     excelData.forEach(row => {
-        const tipo = row['Tipo'];
-        if (tipo && pesosAtuais[tipo]) {
-            row['peso'] = pesosAtuais[tipo];
-        } else {
-            row['peso'] = 1.0;
-        }
+        let pesoAplicado = 1.0;
+        
+        Object.keys(row).forEach(key => {
+            if (key.toLowerCase().includes('tipo') || key.toLowerCase().includes('agendamento')) {
+                const valor = row[key];
+                if (valor !== undefined && valor !== null && valor !== '') {
+                    const valorStr = valor.toString().trim();
+                    
+                    let tipoLimpo = valorStr;
+                    if (valorStr.includes('(') && valorStr.includes(')')) {
+                        tipoLimpo = valorStr.substring(0, valorStr.indexOf('(')).trim();
+                    }
+                    
+                    pesoAplicado = pesosAtuais[valorStr] || pesosAtuais[tipoLimpo] || 1.0;
+                    pesosAplicados++;
+                }
+            }
+        });
+        
+        row['peso'] = pesoAplicado;
     });
 
+    console.log(`Total de pesos aplicados: ${pesosAplicados}`);
+    
     processExcelData();
     
     if (document.getElementById('semana-page').style.display === 'block') {
         gerarTabelaSemana();
     }
+    
+    if (document.getElementById('comparar-page').style.display === 'block') {
+        gerarDadosComparacao();
+    }
 
-    alert('Pesos aplicados com sucesso! Os gráficos e tabelas foram atualizados.');
+    alert(`Pesos aplicados com sucesso! ${pesosAplicados} registros foram atualizados. Os gráficos e tabelas foram recalculados.`);
 }
 
 function restaurarPesosPadrao() {
@@ -1542,7 +1570,8 @@ function restaurarPesosPadrao() {
         });
         
         renderizarTabelaPesos();
-        alert('Pesos restaurados para o valor padrão (1.0).');
+        aplicarPesos();
+        alert('Pesos restaurados para o valor padrão (1.0) e aplicados automaticamente.');
     }
 }
 
