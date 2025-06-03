@@ -1,3 +1,5 @@
+let tiposPesos = [];
+let pesosAtuais = {};
 let tabelaSemana = [];
 let sortColumn = 'usuario';
 let sortAscending = true;
@@ -1366,6 +1368,182 @@ function updateTheme() {
     document.getElementById('theme-icon').textContent = isDarkTheme ? '🌙' : '☀️';
     
     localStorage.setItem('theme', theme);
+}
+
+function showPesosPage() {
+    document.querySelectorAll('.page-content').forEach(page => page.style.display = 'none');
+    document.getElementById('pesos-page').style.display = 'block';
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    document.querySelectorAll('.nav-item')[3].classList.add('active');
+    carregarTiposPesos();
+}
+
+function carregarTiposPesos() {
+    if (!excelData || excelData.length === 0) {
+        const container = document.getElementById('tabela-pesos');
+        container.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">Nenhum dado disponível. Importe arquivos Excel primeiro.</td></tr>';
+        return;
+    }
+
+    const tipos = new Set();
+    
+    console.log('Total de registros para análise:', excelData.length);
+    console.log('Primeiros 5 registros:', excelData.slice(0, 5));
+    
+    excelData.forEach((row, index) => {
+        if (index < 10) {
+            console.log(`Registro ${index}:`, row);
+        }
+        
+        Object.keys(row).forEach(key => {
+            if (key.toLowerCase().includes('tipo') || key.toLowerCase().includes('agendamento')) {
+                const valor = row[key];
+                if (valor !== undefined && valor !== null && valor !== '') {
+                    const valorStr = valor.toString().trim();
+                    if (valorStr !== '' && valorStr.toLowerCase() !== 'tipo' && valorStr.toLowerCase() !== 'agendamento') {
+                        tipos.add(valorStr);
+                        console.log(`Tipo encontrado na coluna "${key}": "${valorStr}"`);
+                    }
+                }
+            }
+        });
+    });
+
+    console.log('Tipos únicos encontrados:', Array.from(tipos));
+
+    if (tipos.size === 0) {
+        const container = document.getElementById('tabela-pesos');
+        container.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">Nenhum tipo de agendamento válido encontrado nos dados importados. Verifique se a coluna existe e tem dados.</td></tr>';
+        return;
+    }
+
+    tiposPesos = Array.from(tipos).sort();
+    
+    tiposPesos.forEach(tipo => {
+        if (!(tipo in pesosAtuais)) {
+            pesosAtuais[tipo] = 1.0;
+        }
+    });
+
+    renderizarTabelaPesos();
+}
+
+function renderizarTabelaPesos() {
+    const container = document.getElementById('tabela-pesos');
+    container.innerHTML = '';
+
+    if (tiposPesos.length === 0) {
+        container.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">Nenhum tipo de agendamento encontrado.</td></tr>';
+        return;
+    }
+
+    tiposPesos.forEach(tipo => {
+        const row = document.createElement('tr');
+        
+        let tipoLimpo = tipo;
+        if (tipo.includes('(') && tipo.includes(')')) {
+            tipoLimpo = tipo.substring(0, tipo.indexOf('(')).trim();
+        }
+        
+        row.innerHTML = `
+            <td class="tipo-cell">${tipoLimpo}</td>
+            <td>
+                <input type="number" 
+                       class="peso-input" 
+                       value="${pesosAtuais[tipo]}" 
+                       min="0" 
+                       max="10" 
+                       step="1"
+                       onchange="atualizarPeso('${tipo}', this.value)">
+            </td>
+            <td>
+                <div class="peso-controls-cell">
+                    <button class="peso-btn decrement" onclick="decrementarPeso('${tipo}')">−</button>
+                    <button class="peso-btn increment" onclick="incrementarPeso('${tipo}')">+</button>
+                </div>
+            </td>
+        `;
+        
+        container.appendChild(row);
+    });
+}
+
+function atualizarPeso(tipo, novoValor) {
+    const valor = parseFloat(novoValor);
+    if (!isNaN(valor) && valor >= 0) {
+        pesosAtuais[tipo] = valor;
+    }
+}
+
+function decrementarPeso(tipo) {
+    if (pesosAtuais[tipo] > 0) {
+        pesosAtuais[tipo] = Math.max(0, pesosAtuais[tipo] - 1);
+        renderizarTabelaPesos();
+    }
+}
+
+function incrementarPeso(tipo) {
+    if (pesosAtuais[tipo] < 10) {
+        pesosAtuais[tipo] = Math.min(10, pesosAtuais[tipo] + 1);
+        renderizarTabelaPesos();
+    }
+}
+
+function salvarPesos() {
+    try {
+        const pesosJson = JSON.stringify(pesosAtuais, null, 2);
+        const blob = new Blob([pesosJson], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `pesos_${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        URL.revokeObjectURL(url);
+        
+        alert('Pesos salvos com sucesso!');
+    } catch (error) {
+        console.error('Erro ao salvar pesos:', error);
+        alert('Erro ao salvar pesos.');
+    }
+}
+
+function aplicarPesos() {
+    if (!excelData || excelData.length === 0) {
+        alert('Nenhum dado disponível para aplicar pesos!');
+        return;
+    }
+
+    excelData.forEach(row => {
+        const tipo = row['Tipo'];
+        if (tipo && pesosAtuais[tipo]) {
+            row['peso'] = pesosAtuais[tipo];
+        } else {
+            row['peso'] = 1.0;
+        }
+    });
+
+    processExcelData();
+    
+    if (document.getElementById('semana-page').style.display === 'block') {
+        gerarTabelaSemana();
+    }
+
+    alert('Pesos aplicados com sucesso! Os gráficos e tabelas foram atualizados.');
+}
+
+function restaurarPesosPadrao() {
+    if (confirm('Tem certeza que deseja restaurar todos os pesos para 1.0?')) {
+        tiposPesos.forEach(tipo => {
+            pesosAtuais[tipo] = 1.0;
+        });
+        
+        renderizarTabelaPesos();
+        alert('Pesos restaurados para o valor padrão (1.0).');
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {

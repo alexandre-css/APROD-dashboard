@@ -27,6 +27,11 @@
                         <img src="assets/icons/semana.png" alt="Semana">
                         <span>Semana</span>
                     </div>
+                        <div class="nav-item" onclick="showPesosPage()">
+                        <img src="assets/icons/peso.png" alt="Pesos">
+                        <span>Pesos</span>
+                    </div>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -247,6 +252,42 @@
                             <p>Planilha editável com formatação completa</p>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pesos-page" class="page-content" style="display: none;">
+        <div class="dashboard">
+            <div class="page-title">
+                <h1>Atribuição de Pesos</h1>
+            </div>
+    
+            <div class="pesos-container">
+                <div class="table-container">
+                    <table class="pesos-table">
+                        <thead>
+                            <tr>
+                                <th>Tipo de Agendamento</th>
+                                <th>Peso</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-pesos">
+                        </tbody>
+                    </table>
+                </div>
+    
+                <div class="pesos-controls">
+                    <button class="btn-peso" onclick="salvarPesos()">
+                        Salvar Pesos
+                    </button>
+                    <button class="btn-peso secondary" onclick="aplicarPesos()">
+                        Aplicar Alterações
+                    </button>
+                    <button class="btn-peso danger" onclick="restaurarPesosPadrao()">
+                        Restaurar Padrão
+                    </button>
                 </div>
             </div>
         </div>
