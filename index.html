@@ -9,6 +9,12 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+<div class="theme-toggle" id="theme-toggle" onclick="toggleTheme()"></div>
+<div class="pesos-toggle" id="pesos-toggle" onclick="togglePesos()" title="Desativar Pesos">⚖️</div>
+
+</div>
+
 </head>
 <body>
     <div class="app-container">
@@ -111,8 +117,6 @@
                     </div>
                 </div>
 
-                <div class="theme-toggle" onclick="toggleTheme()">
-                    <span id="theme-icon">🌙</span>
                 </div>
             </div>
 

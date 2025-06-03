@@ -1,5 +1,6 @@
 let tiposPesos = [];
 let pesosAtuais = {};
+let pesosAtivos = true;
 let tabelaSemana = [];
 let sortColumn = 'usuario';
 let sortAscending = true;
@@ -22,6 +23,7 @@ let processedData = {
 
 function initializeApp() {
     updateTheme();
+    updatePesosButton();
     createChart();
     renderMonths();
     updateKPIs();
@@ -1360,12 +1362,23 @@ function toggleTheme() {
     isDarkTheme = !isDarkTheme;
     updateTheme();
     createChart();
+    if (chartComparacao) {
+        atualizarGraficoComparacao();
+    }
 }
 
 function updateTheme() {
     const theme = isDarkTheme ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', theme);
-    document.getElementById('theme-icon').textContent = isDarkTheme ? '🌙' : '☀️';
+    
+    const themeButton = document.getElementById('theme-toggle');
+    if (themeButton) {
+        if (isDarkTheme) {
+            themeButton.classList.add('dark');
+        } else {
+            themeButton.classList.remove('dark');
+        }
+    }
     
     localStorage.setItem('theme', theme);
 }
@@ -1563,6 +1576,67 @@ function aplicarPesos() {
     alert(`Pesos aplicados com sucesso! ${pesosAplicados} registros foram atualizados. Os gráficos e tabelas foram recalculados.`);
 }
 
+function togglePesos() {
+    pesosAtivos = !pesosAtivos;
+    updatePesosButton();
+    aplicarOuRemoverPesos();
+}
+
+function updatePesosButton() {
+    const button = document.getElementById('pesos-toggle');
+    if (button) {
+        if (pesosAtivos) {
+            button.textContent = '⚖️';
+            button.title = 'Desativar Pesos';
+            button.classList.remove('inactive');
+        } else {
+            button.textContent = '⚖️';
+            button.title = 'Ativar Pesos';
+            button.classList.add('inactive');
+        }
+    }
+}
+
+function aplicarOuRemoverPesos() {
+    if (!excelData || excelData.length === 0) return;
+
+    excelData.forEach(row => {
+        if (pesosAtivos) {
+            let pesoAplicado = 1.0;
+            
+            Object.keys(row).forEach(key => {
+                if (key.toLowerCase().includes('tipo') || key.toLowerCase().includes('agendamento')) {
+                    const valor = row[key];
+                    if (valor !== undefined && valor !== null && valor !== '') {
+                        const valorStr = valor.toString().trim();
+                        
+                        let tipoLimpo = valorStr;
+                        if (valorStr.includes('(') && valorStr.includes(')')) {
+                            tipoLimpo = valorStr.substring(0, valorStr.indexOf('(')).trim();
+                        }
+                        
+                        pesoAplicado = pesosAtuais[valorStr] || pesosAtuais[tipoLimpo] || 1.0;
+                    }
+                }
+            });
+            
+            row['peso'] = pesoAplicado;
+        } else {
+            row['peso'] = 1.0;
+        }
+    });
+
+    processExcelData();
+    
+    if (document.getElementById('semana-page').style.display === 'block') {
+        gerarTabelaSemana();
+    }
+    
+    if (document.getElementById('comparar-page').style.display === 'block') {
+        gerarDadosComparacao();
+    }
+}
+
 function restaurarPesosPadrao() {
     if (confirm('Tem certeza que deseja restaurar todos os pesos para 1.0?')) {
         tiposPesos.forEach(tipo => {
@@ -1596,6 +1670,8 @@ document.addEventListener('DOMContentLoaded', function() {
             renderizarTabelaSemana();
         });
     }
+    
+    setTimeout(updateTheme, 100);
 });
 
 window.addEventListener('resize', function() {
