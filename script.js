@@ -314,7 +314,11 @@ function processExcelFile(arrayBuffer, fileName) {
             if (!usuarioCell || !usuarioCell.v) continue;
             
             let usuario = usuarioCell.v.toString().trim();
-            if (usuario.toUpperCase() === "ANGELOBRASIL" || usuario.toUpperCase() === "SECAUTOLOC") {
+            if (!usuario || usuario === '' || 
+                usuario.toUpperCase() === "ANGELOBRASIL" || 
+                usuario.toUpperCase() === "SECAUTOLOC" ||
+                usuario.toUpperCase() === "USUÁRIO" ||
+                usuario.toUpperCase() === "USUARIO") {
                 continue;
             }
             
