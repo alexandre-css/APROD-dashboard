@@ -368,3 +368,146 @@ body {
         font-size: 24px;
     }
 }
+
+.page-content {
+    width: 100%;
+}
+
+.page-title {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.page-title h1 {
+    color: var(--accent);
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.comparar-container {
+    display: flex;
+    gap: 20px;
+    height: 600px;
+}
+
+.usuarios-selection {
+    width: 400px;
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.selection-header h3 {
+    color: var(--accent);
+    font-size: 18px;
+    margin-bottom: 15px;
+}
+
+.filter-container input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.usuarios-list {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+
+.usuario-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.usuario-item:hover {
+    background: var(--hover);
+}
+
+.usuario-item.selected {
+    background: var(--accent);
+    color: white;
+}
+
+.usuario-checkbox {
+    margin-right: 12px;
+}
+
+.usuario-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+
+.usuario-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.usuario-nome {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.usuario-minutas {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.selection-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-secondary {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+    background: var(--hover);
+}
+
+.grafico-comparacao {
+    flex: 1;
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.grafico-header h3 {
+    color: var(--accent);
+    font-size: 18px;
+    margin-bottom: 15px;
+}
+
+.chart-container-comparacao {
+    flex: 1;
+    position: relative;
+    min-height: 400px;
+}

@@ -13,90 +13,136 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-content">
                 <div class="nav-items">
-                    <div class="nav-item active">
+                    <div class="nav-item active" onclick="showDashboard()">
                         <img src="assets/icons/dashboard.png" alt="Dashboard">
                         <span>Dashboard</span>
+                    </div>
+                    <div class="nav-item" onclick="showComparacaoPage()">
+                        <img src="assets/icons/compara.png" alt="Comparar">
+                        <span>Comparar</span>
                     </div>
                 </div>
             </div>
         </aside>
 
         <main class="main-content">
-            <div class="dashboard">
-                <div class="kpis-row">
-                    <div class="kpi-card">
-                        <div class="kpi-content">
-                            <img src="assets/icons/sum.png" alt="Total">
-                            <div class="kpi-text">
-                                <h3>Total de Minutas</h3>
-                                <span class="kpi-value" id="total-minutas">0</span>
+            <div id="dashboard-page" class="page-content">
+                <div class="dashboard">
+                    <div class="kpis-row">
+                        <div class="kpi-card">
+                            <div class="kpi-content">
+                                <img src="assets/icons/sum.png" alt="Total">
+                                <div class="kpi-text">
+                                    <h3>Total de Minutas</h3>
+                                    <span class="kpi-value" id="total-minutas">0</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="kpi-card">
-                        <div class="kpi-content">
-                            <img src="assets/icons/peso.png" alt="Média">
-                            <div class="kpi-text">
-                                <h3>Média por Usuário</h3>
-                                <span class="kpi-value" id="media-usuario">--</span>
+                        <div class="kpi-card">
+                            <div class="kpi-content">
+                                <img src="assets/icons/peso.png" alt="Média">
+                                <div class="kpi-text">
+                                    <h3>Média por Usuário</h3>
+                                    <span class="kpi-value" id="media-usuario">--</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="kpi-card">
-                        <div class="kpi-content">
-                            <img src="assets/icons/dashboard.png" alt="Usuários">
-                            <div class="kpi-text">
-                                <h3>Usuários Ativos</h3>
-                                <span class="kpi-value" id="usuarios-ativos">0</span>
+                        <div class="kpi-card">
+                            <div class="kpi-content">
+                                <img src="assets/icons/dashboard.png" alt="Usuários">
+                                <div class="kpi-text">
+                                    <h3>Usuários Ativos</h3>
+                                    <span class="kpi-value" id="usuarios-ativos">0</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="kpi-card">
-                        <div class="kpi-content">
-                            <img src="assets/icons/calendar.png" alt="Dia">
-                            <div class="kpi-text">
-                                <h3>Dia Mais Produtivo</h3>
-                                <span class="kpi-value" id="dia-produtivo">--</span>
+                        <div class="kpi-card">
+                            <div class="kpi-content">
+                                <img src="assets/icons/calendar.png" alt="Dia">
+                                <div class="kpi-text">
+                                    <h3>Dia Mais Produtivo</h3>
+                                    <span class="kpi-value" id="dia-produtivo">--</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="kpi-card top-users-card">
-                        <div class="kpi-content">
-                            <img src="assets/icons/top.png" alt="Top">
-                            <div class="kpi-text">
-                                <h3>Top 3 Usuários</h3>
-                                <div class="top-users" id="top-users">
-                                    <div class="user-item">Carregando...</div>
+                        <div class="kpi-card top-users-card">
+                            <div class="kpi-content">
+                                <img src="assets/icons/top.png" alt="Top">
+                                <div class="kpi-text">
+                                    <h3>Top 3 Usuários</h3>
+                                    <div class="top-users" id="top-users">
+                                        <div class="user-item">Carregando...</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="controls-row">
-                    <button class="import-btn" onclick="importData()">
-                        <img src="assets/icons/excel.png" alt="Excel">
-                        Importar Excel
-                    </button>
+                    <div class="controls-row">
+                        <button class="import-btn" onclick="importData()">
+                            <img src="assets/icons/excel.png" alt="Excel">
+                            Importar Excel
+                        </button>
 
-                    <div class="months-container">
-                        <h4>Meses Ativos:</h4>
-                        <div class="months-grid" id="months-grid">
+                        <div class="months-container">
+                            <h4>Meses Ativos:</h4>
+                            <div class="months-grid" id="months-grid">
+                            </div>
                         </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="produtividade-chart"></canvas>
                     </div>
                 </div>
 
-                <div class="chart-container">
-                    <canvas id="produtividade-chart"></canvas>
+                <div class="theme-toggle" onclick="toggleTheme()">
+                    <span id="theme-icon">🌙</span>
                 </div>
             </div>
 
-            <div class="theme-toggle" onclick="toggleTheme()">
-                <span id="theme-icon">🌙</span>
+            <div id="comparar-page" class="page-content" style="display: none;">
+                <div class="dashboard">
+                    <div class="page-title">
+                        <h1>Comparação de Produtividade entre Usuários</h1>
+                    </div>
+
+                    <div class="comparar-container">
+                        <div class="usuarios-selection">
+                            <div class="selection-header">
+                                <h3>Selecionar Usuários</h3>
+                                <div class="filter-container">
+                                    <input type="text" id="filtro-usuarios" placeholder="Filtrar usuários..." />
+                                </div>
+                            </div>
+
+                            <div class="usuarios-list" id="usuarios-list">
+                            </div>
+
+                            <div class="selection-controls">
+                                <button class="btn-secondary" onclick="selecionarTodosUsuarios()">
+                                    Selecionar Todos
+                                </button>
+                                <button class="btn-secondary" onclick="limparSelecaoUsuarios()">
+                                    Limpar Seleção
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grafico-comparacao">
+                            <div class="grafico-header">
+                                <h3>Gráfico de Comparação</h3>
+                            </div>
+                            <div class="chart-container-comparacao">
+                                <canvas id="comparacao-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>

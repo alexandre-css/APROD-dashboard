@@ -1,3 +1,6 @@
+let usuariosComparacao = [];
+let dadosComparacao = [];
+let chartComparacao = null;
 let chartInstance = null;
 let isDarkTheme = true;
 let excelData = null;
@@ -17,6 +20,219 @@ function initializeApp() {
     createChart();
     renderMonths();
     updateKPIs();
+}
+
+function showDashboard() {
+    document.getElementById('dashboard-page').style.display = 'block';
+    document.getElementById('comparar-page').style.display = 'none';
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    document.querySelectorAll('.nav-item')[0].classList.add('active');
+}
+
+function showComparacaoPage() {
+    document.getElementById('dashboard-page').style.display = 'none';
+    document.getElementById('comparar-page').style.display = 'block';
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    document.querySelectorAll('.nav-item')[1].classList.add('active');
+    gerarDadosComparacao();
+}
+
+function gerarDadosComparacao() {
+    if (!excelData || excelData.length === 0) return;
+
+    const usuariosMap = new Map();
+    let filteredData = excelData;
+
+    if (processedData.mesesAtivos.length > 0 && processedData.mesesAtivos.length < processedData.mesesDisponiveis.length) {
+        filteredData = excelData.filter(row => {
+            if (!row['Data criação']) return false;
+            
+            try {
+                let date = row['Data criação'];
+                if (!(date instanceof Date)) {
+                    date = new Date(date);
+                }
+                
+                if (!isNaN(date.getTime())) {
+                    const mesNomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 
+                                     'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+                    const mesAno = `${mesNomes[date.getMonth()]}/${date.getFullYear()}`;
+                    return processedData.mesesAtivos.includes(mesAno);
+                }
+                return false;
+            } catch (e) {
+                return false;
+            }
+        });
+    }
+
+    filteredData.forEach(row => {
+        const nroProcesso = row['Nro. processo'];
+        if (!nroProcesso || nroProcesso.trim() === '') return;
+        
+        const usuario = row['Usuário'];
+        if (!usuario || usuario.toString().trim() === '') return;
+        
+        const peso = parseFloat(row['peso']) || 1.0;
+        
+        if (!usuariosMap.has(usuario)) {
+            usuariosMap.set(usuario, 0);
+        }
+        usuariosMap.set(usuario, usuariosMap.get(usuario) + peso);
+    });
+
+    const usuarios = Array.from(usuariosMap.entries())
+        .map(([nome, minutas]) => ({ nome, minutas, selecionado: false }))
+        .sort((a, b) => b.minutas - a.minutas);
+
+    usuariosComparacao = usuarios;
+    renderizarListaUsuarios();
+}
+
+function renderizarListaUsuarios() {
+    const container = document.getElementById('usuarios-list');
+    if (!container) return;
+    
+    container.innerHTML = '';
+
+    const filtro = document.getElementById('filtro-usuarios').value.toLowerCase();
+    const usuariosFiltrados = usuariosComparacao.filter(usuario => 
+        usuario.nome.toLowerCase().includes(filtro)
+    );
+
+    usuariosFiltrados.forEach((usuario, index) => {
+        const usuarioDiv = document.createElement('div');
+        usuarioDiv.className = `usuario-item ${usuario.selecionado ? 'selected' : ''}`;
+        usuarioDiv.innerHTML = `
+            <div class="usuario-checkbox">
+                <input type="checkbox" 
+                       id="user-${index}" 
+                       ${usuario.selecionado ? 'checked' : ''}
+                       onchange="toggleUsuarioComparacao('${usuario.nome}')">
+                <label for="user-${index}"></label>
+            </div>
+            <div class="usuario-info">
+                <span class="usuario-nome">${usuario.nome}</span>
+                <span class="usuario-minutas">${Math.round(usuario.minutas)} minutas</span>
+            </div>
+        `;
+        container.appendChild(usuarioDiv);
+    });
+}
+
+function toggleUsuarioComparacao(nomeUsuario) {
+    const usuario = usuariosComparacao.find(u => u.nome === nomeUsuario);
+    if (usuario) {
+        usuario.selecionado = !usuario.selecionado;
+        renderizarListaUsuarios();
+        atualizarGraficoComparacao();
+    }
+}
+
+function selecionarTodosUsuarios() {
+    usuariosComparacao.forEach(usuario => usuario.selecionado = true);
+    renderizarListaUsuarios();
+    atualizarGraficoComparacao();
+}
+
+function limparSelecaoUsuarios() {
+    usuariosComparacao.forEach(usuario => usuario.selecionado = false);
+    renderizarListaUsuarios();
+    atualizarGraficoComparacao();
+}
+
+function atualizarGraficoComparacao() {
+    const ctx = document.getElementById('comparacao-chart');
+    if (!ctx) return;
+
+    if (chartComparacao) {
+        chartComparacao.destroy();
+    }
+
+    const usuariosSelecionados = usuariosComparacao.filter(u => u.selecionado);
+    
+    if (usuariosSelecionados.length === 0) {
+        chartComparacao = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Nenhum usuário selecionado'],
+                datasets: [{
+                    label: 'Minutas',
+                    data: [0],
+                    backgroundColor: '#cccccc'
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'Selecione usuários para comparar',
+                        color: '#666666'
+                    }
+                }
+            }
+        });
+        return;
+    }
+
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    const cores = [
+        '#4a90e2', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6',
+        '#1abc9c', '#34495e', '#e67e22', '#95a5a6', '#d35400'
+    ];
+
+    chartComparacao = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: usuariosSelecionados.map(u => u.nome),
+            datasets: [{
+                label: 'Minutas',
+                data: usuariosSelecionados.map(u => u.minutas),
+                backgroundColor: usuariosSelecionados.map((_, index) => cores[index % cores.length]),
+                borderWidth: 0
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                title: {
+                    display: true,
+                    text: 'Comparação de Produtividade',
+                    color: isDark ? '#ffffff' : '#232946',
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grid: {
+                        color: isDark ? '#404040' : '#e0e0e0'
+                    },
+                    ticks: {
+                        color: isDark ? '#ffffff' : '#232946'
+                    }
+                },
+                y: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: isDark ? '#ffffff' : '#232946'
+                    }
+                }
+            }
+        }
+    });
 }
 
 function updateKPIs() {
