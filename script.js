@@ -646,8 +646,12 @@ function fecharPopupExportacao() {
 
 window.onclick = function(event) {
     const popup = document.getElementById('popup-exportacao');
+    const popupDashboard = document.getElementById('popup-exportacao-dashboard');
     if (event.target === popup) {
         fecharPopupExportacao();
+    }
+    if (event.target === popupDashboard) {
+        fecharPopupExportacaoDashboard();
     }
 }
 
@@ -1647,6 +1651,181 @@ function restaurarPesosPadrao() {
         aplicarPesos();
         alert('Pesos restaurados para o valor padrão (1.0) e aplicados automaticamente.');
     }
+}
+
+function mostrarPopupExportacaoDashboard() {
+    document.getElementById('popup-exportacao-dashboard').style.display = 'flex';
+}
+
+function fecharPopupExportacaoDashboard() {
+    document.getElementById('popup-exportacao-dashboard').style.display = 'none';
+}
+
+function exportarDashboard(formato) {
+    if (!processedData.usuarios || processedData.usuarios.length === 0) {
+        alert('Não há dados para exportar!');
+        return;
+    }
+    
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    
+    if (formato === 'pdf') {
+        exportarDashboardPDF(timestamp);
+    } else if (formato === 'xlsx') {
+        exportarDashboardExcel(timestamp);
+    }
+    
+    fecharPopupExportacaoDashboard();
+}
+
+function exportarDashboardPDF(timestamp) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape');
+    
+    doc.setFillColor(74, 144, 226);
+    doc.rect(0, 0, doc.internal.pageSize.width, 25, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('APROD - Dashboard de Produtividade', 15, 16);
+    
+    doc.setTextColor(74, 144, 226);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 15, 35);
+    
+    let mesesTexto = `Meses: ${processedData.mesesAtivos.join(', ')}`;
+    if (processedData.mesesAtivos.length === 0) {
+        mesesTexto = 'Todos os meses';
+    }
+    doc.text(mesesTexto, 15, 42);
+    
+    const kpisData = [
+        ['Total de Minutas', processedData.totalMinutas.toString()],
+        ['Média por Usuário', processedData.mediaUsuario > 0 ? processedData.mediaUsuario.toFixed(1) : '--'],
+        ['Usuários Ativos', processedData.usuariosAtivos.toString()],
+        ['Dia Mais Produtivo', processedData.diaProdutivo]
+    ];
+    
+    doc.autoTable({
+        head: [['Indicador', 'Valor']],
+        body: kpisData,
+        startY: 52,
+        margin: { left: 15, right: 140 },
+        tableWidth: 140,
+        styles: {
+            fontSize: 10,
+            cellPadding: 5
+        },
+        headStyles: {
+            fillColor: [74, 144, 226],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold'
+        }
+    });
+    
+    const chartData = processedData.usuarios.slice(0, 20);
+    const tableData = chartData.map((usuario, index) => [
+        index + 1,
+        usuario.nome,
+        Math.round(usuario.minutas)
+    ]);
+    
+    doc.autoTable({
+        head: [['#', 'Usuário', 'Minutas']],
+        body: tableData,
+        startY: 52,
+        margin: { left: 170, right: 15 },
+        styles: {
+            fontSize: 9,
+            cellPadding: 4
+        },
+        headStyles: {
+            fillColor: [74, 144, 226],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold'
+        },
+        columnStyles: {
+            0: { cellWidth: 20, halign: 'center' },
+            1: { cellWidth: 60 },
+            2: { cellWidth: 30, halign: 'center', fontStyle: 'bold' }
+        }
+    });
+    
+    doc.save(`dashboard_${timestamp}.pdf`);
+}
+
+function exportarDashboardExcel(timestamp) {
+    let mesesTexto = `Meses: ${processedData.mesesAtivos.join(', ')}`;
+    if (processedData.mesesAtivos.length === 0) {
+        mesesTexto = 'Todos os meses';
+    }
+    
+    const wb = XLSX.utils.book_new();
+    const ws = {};
+    
+    ws['A1'] = { 
+        v: 'APROD - Dashboard de Produtividade', 
+        t: 's',
+        s: {
+            font: { name: "Calibri", sz: 18, bold: true, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "4A90E2" } },
+            alignment: { horizontal: "center", vertical: "center" }
+        }
+    };
+    
+    ws['A3'] = { v: `Gerado em: ${new Date().toLocaleString('pt-BR')}`, t: 's' };
+    ws['A4'] = { v: mesesTexto, t: 's' };
+    
+    const kpisHeaders = ['Indicador', 'Valor'];
+    const kpisData = [
+        ['Total de Minutas', processedData.totalMinutas],
+        ['Média por Usuário', processedData.mediaUsuario > 0 ? Math.round(processedData.mediaUsuario * 10) / 10 : 0],
+        ['Usuários Ativos', processedData.usuariosAtivos],
+        ['Dia Mais Produtivo', processedData.diaProdutivo]
+    ];
+    
+    ws['A6'] = { v: 'INDICADORES', t: 's', s: { font: { bold: true }, fill: { fgColor: { rgb: "4A90E2" } } } };
+    ws['A7'] = { v: kpisHeaders[0], t: 's', s: { font: { bold: true } } };
+    ws['B7'] = { v: kpisHeaders[1], t: 's', s: { font: { bold: true } } };
+    
+    kpisData.forEach((row, index) => {
+        const rowNum = 8 + index;
+        ws[`A${rowNum}`] = { v: row[0], t: 's' };
+        ws[`B${rowNum}`] = { v: row[1], t: typeof row[1] === 'number' ? 'n' : 's' };
+    });
+    
+    const chartData = processedData.usuarios.slice(0, 20);
+    const startRow = 14;
+    
+    ws[`A${startRow}`] = { v: 'RANKING DE USUÁRIOS', t: 's', s: { font: { bold: true }, fill: { fgColor: { rgb: "4A90E2" } } } };
+    ws[`A${startRow + 1}`] = { v: '#', t: 's', s: { font: { bold: true } } };
+    ws[`B${startRow + 1}`] = { v: 'Usuário', t: 's', s: { font: { bold: true } } };
+    ws[`C${startRow + 1}`] = { v: 'Minutas', t: 's', s: { font: { bold: true } } };
+    
+    chartData.forEach((usuario, index) => {
+        const rowNum = startRow + 2 + index;
+        ws[`A${rowNum}`] = { v: index + 1, t: 'n' };
+        ws[`B${rowNum}`] = { v: usuario.nome, t: 's' };
+        ws[`C${rowNum}`] = { v: Math.round(usuario.minutas), t: 'n' };
+    });
+    
+    const lastRow = startRow + 2 + chartData.length;
+    ws['!ref'] = `A1:C${lastRow}`;
+    
+    ws['!cols'] = [
+        { wch: 20 }, { wch: 30 }, { wch: 15 }
+    ];
+    
+    ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+        { s: { r: 5, c: 0 }, e: { r: 5, c: 2 } },
+        { s: { r: startRow - 1, c: 0 }, e: { r: startRow - 1, c: 2 } }
+    ];
+    
+    XLSX.utils.book_append_sheet(wb, ws, "Dashboard");
+    XLSX.writeFile(wb, `dashboard_${timestamp}.xlsx`);
 }
 
 document.addEventListener('DOMContentLoaded', function() {

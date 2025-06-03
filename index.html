@@ -104,12 +104,17 @@
                             <img src="assets/icons/excel.png" alt="Excel">
                             Importar Excel
                         </button>
-
+                    
                         <div class="months-container">
                             <h4>Meses Ativos:</h4>
                             <div class="months-grid" id="months-grid">
                             </div>
                         </div>
+                    
+                        <button class="import-btn" onclick="mostrarPopupExportacaoDashboard()">
+                            <img src="assets/icons/export.png" alt="Exportar">
+                            Exportar
+                        </button>
                     </div>
 
                     <div class="chart-container">
@@ -229,7 +234,72 @@
                     </div>
                 </div>
             </div>
+
+            <div id="pesos-page" class="page-content" style="display: none;">
+                <div class="dashboard">
+                    <div class="page-title">
+                        <h1>Atribuição de Pesos</h1>
+                    </div>
+        
+                    <div class="pesos-container">
+                        <div class="table-container">
+                            <table class="pesos-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo de Agendamento</th>
+                                        <th>Peso</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela-pesos">
+                                </tbody>
+                            </table>
+                        </div>
+        
+                        <div class="pesos-controls">
+                            <button class="btn-peso" onclick="salvarPesos()">
+                                Salvar Pesos
+                            </button>
+                            <button class="btn-peso secondary" onclick="aplicarPesos()">
+                                Aplicar Alterações
+                            </button>
+                            <button class="btn-peso danger" onclick="restaurarPesosPadrao()">
+                                Restaurar Padrão
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
+    </div>
+
+    <div id="popup-exportacao-dashboard" class="popup-overlay" style="display: none;">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3>Exportar Dashboard</h3>
+                <button class="popup-close" onclick="fecharPopupExportacaoDashboard()">×</button>
+            </div>
+            
+            <div class="popup-body">
+                <div class="export-options">
+                    <div class="export-option" onclick="exportarDashboard('pdf')">
+                        <div class="export-icon pdf-icon">📄</div>
+                        <div class="export-info">
+                            <h4>Exportar para PDF</h4>
+                            <p>Dashboard com KPIs e ranking de usuários</p>
+                        </div>
+                    </div>
+                    
+                    <div class="export-option" onclick="exportarDashboard('xlsx')">
+                        <div class="export-icon excel-icon">📊</div>
+                        <div class="export-info">
+                            <h4>Exportar para Excel</h4>
+                            <p>Planilha com indicadores e dados do gráfico</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="popup-exportacao" class="popup-overlay" style="display: none;">
@@ -256,42 +326,6 @@
                             <p>Planilha editável com formatação completa</p>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="pesos-page" class="page-content" style="display: none;">
-        <div class="dashboard">
-            <div class="page-title">
-                <h1>Atribuição de Pesos</h1>
-            </div>
-    
-            <div class="pesos-container">
-                <div class="table-container">
-                    <table class="pesos-table">
-                        <thead>
-                            <tr>
-                                <th>Tipo de Agendamento</th>
-                                <th>Peso</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela-pesos">
-                        </tbody>
-                    </table>
-                </div>
-    
-                <div class="pesos-controls">
-                    <button class="btn-peso" onclick="salvarPesos()">
-                        Salvar Pesos
-                    </button>
-                    <button class="btn-peso secondary" onclick="aplicarPesos()">
-                        Aplicar Alterações
-                    </button>
-                    <button class="btn-peso danger" onclick="restaurarPesosPadrao()">
-                        Restaurar Padrão
-                    </button>
                 </div>
             </div>
         </div>
