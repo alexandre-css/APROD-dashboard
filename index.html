@@ -6,6 +6,7 @@
     <title>APROD Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -29,6 +30,26 @@
                             <div class="kpi-text">
                                 <h3>Total de Minutas</h3>
                                 <span class="kpi-value" id="total-minutas">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <img src="assets/icons/peso.png" alt="Média">
+                            <div class="kpi-text">
+                                <h3>Média por Usuário</h3>
+                                <span class="kpi-value" id="media-usuario">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <img src="assets/icons/dashboard.png" alt="Usuários">
+                            <div class="kpi-text">
+                                <h3>Usuários Ativos</h3>
+                                <span class="kpi-value" id="usuarios-ativos">0</span>
                             </div>
                         </div>
                     </div>
