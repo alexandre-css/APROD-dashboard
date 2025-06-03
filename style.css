@@ -323,13 +323,15 @@ body {
     }
     
     .kpis-row {
-        flex-direction: column;
-        align-items: center;
+        flex-direction: row;
+        justify-content: center;
+        flex-wrap: wrap;
     }
-    
+
     .kpi-card {
-        width: 100%;
-        max-width: 400px;
+        min-width: 280px;
+        flex: 1;
+        max-width: 320px;
     }
     
     .controls-row {
