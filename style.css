@@ -51,7 +51,9 @@ body {
     background: var(--sidebar-bg);
     border-right: 1px solid var(--border-color);
     transition: width 0.3s ease;
-    z-index: 10;
+    position: fixed;
+    height: 100vh;
+    z-index: 1000;
 }
 
 .sidebar:hover {
@@ -75,12 +77,14 @@ body {
 
 .nav-item {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    padding: 20px;
-    border-radius: 12px;
+    padding: 15px 10px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    gap: 15px;
+    transition: background-color 0.2s ease;
+    border-radius: 8px;
+    margin: 5px;
+    text-align: center;
 }
 
 .nav-item.active {
@@ -91,26 +95,40 @@ body {
 .nav-item img {
     width: 32px;
     height: 32px;
-    min-width: 32px;
+    margin-bottom: 5px;
+    transition: all 0.3s ease;
 }
 
 .nav-item span {
-    font-size: 16px;
+    font-size: 12px;
     font-weight: 500;
-    color: var(--text-title);
-    white-space: nowrap;
+    text-align: center;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.3s ease;
 }
 
 .sidebar:hover .nav-item span {
     opacity: 1;
 }
 
+.sidebar:hover .nav-item {
+    flex-direction: row;
+    justify-content: flex-start;
+}
+
+.sidebar:hover .nav-item img {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 0;
+    margin-right: 10px;
+}
+
 .main-content {
     flex: 1;
     padding: 20px;
-    position: relative;
+    background: var(--bg-primary);
+    margin-left: 110px;
+    min-height: 100vh;
 }
 
 .dashboard {
@@ -510,4 +528,391 @@ body {
     flex: 1;
     position: relative;
     min-height: 400px;
+}
+
+.semana-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 20px;
+}
+
+.semana-controls .filter-container {
+    flex: 1;
+    max-width: 300px;
+}
+
+.btn-export {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--text-title) 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.btn-export:hover {
+    transform: scale(1.05);
+}
+
+.table-container {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.semana-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.semana-table thead {
+    background: var(--accent);
+}
+
+.semana-table th {
+    padding: 15px 10px;
+    text-align: center;
+    font-weight: bold;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+}
+
+.semana-table th.sortable:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sort-icon {
+    margin-left: 5px;
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.semana-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.semana-table tbody tr:hover {
+    background: var(--hover);
+}
+
+.semana-table td {
+    padding: 12px 10px;
+    text-align: center;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.usuario-cell {
+    text-align: left !important;
+    font-weight: bold;
+    color: var(--accent) !important;
+}
+
+.dia-cell {
+    font-weight: 500;
+}
+
+.total-cell {
+    font-weight: bold;
+    background: var(--hover);
+    color: var(--accent);
+}
+
+.ranking-container {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.ranking-container h3 {
+    color: var(--accent);
+    font-size: 18px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.ranking-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    justify-content: center;
+}
+
+.ranking-item {
+    background: var(--hover);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--accent);
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ranking-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.ranking-posicao {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.ranking-icone {
+    font-size: 20px;
+}
+
+.ranking-numero {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: bold;
+}
+
+.ranking-dia {
+    font-size: 16px;
+    color: var(--accent);
+    font-weight: bold;
+    margin-bottom: 6px;
+    text-align: center;
+}
+
+.ranking-total {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 4px;
+}
+
+.ranking-porcentagem {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.ranking-barra {
+    width: 100%;
+    height: 6px;
+    background: var(--border-color);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.ranking-barra-preenchida {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .ranking-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .ranking-item {
+        padding: 12px;
+    }
+    
+    .ranking-dia {
+        font-size: 14px;
+    }
+    
+    .ranking-total {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 768px) {
+    .semana-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .semana-table {
+        font-size: 12px;
+    }
+    
+    .semana-table th,
+    .semana-table td {
+        padding: 8px 5px;
+    }
+    
+    .ranking-list {
+        flex-direction: column;
+    }
+}
+
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.popup-content {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    width: 500px;
+    max-width: 90vw;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: popupSlideIn 0.3s ease-out;
+}
+
+@keyframes popupSlideIn {
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.popup-header {
+    padding: 20px;
+    border-bottom: 2px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.popup-header h3 {
+    color: var(--accent);
+    font-size: 18px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.popup-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.popup-close:hover {
+    background: var(--hover);
+    color: var(--text-primary);
+}
+
+.popup-body {
+    padding: 20px;
+}
+
+.export-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.export-option {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--hover);
+}
+
+.export-option:hover {
+    border-color: var(--accent);
+    background: var(--card-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.2);
+}
+
+.export-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-right: 15px;
+}
+
+.pdf-icon {
+    background: linear-gradient(135deg, #ff5722, #ff7043);
+}
+
+.excel-icon {
+    background: linear-gradient(135deg, #4caf50, #66bb6a);
+}
+
+.export-info h4 {
+    color: var(--accent);
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0 0 5px 0;
+}
+
+.export-info p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0;
+}
+
+.page-content {
+    width: 100%;
+    display: none;
+}
+
+.page-content:first-child {
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .popup-content {
+        width: 90vw;
+        margin: 20px;
+    }
+    
+    .export-options {
+        gap: 10px;
+    }
+    
+    .export-option {
+        padding: 15px;
+    }
+    
+    .export-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+        margin-right: 12px;
+    }
 }

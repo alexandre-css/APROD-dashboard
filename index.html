@@ -6,7 +6,9 @@
     <title>APROD Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -20,6 +22,10 @@
                     <div class="nav-item" onclick="showComparacaoPage()">
                         <img src="assets/icons/compara.png" alt="Comparar">
                         <span>Comparar</span>
+                    </div>
+                    <div class="nav-item" onclick="showSemanaPage()">
+                        <img src="assets/icons/semana.png" alt="Semana">
+                        <span>Semana</span>
                     </div>
                 </div>
             </div>
@@ -144,7 +150,106 @@
                     </div>
                 </div>
             </div>
+
+            <div id="semana-page" class="page-content" style="display: none;">
+                <div class="dashboard">
+                    <div class="page-title">
+                        <h1>Produtividade por Dia da Semana</h1>
+                    </div>
+
+                    <div class="semana-controls">
+                        <div class="filter-container">
+                            <input type="text" id="filtro-semana" placeholder="Filtrar por usuário..." />
+                        </div>
+                        <button class="btn-export" onclick="mostrarPopupExportacao()">
+                            Exportar
+                        </button>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="semana-table">
+                            <thead>
+                                <tr>
+                                    <th onclick="ordenarTabelaSemana('usuario')" class="sortable">
+                                        Usuário
+                                        <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaSemana('segunda')" class="sortable">
+                                        Segunda
+                                        <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaSemana('terca')" class="sortable">
+                                        Terça
+                                        <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaSemana('quarta')" class="sortable">
+                                        Quarta
+                                        <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaSemana('quinta')" class="sortable">
+                                        Quinta
+                                        <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaSemana('sexta')" class="sortable">
+                                        Sexta
+                                        <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaSemana('sabado')" class="sortable">
+                                        Sábado
+                                        <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaSemana('domingo')" class="sortable">
+                                        Domingo
+                                        <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaSemana('total')" class="sortable">
+                                        Total
+                                        <span class="sort-icon">↕</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-semana">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="ranking-container">
+                        <h3>Ranking dos Dias Mais Produtivos</h3>
+                        <div id="ranking-dias" class="ranking-list">
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
+    </div>
+
+    <div id="popup-exportacao" class="popup-overlay" style="display: none;">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3>Selecionar Formato de Exportação</h3>
+                <button class="popup-close" onclick="fecharPopupExportacao()">×</button>
+            </div>
+            
+            <div class="popup-body">
+                <div class="export-options">
+                    <div class="export-option" onclick="exportarTabelaSemana('pdf')">
+                        <div class="export-icon pdf-icon">📄</div>
+                        <div class="export-info">
+                            <h4>Exportar para PDF</h4>
+                            <p>Arquivo formatado e pronto para impressão</p>
+                        </div>
+                    </div>
+                    
+                    <div class="export-option" onclick="exportarTabelaSemana('xlsx')">
+                        <div class="export-icon excel-icon">📊</div>
+                        <div class="export-info">
+                            <h4>Exportar para Excel</h4>
+                            <p>Planilha editável com formatação completa</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>
