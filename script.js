@@ -20,8 +20,19 @@ let processedData = {
     mesesAtivos: [],
     mesesDisponiveis: []
 };
+let configuracoes = {
+    nomeGabinete: '',
+    incluirLogo: true,
+    incluirData: true,
+    formatoData: 'br',
+    temaInicial: 'dark',
+    itensGrafico: 20,
+    pesoPadrao: 1.0,
+    autoAplicarPesos: false
+};
 
 function initializeApp() {
+    carregarConfiguracoes();
     updateTheme();
     updatePesosButton();
     createChart();
@@ -206,7 +217,7 @@ function atualizarGraficoComparacao() {
             labels: usuariosSelecionados.map(u => u.nome),
             datasets: [{
                 label: 'Minutas',
-                data: usuariosSelecionados.map(u => u.minutas),
+                data: usuariosSelecionados.map(u => Math.round(u.minutas)),
                 backgroundColor: usuariosSelecionados.map((_, index) => cores[index % cores.length]),
                 borderWidth: 0
             }]
@@ -246,7 +257,25 @@ function atualizarGraficoComparacao() {
                     }
                 }
             }
-        }
+        },
+        plugins: [{
+            id: 'datalabels',
+            afterDatasetsDraw: function(chart) {
+                const ctx = chart.ctx;
+                const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+                chart.data.datasets.forEach((dataset, i) => {
+                    const meta = chart.getDatasetMeta(i);
+                    meta.data.forEach((bar, index) => {
+                        const data = dataset.data[index];
+                        ctx.fillStyle = isDark ? '#ffffff' : '#232946';
+                        ctx.font = 'bold 12px Arial';
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(data, bar.x + 5, bar.y);
+                    });
+                });
+            }
+        }]
     });
 }
 
@@ -1011,7 +1040,12 @@ function exportarPDF(timestamp) {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('APROD - Produtividade por Dia da Semana', 15, 16);
+    
+    let titulo = 'APROD - Produtividade por Dia da Semana';
+    if (configuracoes.nomeGabinete) {
+        titulo = `${configuracoes.nomeGabinete} - APROD - Produtividade por Dia da Semana`;
+    }
+    doc.text(titulo, 15, 16);
     
     doc.setTextColor(74, 144, 226);
     doc.setFontSize(10);
@@ -1093,8 +1127,13 @@ function exportarExcel(timestamp) {
     const wb = XLSX.utils.book_new();
     const ws = {};
     
+    let titulo = 'APROD - Produtividade por Dia da Semana';
+    if (configuracoes.nomeGabinete) {
+        titulo = `${configuracoes.nomeGabinete} - APROD - Produtividade por Dia da Semana`;
+    }
+    
     ws['A1'] = { 
-        v: 'APROD - Produtividade por Dia da Semana', 
+        v: titulo, 
         t: 's',
         s: {
             font: { name: "Calibri", sz: 18, bold: true, color: { rgb: "FFFFFF" } },
@@ -1688,7 +1727,12 @@ function exportarDashboardPDF(timestamp) {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('APROD - Dashboard de Produtividade', 15, 16);
+    
+    let titulo = 'APROD - Dashboard de Produtividade';
+    if (configuracoes.nomeGabinete) {
+        titulo = `${configuracoes.nomeGabinete} - APROD - Dashboard de Produtividade`;
+    }
+    doc.text(titulo, 15, 16);
     
     doc.setTextColor(74, 144, 226);
     doc.setFontSize(10);
@@ -1765,8 +1809,13 @@ function exportarDashboardExcel(timestamp) {
     const wb = XLSX.utils.book_new();
     const ws = {};
     
+    let titulo = 'APROD - Dashboard de Produtividade';
+    if (configuracoes.nomeGabinete) {
+        titulo = `${configuracoes.nomeGabinete} - APROD - Dashboard de Produtividade`;
+    }
+    
     ws['A1'] = { 
-        v: 'APROD - Dashboard de Produtividade', 
+        v: titulo, 
         t: 's',
         s: {
             font: { name: "Calibri", sz: 18, bold: true, color: { rgb: "FFFFFF" } },
@@ -1852,6 +1901,122 @@ document.addEventListener('DOMContentLoaded', function() {
     
     setTimeout(updateTheme, 100);
 });
+
+function showConfiguracoesPage() {
+    document.querySelectorAll('.page-content').forEach(page => page.style.display = 'none');
+    document.getElementById('configuracoes-page').style.display = 'block';
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    document.querySelectorAll('.nav-item')[4].classList.add('active');
+    carregarConfiguracoes();
+}
+
+function carregarConfiguracoes() {
+    const configSalvas = localStorage.getItem('aprod-configuracoes');
+    if (configSalvas) {
+        configuracoes = { ...configuracoes, ...JSON.parse(configSalvas) };
+    }
+    
+    document.getElementById('nome-gabinete').value = configuracoes.nomeGabinete;
+    document.getElementById('incluir-logo').checked = configuracoes.incluirLogo;
+    document.getElementById('incluir-data').checked = configuracoes.incluirData;
+    document.getElementById('formato-data').value = configuracoes.formatoData;
+    document.getElementById('tema-inicial').value = configuracoes.temaInicial;
+    document.getElementById('itens-grafico').value = configuracoes.itensGrafico;
+    document.getElementById('peso-padrao').value = configuracoes.pesoPadrao;
+    document.getElementById('auto-aplicar-pesos').checked = configuracoes.autoAplicarPesos;
+    
+    atualizarDisplayGabinete();
+}
+
+function salvarNomeGabinete() {
+    const nomeGabinete = document.getElementById('nome-gabinete').value.trim();
+    configuracoes.nomeGabinete = nomeGabinete;
+    localStorage.setItem('aprod-configuracoes', JSON.stringify(configuracoes));
+    atualizarDisplayGabinete();
+    alert('Nome do gabinete salvo com sucesso!');
+}
+
+function salvarTodasConfiguracoes() {
+    configuracoes.nomeGabinete = document.getElementById('nome-gabinete').value.trim();
+    configuracoes.incluirLogo = document.getElementById('incluir-logo').checked;
+    configuracoes.incluirData = document.getElementById('incluir-data').checked;
+    configuracoes.formatoData = document.getElementById('formato-data').value;
+    configuracoes.temaInicial = document.getElementById('tema-inicial').value;
+    configuracoes.itensGrafico = parseInt(document.getElementById('itens-grafico').value);
+    configuracoes.pesoPadrao = parseFloat(document.getElementById('peso-padrao').value);
+    configuracoes.autoAplicarPesos = document.getElementById('auto-aplicar-pesos').checked;
+    
+    localStorage.setItem('aprod-configuracoes', JSON.stringify(configuracoes));
+    atualizarDisplayGabinete();
+    alert('Todas as configurações foram salvas com sucesso!');
+}
+
+function atualizarDisplayGabinete() {
+    let displayElement = document.getElementById('gabinete-display');
+    
+    if (!displayElement) {
+        displayElement = document.createElement('div');
+        displayElement.id = 'gabinete-display';
+        displayElement.className = 'gabinete-display';
+        document.body.appendChild(displayElement);
+    }
+    
+    if (configuracoes.nomeGabinete) {
+        displayElement.textContent = configuracoes.nomeGabinete;
+        displayElement.style.display = 'block';
+    } else {
+        displayElement.style.display = 'none';
+    }
+}
+
+function restaurarConfiguracoesPadrao() {
+    if (confirm('Tem certeza que deseja restaurar todas as configurações para o padrão?')) {
+        configuracoes = {
+            nomeGabinete: '',
+            incluirLogo: true,
+            incluirData: true,
+            formatoData: 'br',
+            temaInicial: 'dark',
+            itensGrafico: 20,
+            pesoPadrao: 1.0,
+            autoAplicarPesos: false
+        };
+        localStorage.setItem('aprod-configuracoes', JSON.stringify(configuracoes));
+        carregarConfiguracoes();
+        alert('Configurações restauradas para o padrão!');
+    }
+}
+
+function exportarConfiguracoes() {
+    const blob = new Blob([JSON.stringify(configuracoes, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `aprod_configuracoes_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+function importarConfiguracoes(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const configImportadas = JSON.parse(e.target.result);
+            configuracoes = { ...configuracoes, ...configImportadas };
+            localStorage.setItem('aprod-configuracoes', JSON.stringify(configuracoes));
+            carregarConfiguracoes();
+            alert('Configurações importadas com sucesso!');
+        } catch (error) {
+            alert('Erro ao importar configurações. Verifique se o arquivo é válido.');
+        }
+    };
+    reader.readAsText(file);
+}
 
 window.addEventListener('resize', function() {
     if (chartInstance) {

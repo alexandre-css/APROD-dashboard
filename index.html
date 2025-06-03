@@ -37,6 +37,11 @@
                         <img src="assets/icons/peso.png" alt="Pesos">
                         <span>Pesos</span>
                     </div>
+                        <div class="nav-item" onclick="showConfiguracoesPage()">
+                            <img src="assets/icons/settings.png" alt="Configurações">
+                            <span>Configurações</span>
+                        </div>
+                    </div>
                     </div>
                 </div>
             </div>
@@ -176,6 +181,7 @@
                             <input type="text" id="filtro-semana" placeholder="Filtrar por usuário..." />
                         </div>
                         <button class="btn-export" onclick="mostrarPopupExportacao()">
+                            <img src="assets/icons/excel.png" alt="Exportar">
                             Exportar
                         </button>
                     </div>
@@ -271,6 +277,112 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <div id="configuracoes-page" class="page-content" style="display: none;">
+        <div class="dashboard">
+            <div class="page-title">
+                <h1>Configurações</h1>
+            </div>
+
+            <div class="config-container">
+                <div class="config-section">
+                    <h3>Identificação do Gabinete</h3>
+                    <div class="config-item">
+                        <label for="nome-gabinete">Nome do Gabinete:</label>
+                        <input type="text" 
+                            id="nome-gabinete" 
+                            class="config-input" 
+                            placeholder="Ex: Gabinete do Desembargador Alexandre Morais da Rosa"
+                            value="">
+                        <button class="btn-config primary" onclick="salvarNomeGabinete()">
+                            Salvar Nome
+                        </button>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <h3>Configurações de Exportação</h3>
+                    <div class="config-item">
+                        <label for="incluir-logo">
+                            <input type="checkbox" id="incluir-logo" checked>
+                            Incluir cabeçalho APROD nos documentos
+                        </label>
+                    </div>
+                    <div class="config-item">
+                        <label for="incluir-data">
+                            <input type="checkbox" id="incluir-data" checked>
+                            Incluir data/hora de geração
+                        </label>
+                    </div>
+                    <div class="config-item">
+                        <label for="formato-data">Formato de data nos arquivos:</label>
+                        <select id="formato-data" class="config-select">
+                            <option value="br">Brasileiro (DD/MM/AAAA)</option>
+                            <option value="iso">ISO (AAAA-MM-DD)</option>
+                            <option value="us">Americano (MM/DD/AAAA)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <h3>Interface</h3>
+                    <div class="config-item">
+                        <label for="tema-inicial">Tema inicial:</label>
+                        <select id="tema-inicial" class="config-select">
+                            <option value="dark">Escuro</option>
+                            <option value="light">Claro</option>
+                            <option value="auto">Automático (sistema)</option>
+                        </select>
+                    </div>
+                    <div class="config-item">
+                        <label for="itens-grafico">Itens no gráfico principal:</label>
+                        <input type="number" 
+                            id="itens-grafico" 
+                            class="config-input-small" 
+                            value="20" 
+                            min="5" 
+                            max="50">
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <h3>Dados e Processamento</h3>
+                    <div class="config-item">
+                        <label for="peso-padrao">Peso padrão para novos tipos:</label>
+                        <input type="number" 
+                            id="peso-padrao" 
+                            class="config-input-small" 
+                            value="1.0" 
+                            min="0" 
+                            max="10" 
+                            step="0.1">
+                    </div>
+                    <div class="config-item">
+                        <label for="auto-aplicar-pesos">
+                            <input type="checkbox" id="auto-aplicar-pesos">
+                            Aplicar pesos automaticamente ao importar dados
+                        </label>
+                    </div>
+                </div>
+
+                <div class="config-actions">
+                    <button class="btn-config success" onclick="salvarTodasConfiguracoes()">
+                        Salvar Todas as Configurações
+                    </button>
+                    <button class="btn-config secondary" onclick="restaurarConfiguracoesPadrao()">
+                        Restaurar Padrão
+                    </button>
+                    <button class="btn-config danger" onclick="exportarConfiguracoes()">
+                        Exportar Configurações
+                    </button>
+                    <input type="file" id="importar-config" accept=".json" style="display: none;" onchange="importarConfiguracoes(event)">
+                    <button class="btn-config secondary" onclick="document.getElementById('importar-config').click()">
+                        Importar Configurações
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="popup-exportacao-dashboard" class="popup-overlay" style="display: none;">
