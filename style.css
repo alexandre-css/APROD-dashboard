@@ -1,0 +1,357 @@
+:root {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --card-bg: #2d2d2d;
+    --border-color: #4a90e2;
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+    --text-title: #4a90e2;
+    --accent: #4a90e2;
+    --hover: #3d3d3d;
+    --sidebar-bg: #262626;
+    --input-bg: #3d3d3d;
+    --chart-bg: #2d2d2d;
+}
+
+[data-theme="light"] {
+    --bg-primary: #f9fafb;
+    --bg-secondary: #e5e7ea;
+    --card-bg: #fff;
+    --border-color: #3cb3e6;
+    --text-primary: #232946;
+    --text-secondary: #666666;
+    --text-title: #1976d2;
+    --accent: #3cb3e6;
+    --hover: #e3f2fd;
+    --sidebar-bg: #fff;
+    --input-bg: #ffffff;
+    --chart-bg: #ffffff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+.app-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 110px;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border-color);
+    transition: width 0.3s ease;
+    z-index: 10;
+}
+
+.sidebar:hover {
+    width: 220px;
+}
+
+.sidebar-content {
+    padding: 20px 10px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-items {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    gap: 15px;
+}
+
+.nav-item.active {
+    background: var(--hover);
+    border: 2px solid var(--accent);
+}
+
+.nav-item img {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+}
+
+.nav-item span {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-title);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.sidebar:hover .nav-item span {
+    opacity: 1;
+}
+
+.main-content {
+    flex: 1;
+    padding: 20px;
+    position: relative;
+}
+
+.dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.kpis-row {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.kpi-card {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    padding: 16px;
+    min-width: 280px;
+    transition: transform 0.2s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+}
+
+.top-users-card {
+    min-width: 320px;
+}
+
+.kpi-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.kpi-content img {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+}
+
+.kpi-text h3 {
+    font-size: 16px;
+    color: var(--accent);
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.kpi-value {
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.top-users {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.user-item {
+    font-size: 12px;
+    color: var(--text-primary);
+    padding: 2px 0;
+}
+
+.user-item:first-child {
+    font-weight: bold;
+}
+
+.controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.import-btn {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--text-title) 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.2s ease;
+    min-width: 200px;
+    justify-content: center;
+}
+
+.import-btn:hover {
+    transform: scale(1.03);
+}
+
+.import-btn img {
+    width: 24px;
+    height: 24px;
+}
+
+.months-container {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    flex: 1;
+    max-width: 600px;
+}
+
+.months-container h4 {
+    color: var(--accent);
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
+.months-grid {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.month-chip {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid var(--border-color);
+}
+
+.month-chip.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--text-title);
+}
+
+.month-chip:not(.active) {
+    background: var(--hover);
+    color: var(--text-secondary);
+    opacity: 0.5;
+}
+
+.month-chip:hover {
+    transform: scale(1.05);
+}
+
+.chart-container {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
+    height: 500px;
+    position: relative;
+}
+
+.chart-container canvas {
+    max-height: 100%;
+}
+
+.theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 24px;
+    transition: transform 0.2s ease;
+    z-index: 1000;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1);
+}
+
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    color: var(--accent);
+    font-size: 18px;
+    font-weight: bold;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 70px;
+    }
+    
+    .sidebar:hover {
+        width: 200px;
+    }
+    
+    .kpis-row {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .kpi-card {
+        width: 100%;
+        max-width: 400px;
+    }
+    
+    .controls-row {
+        flex-direction: column;
+    }
+    
+    .months-container {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-content {
+        padding: 10px;
+    }
+    
+    .kpi-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .kpi-value {
+        font-size: 24px;
+    }
+}

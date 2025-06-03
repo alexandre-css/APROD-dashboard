@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APROD Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-content">
+                <div class="nav-items">
+                    <div class="nav-item active">
+                        <img src="assets/icons/dashboard.png" alt="Dashboard">
+                        <span>Dashboard</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="dashboard">
+                <div class="kpis-row">
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <img src="assets/icons/sum.png" alt="Total">
+                            <div class="kpi-text">
+                                <h3>Total de Minutas</h3>
+                                <span class="kpi-value" id="total-minutas">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <img src="assets/icons/calendar.png" alt="Dia">
+                            <div class="kpi-text">
+                                <h3>Dia Mais Produtivo</h3>
+                                <span class="kpi-value" id="dia-produtivo">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card top-users-card">
+                        <div class="kpi-content">
+                            <img src="assets/icons/top.png" alt="Top">
+                            <div class="kpi-text">
+                                <h3>Top 3 Usuários</h3>
+                                <div class="top-users" id="top-users">
+                                    <div class="user-item">Carregando...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="controls-row">
+                    <button class="import-btn" onclick="importData()">
+                        <img src="assets/icons/excel.png" alt="Excel">
+                        Importar Excel
+                    </button>
+
+                    <div class="months-container">
+                        <h4>Meses Ativos:</h4>
+                        <div class="months-grid" id="months-grid">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="produtividade-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="theme-toggle" onclick="toggleTheme()">
+                <span id="theme-icon">🌙</span>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
