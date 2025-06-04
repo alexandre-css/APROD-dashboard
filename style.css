@@ -133,10 +133,10 @@ body {
 .sidebar:not(:hover) .nav-item.active::before {
     content: '';
     position: absolute;
-    top: -8px;
+    top: -15px;
     left: -6px;
     right: -6px;
-    bottom: -8px;
+    bottom: -3px;
     background: var(--hover);
     border: 1px solid var(--accent);
     border-radius: 8px;
