@@ -9,14 +9,20 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-
-<div class="theme-toggle" id="theme-toggle" onclick="toggleTheme()"></div>
-<div class="pesos-toggle" id="pesos-toggle" onclick="togglePesos()" title="Desativar Pesos">⚖️</div>
-
-</div>
-
 </head>
 <body>
+    <template id="modelos-ia-template">
+        <option value="finetuned-gpt-neox-20b">GPT-NeoX-20B (Recomendado)</option>
+        <option value="meta-llama/llama-3-70b-instruct">LLaMA 3 70B</option>
+        <option value="meta-llama/llama-3-8b-instruct">LLaMA 3 8B</option>
+        <option value="google-flan-t5-xl">Google Flan-T5-XL</option>
+        <option value="fast-gpt-j">Fast GPT-J</option>
+        <option value="dolphin">Dolphin</option>
+        <option value="mistral-7b-instruct">Mistral-7B-Instruct</option>
+    </template>
+    <div class="theme-toggle" id="theme-toggle" onclick="toggleTheme()"></div>
+    <div class="pesos-toggle" id="pesos-toggle" onclick="togglePesos()" title="Desativar Pesos">⚖️</div>
+
     <div class="app-container">
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-content">
@@ -33,15 +39,17 @@
                         <img src="assets/icons/semana.png" alt="Semana">
                         <span>Semana</span>
                     </div>
-                        <div class="nav-item" onclick="showPesosPage()">
+                    <div class="nav-item" onclick="showPesosPage()">
                         <img src="assets/icons/peso.png" alt="Pesos">
                         <span>Pesos</span>
                     </div>
-                        <div class="nav-item" onclick="showConfiguracoesPage()">
-                            <img src="assets/icons/settings.png" alt="Configurações">
-                            <span>Configurações</span>
-                        </div>
+                    <div class="nav-item" onclick="showIAPage()">
+                        <img src="assets/icons/ai2.png" alt="IA">
+                        <span>Relatórios IA</span>
                     </div>
+                    <div class="nav-item" onclick="showConfiguracoesPage()">
+                        <img src="assets/icons/settings.png" alt="Configurações">
+                        <span>Configurações</span>
                     </div>
                 </div>
             </div>
@@ -125,8 +133,6 @@
                     <div class="chart-container">
                         <canvas id="produtividade-chart"></canvas>
                     </div>
-                </div>
-
                 </div>
             </div>
 
@@ -276,113 +282,200 @@
                     </div>
                 </div>
             </div>
+
+            <div id="ia-page" class="page-content" style="display: none;">
+                <div class="dashboard">
+                    <div class="page-title">
+                        <h1>Relatórios com Inteligência Artificial</h1>
+                    </div>
+
+                    <div class="ia-container">
+                        <div class="ia-controls">
+                            <button class="btn-relatorio-ia" onclick="gerarRelatorioIA()" id="btn-ia">
+                                <img src="assets/icons/ai.png" alt="IA">
+                                Gerar Relatório IA
+                            </button>
+                            
+                            <div class="modelo-ai-selector">
+                                <label for="ia-modelo-direto">Modelo:</label>
+                                <select id="ia-modelo-direto" class="config-select" onchange="alterarModeloIA(this.value)">
+                                    <option value="finetuned-gpt-neox-20b">GPT-NeoX-20B (Recomendado)</option>
+                                    <option value="meta-llama/llama-3-70b-instruct">LLaMA 3 70B</option>
+                                    <option value="meta-llama/llama-3-8b-instruct">LLaMA 3 8B</option>
+                                    <option value="google-flan-t5-xl">Google Flan-T5-XL</option>
+                                    <option value="fast-gpt-j">Fast GPT-J</option>
+                                    <option value="dolphin">Dolphin</option>
+                                    <option value="mistral-7b-instruct">Mistral-7B-Instruct</option>
+                                </select>
+
+                            </div>
+                            
+                            <div class="ia-info">
+                                <h3>📊 Análise Automática</h3>
+                                <p>A IA analisará seus dados de produtividade e gerará insights automáticos incluindo:</p>
+                                <ul>
+                                    <li>• Resumo executivo dos indicadores</li>
+                                    <li>• Análise de performance da equipe</li>
+                                    <li>• Identificação de padrões e tendências</li>
+                                    <li>• Recomendações para melhoria</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div id="relatorio-ia-container" class="relatorio-ia-container">
+                            <div class="relatorio-ia-header">
+                                <h3>Relatório Gerado</h3>
+                                <button class="btn-config secondary" onclick="exportarRelatorioIA()">
+                                    <img src="assets/icons/export.png" alt="Exportar">
+                                    Exportar PDF
+                                </button>
+                            </div>
+                            <div id="relatorio-ia-conteudo" class="relatorio-ia-conteudo">
+                                Clique em "Gerar Relatório IA" para criar uma análise automática dos seus dados.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="configuracoes-page" class="page-content" style="display: none;">
+                <div class="dashboard">
+                    <div class="page-title">
+                        <h1>Configurações</h1>
+                    </div>
+
+                    <div class="config-container">
+                        <div class="config-section">
+                            <h3>Identificação do Gabinete</h3>
+                            <div class="config-item">
+                                <label for="nome-gabinete">Nome do Gabinete:</label>
+                                <input type="text" 
+                                    id="nome-gabinete" 
+                                    class="config-input" 
+                                    placeholder="Ex: Gabinete do Desembargador Alexandre Morais da Rosa"
+                                    value="">
+                                <button class="btn-config primary" onclick="salvarNomeGabinete()">
+                                    Salvar Nome
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="config-section">
+                            <h3>Configurações de Exportação</h3>
+                            <div class="config-item">
+                                <label for="incluir-logo">
+                                    <input type="checkbox" id="incluir-logo" checked>
+                                    Incluir cabeçalho APROD nos documentos
+                                </label>
+                            </div>
+                            <div class="config-item">
+                                <label for="incluir-data">
+                                    <input type="checkbox" id="incluir-data" checked>
+                                    Incluir data/hora de geração
+                                </label>
+                            </div>
+                            <div class="config-item">
+                                <label for="formato-data">Formato de data nos arquivos:</label>
+                                <select id="formato-data" class="config-select">
+                                    <option value="br">Brasileiro (DD/MM/AAAA)</option>
+                                    <option value="iso">ISO (AAAA-MM-DD)</option>
+                                    <option value="us">Americano (MM/DD/AAAA)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="config-section">
+                            <h3>Inteligência Artificial</h3>
+                            <div class="config-item">
+                                <label for="ia-habilitada">
+                                    <input type="checkbox" id="ia-habilitada">
+                                    Habilitar relatórios automáticos com IA
+                                </label>
+                            </div>
+                            <div class="config-item">
+                                <label for="ia-token">Token/API Key:</label>
+                                <input type="password" 
+                                    id="ia-token" 
+                                    class="config-input" 
+                                    placeholder="hf_xxxxxxxxxxxxxxxxxxxx">
+                                <button class="btn-config secondary" onclick="obterToken()">
+                                    Como obter?
+                                </button>
+                            </div>
+                            <div class="config-item">
+                                <label for="ia-modelo">Modelo de IA:</label>
+                                <select id="ia-modelo" class="config-select">
+                                    <option value="finetuned-gpt-neox-20b">GPT-NeoX-20B (Recomendado)</option>
+                                    <option value="meta-llama/llama-3-70b-instruct">LLaMA 3 70B</option>
+                                    <option value="meta-llama/llama-3-8b-instruct">LLaMA 3 8B</option>
+                                    <option value="google-flan-t5-xl">Google Flan-T5-XL</option>
+                                    <option value="fast-gpt-j">Fast GPT-J</option>
+                                    <option value="dolphin">Dolphin</option>
+                                    <option value="mistral-7b-instruct">Mistral-7B-Instruct</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="config-section">
+                            <h3>Interface</h3>
+                            <div class="config-item">
+                                <label for="tema-inicial">Tema inicial:</label>
+                                <select id="tema-inicial" class="config-select">
+                                    <option value="dark">Escuro</option>
+                                    <option value="light">Claro</option>
+                                    <option value="auto">Automático (sistema)</option>
+                                </select>
+                            </div>
+                            <div class="config-item">
+                                <label for="itens-grafico">Itens no gráfico principal:</label>
+                                <input type="number" 
+                                    id="itens-grafico" 
+                                    class="config-input-small" 
+                                    value="20" 
+                                    min="5" 
+                                    max="50">
+                            </div>
+                        </div>
+
+                        <div class="config-section">
+                            <h3>Dados e Processamento</h3>
+                            <div class="config-item">
+                                <label for="peso-padrao">Peso padrão para novos tipos:</label>
+                                <input type="number" 
+                                    id="peso-padrao" 
+                                    class="config-input-small" 
+                                    value="1.0" 
+                                    min="0" 
+                                    max="10" 
+                                    step="0.1">
+                            </div>
+                            <div class="config-item">
+                                <label for="auto-aplicar-pesos">
+                                    <input type="checkbox" id="auto-aplicar-pesos">
+                                    Aplicar pesos automaticamente ao importar dados
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="config-actions">
+                            <button class="btn-config success" onclick="salvarTodasConfiguracoes()">
+                                Salvar Todas as Configurações
+                            </button>
+                            <button class="btn-config secondary" onclick="restaurarConfiguracoesPadrao()">
+                                Restaurar Padrão
+                            </button>
+                            <button class="btn-config danger" onclick="exportarConfiguracoes()">
+                                Exportar Configurações
+                            </button>
+                            <input type="file" id="importar-config" accept=".json" style="display: none;" onchange="importarConfiguracoes(event)">
+                            <button class="btn-config secondary" onclick="document.getElementById('importar-config').click()">
+                                Importar Configurações
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
-    </div>
-
-    <div id="configuracoes-page" class="page-content" style="display: none;">
-        <div class="dashboard">
-            <div class="page-title">
-                <h1>Configurações</h1>
-            </div>
-
-            <div class="config-container">
-                <div class="config-section">
-                    <h3>Identificação do Gabinete</h3>
-                    <div class="config-item">
-                        <label for="nome-gabinete">Nome do Gabinete:</label>
-                        <input type="text" 
-                            id="nome-gabinete" 
-                            class="config-input" 
-                            placeholder="Ex: Gabinete do Desembargador Alexandre Morais da Rosa"
-                            value="">
-                        <button class="btn-config primary" onclick="salvarNomeGabinete()">
-                            Salvar Nome
-                        </button>
-                    </div>
-                </div>
-
-                <div class="config-section">
-                    <h3>Configurações de Exportação</h3>
-                    <div class="config-item">
-                        <label for="incluir-logo">
-                            <input type="checkbox" id="incluir-logo" checked>
-                            Incluir cabeçalho APROD nos documentos
-                        </label>
-                    </div>
-                    <div class="config-item">
-                        <label for="incluir-data">
-                            <input type="checkbox" id="incluir-data" checked>
-                            Incluir data/hora de geração
-                        </label>
-                    </div>
-                    <div class="config-item">
-                        <label for="formato-data">Formato de data nos arquivos:</label>
-                        <select id="formato-data" class="config-select">
-                            <option value="br">Brasileiro (DD/MM/AAAA)</option>
-                            <option value="iso">ISO (AAAA-MM-DD)</option>
-                            <option value="us">Americano (MM/DD/AAAA)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="config-section">
-                    <h3>Interface</h3>
-                    <div class="config-item">
-                        <label for="tema-inicial">Tema inicial:</label>
-                        <select id="tema-inicial" class="config-select">
-                            <option value="dark">Escuro</option>
-                            <option value="light">Claro</option>
-                            <option value="auto">Automático (sistema)</option>
-                        </select>
-                    </div>
-                    <div class="config-item">
-                        <label for="itens-grafico">Itens no gráfico principal:</label>
-                        <input type="number" 
-                            id="itens-grafico" 
-                            class="config-input-small" 
-                            value="20" 
-                            min="5" 
-                            max="50">
-                    </div>
-                </div>
-
-                <div class="config-section">
-                    <h3>Dados e Processamento</h3>
-                    <div class="config-item">
-                        <label for="peso-padrao">Peso padrão para novos tipos:</label>
-                        <input type="number" 
-                            id="peso-padrao" 
-                            class="config-input-small" 
-                            value="1.0" 
-                            min="0" 
-                            max="10" 
-                            step="0.1">
-                    </div>
-                    <div class="config-item">
-                        <label for="auto-aplicar-pesos">
-                            <input type="checkbox" id="auto-aplicar-pesos">
-                            Aplicar pesos automaticamente ao importar dados
-                        </label>
-                    </div>
-                </div>
-
-                <div class="config-actions">
-                    <button class="btn-config success" onclick="salvarTodasConfiguracoes()">
-                        Salvar Todas as Configurações
-                    </button>
-                    <button class="btn-config secondary" onclick="restaurarConfiguracoesPadrao()">
-                        Restaurar Padrão
-                    </button>
-                    <button class="btn-config danger" onclick="exportarConfiguracoes()">
-                        Exportar Configurações
-                    </button>
-                    <input type="file" id="importar-config" accept=".json" style="display: none;" onchange="importarConfiguracoes(event)">
-                    <button class="btn-config secondary" onclick="document.getElementById('importar-config').click()">
-                        Importar Configurações
-                    </button>
-                </div>
-            </div>
-        </div>
     </div>
 
     <div id="popup-exportacao-dashboard" class="popup-overlay" style="display: none;">
@@ -442,6 +535,8 @@
             </div>
         </div>
     </div>
+
+    <input type="file" id="file-input" accept=".xlsx,.xls" style="display: none;">
 
     <script src="script.js"></script>
 </body>

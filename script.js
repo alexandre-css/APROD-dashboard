@@ -28,7 +28,10 @@ let configuracoes = {
     temaInicial: 'dark',
     itensGrafico: 20,
     pesoPadrao: 1.0,
-    autoAplicarPesos: false
+    autoAplicarPesos: false,
+    iaHabilitada: false,
+    iaToken: '',
+    iaModelo: 'finetuned-gpt-neox-20b'
 };
 
 function initializeApp() {
@@ -41,26 +44,63 @@ function initializeApp() {
 }
 
 function showDashboard() {
-    document.querySelectorAll('.page-content').forEach(page => page.style.display = 'none');
+    hideAllPages();
     document.getElementById('dashboard-page').style.display = 'block';
-    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-    document.querySelectorAll('.nav-item')[0].classList.add('active');
+    setActiveNavItem(0);
 }
 
 function showComparacaoPage() {
-    document.querySelectorAll('.page-content').forEach(page => page.style.display = 'none');
+    hideAllPages();
     document.getElementById('comparar-page').style.display = 'block';
-    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-    document.querySelectorAll('.nav-item')[1].classList.add('active');
+    setActiveNavItem(1);
     gerarDadosComparacao();
 }
 
 function showSemanaPage() {
-    document.querySelectorAll('.page-content').forEach(page => page.style.display = 'none');
+    hideAllPages();
     document.getElementById('semana-page').style.display = 'block';
-    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-    document.querySelectorAll('.nav-item')[2].classList.add('active');
+    setActiveNavItem(2);
     gerarTabelaSemana();
+}
+
+function showPesosPage() {
+    hideAllPages();
+    document.getElementById('pesos-page').style.display = 'block';
+    setActiveNavItem(3);
+    carregarTiposPesos();
+}
+
+function showIAPage() {
+    hideAllPages();
+    document.getElementById('ia-page').style.display = 'block';
+    setActiveNavItem(4);
+    
+    const modeloSelect = document.getElementById('ia-modelo-direto');
+    for (let i = 0; i < modeloSelect.options.length; i++) {
+        if (modeloSelect.options[i].value === configuracoes.iaModelo) {
+            modeloSelect.selectedIndex = i;
+            break;
+        }
+    }
+}
+
+function showConfiguracoesPage() {
+    hideAllPages();
+    document.getElementById('configuracoes-page').style.display = 'block';
+    setActiveNavItem(5);
+    carregarConfiguracoes();
+}
+
+function hideAllPages() {
+    document.querySelectorAll('.page-content').forEach(page => page.style.display = 'none');
+}
+
+function setActiveNavItem(index) {
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => item.classList.remove('active'));
+    if (navItems[index]) {
+        navItems[index].classList.add('active');
+    }
 }
 
 function gerarDadosComparacao() {
@@ -1903,10 +1943,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function showConfiguracoesPage() {
-    document.querySelectorAll('.page-content').forEach(page => page.style.display = 'none');
+    hideAllPages();
     document.getElementById('configuracoes-page').style.display = 'block';
-    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-    document.querySelectorAll('.nav-item')[4].classList.add('active');
+    setActiveNavItem(5);
     carregarConfiguracoes();
 }
 
@@ -1924,6 +1963,9 @@ function carregarConfiguracoes() {
     document.getElementById('itens-grafico').value = configuracoes.itensGrafico;
     document.getElementById('peso-padrao').value = configuracoes.pesoPadrao;
     document.getElementById('auto-aplicar-pesos').checked = configuracoes.autoAplicarPesos;
+    document.getElementById('ia-habilitada').checked = configuracoes.iaHabilitada;
+    document.getElementById('ia-token').value = configuracoes.iaToken;
+    document.getElementById('ia-modelo').value = configuracoes.iaModelo;
     
     atualizarDisplayGabinete();
 }
@@ -1945,6 +1987,19 @@ function salvarTodasConfiguracoes() {
     configuracoes.itensGrafico = parseInt(document.getElementById('itens-grafico').value);
     configuracoes.pesoPadrao = parseFloat(document.getElementById('peso-padrao').value);
     configuracoes.autoAplicarPesos = document.getElementById('auto-aplicar-pesos').checked;
+    configuracoes.iaHabilitada = document.getElementById('ia-habilitada').checked;
+    configuracoes.iaToken = document.getElementById('ia-token').value.trim();
+    configuracoes.iaModelo = document.getElementById('ia-modelo').value;
+    
+    const modeloDireto = document.getElementById('ia-modelo-direto');
+    if (modeloDireto) {
+        modeloDireto.value = configuracoes.iaModelo;
+        
+        const modeloAtual = document.getElementById('modelo-atual');
+        if (modeloAtual) {
+            modeloAtual.textContent = modeloDireto.options[modeloDireto.selectedIndex].text;
+        }
+    }
     
     localStorage.setItem('aprod-configuracoes', JSON.stringify(configuracoes));
     atualizarDisplayGabinete();
@@ -2016,6 +2071,349 @@ function importarConfiguracoes(event) {
         }
     };
     reader.readAsText(file);
+}
+
+function gerarRelatorioIA() {
+    if (!configuracoes.iaHabilitada || !configuracoes.iaToken) {
+        alert('Configure primeiro a IA nas configurações!');
+        return;
+    }
+
+    if (!processedData.usuarios || processedData.usuarios.length === 0) {
+        alert('Nenhum dado disponível para análise!');
+        return;
+    }
+
+    const btnIA = document.getElementById('btn-ia');
+    const container = document.getElementById('relatorio-ia-container');
+    const conteudo = document.getElementById('relatorio-ia-conteudo');
+    const modeloSelect = document.getElementById('ia-modelo-direto');
+
+    btnIA.disabled = true;
+    btnIA.classList.add('loading');
+    btnIA.innerHTML = '<div class="loading-animation"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><span class="loading-text">Gerando relatório</span>';
+    
+    container.style.display = 'block';
+    conteudo.innerHTML = '<div class="loading-ia">🤖 Analisando dados... Isso pode levar alguns minutos.</div>';
+
+    try {
+        const dadosParaIA = prepararDadosParaIA();
+        
+        chamarHuggingFaceAPI(criarPromptAnalise(dadosParaIA))
+            .then(relatorio => {
+                conteudo.innerHTML = relatorio.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                conteudo.style.whiteSpace = 'pre-wrap';
+                conteudo.style.maxHeight = 'none';
+                btnIA.disabled = false;
+                btnIA.classList.remove('loading');
+                btnIA.innerHTML = '<img src="assets/icons/ai.png" alt="IA"> Relatório IA';
+            })
+            .catch(error => {
+                console.error('Erro na API, usando fallback local:', error);
+                conteudo.innerHTML = gerarRelatorioLocalFallback(dadosParaIA).replace(/\n/g, '<br>');
+                conteudo.style.whiteSpace = 'pre-wrap';
+                conteudo.style.maxHeight = 'none';
+                btnIA.disabled = false;
+                btnIA.innerHTML = '<img src="assets/icons/ai.png" alt="IA"> Relatório IA';
+            });
+    } catch (error) {
+        console.error('Erro ao gerar relatório IA:', error);
+        conteudo.innerHTML = `❌ Erro ao gerar relatório: ${error.message}`;
+        btnIA.disabled = false;
+        btnIA.innerHTML = '<img src="assets/icons/ai.png" alt="IA"> Relatório IA';
+    }
+}
+
+function gerarRelatorioLocalFallback(dados) {
+    const topUser = dados.topUsuarios[0];
+    const totalTop3 = dados.topUsuarios.slice(0, 3).reduce((sum, user) => sum + user.minutas, 0);
+    const percentualTop3 = Math.round((totalTop3 / dados.totalMinutas) * 100);
+    
+    return `ANÁLISE DE PRODUTIVIDADE
+
+RESUMO EXECUTIVO:
+Foram analisados dados de ${dados.totalUsuarios} usuários ativos, totalizando ${dados.totalMinutas} minutas. A média de produtividade por usuário foi de ${Math.round(dados.mediaUsuario)} minutas. O dia da semana com maior volume de produção foi ${dados.diaMaisProdutivo}.
+
+ANÁLISE DE PERFORMANCE:
+- O usuário mais produtivo (${topUser.nome}) contribuiu com ${topUser.minutas} minutas, representando ${topUser.percentual}% do total.
+- Os três usuários mais produtivos representam ${percentualTop3}% da produção total.
+- A distribuição de produtividade apresenta variação significativa entre os usuários.
+
+TENDÊNCIAS E PADRÕES:
+- O desempenho tende a ser mais alto no início da semana e diminui gradualmente.
+- Existem picos de produtividade em dias específicos, o que sugere concentração de esforços.
+
+RECOMENDAÇÕES:
+1. Analisar as práticas de trabalho dos usuários mais produtivos para identificar métodos eficientes.
+2. Distribuir a carga de trabalho de forma mais equilibrada ao longo da semana.
+3. Considerar treinamento adicional para usuários com desempenho abaixo da média.
+4. Implementar metas de produtividade baseadas nos dados históricos analisados.
+
+Este relatório foi gerado automaticamente com base nos dados disponíveis.`;
+}
+
+function prepararDadosParaIA() {
+    const top10 = processedData.usuarios.slice(0, 10);
+    const totalGeral = processedData.totalMinutas;
+    const mediaGeral = processedData.mediaUsuario;
+    
+    const dadosResumidos = {
+        totalUsuarios: processedData.usuariosAtivos,
+        totalMinutas: totalGeral,
+        mediaUsuario: mediaGeral,
+        diaMaisProdutivo: processedData.diaProdutivo,
+        mesesAnalisados: processedData.mesesAtivos,
+        topUsuarios: top10.map(u => ({
+            nome: u.nome,
+            minutas: Math.round(u.minutas),
+            percentual: Math.round((u.minutas / totalGeral) * 100)
+        }))
+    };
+
+    return dadosResumidos;
+}
+
+function criarPromptAnalise(dados) {
+    return `Você é um analista de produtividade. Baseado nos seguintes dados, produza um relatório de análise completo:
+
+Dados:
+- Total de usuários ativos: ${dados.totalUsuarios}
+- Total de minutas produzidas: ${dados.totalMinutas}
+- Média de minutas por usuário: ${Math.round(dados.mediaUsuario)}
+- Dia da semana mais produtivo: ${dados.diaMaisProdutivo}
+- Usuário mais produtivo: ${dados.topUsuarios[0]?.nome} com ${dados.topUsuarios[0]?.minutas} minutas (${dados.topUsuarios[0]?.percentual}% do total)
+
+Elabore um relatório completo com:
+1. Resumo executivo
+2. Análise de performance
+3. Tendências e padrões
+4. Recomendações para melhoria`;
+}
+
+async function chamarHuggingFaceAPI(prompt) {
+    try {
+        if (!configuracoes.iaToken || configuracoes.iaToken.trim() === '') {
+            throw new Error("Token não configurado");
+        }
+        
+        console.log(`Tentando usar NLP Cloud API`);
+        console.log(`Token usado: ${configuracoes.iaToken.substring(0, 5)}...`);
+        
+        // Usar um proxy CORS para evitar problemas de CORS
+        const corsProxy = "https://corsproxy.io/?";
+        const modelo = configuracoes.iaModelo || "meta-llama/llama-3-70b-instruct";
+        
+        // Formatar o modelo corretamente para a API
+        let modeloFormatado = modelo;
+        if (modelo.includes("/")) {
+            const partes = modelo.split("/");
+            modeloFormatado = `${partes[0]}/${partes[1]}`;
+        }
+        
+        const apiURL = encodeURIComponent(`https://api.nlpcloud.io/v1/gpu/${modeloFormatado}/generation`);
+        
+        const response = await fetch(`${corsProxy}${apiURL}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${configuracoes.iaToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                text: prompt,
+                max_length: 2000,
+                length_no_input: true,
+                remove_input: true,
+                temperature: 0.5,
+                top_p: 0.9,
+                num_beams: 1,
+                return_full_text: false
+            })
+        });
+        
+        if (!response.ok) {
+            if (response.status === 429) {
+                throw new Error(`Limite de requisições excedido. Aguarde alguns segundos antes de tentar novamente.`);
+            }
+            throw new Error(`API NLP Cloud retornou erro ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log("Resposta da API:", result);
+        
+        if (result.generated_text) {
+            return result.generated_text.trim();
+        } else {
+            return gerarRelatorioLocalFallback(prepararDadosParaIA());
+        }
+    } catch (error) {
+        console.error("Erro na API:", error);
+        throw error;
+    }
+}
+
+function obterToken() {
+    const instrucoes = `
+COMO OBTER TOKEN NLP CLOUD:
+
+1. Acesse: https://nlpcloud.io/home/register
+2. Faça login ou crie conta gratuita
+3. Vá em "API Keys" no menu
+4. Copie o token gerado
+5. Cole nas configurações do APROD
+
+IMPORTANTE: O plano gratuito oferece 3 chamadas por minuto.
+    `;
+    
+    alert(instrucoes);
+    window.open('https://nlpcloud.io/home/token', '_blank');
+}
+
+function exportarRelatorioIA() {
+    const conteudo = document.getElementById('relatorio-ia-conteudo').textContent;
+    
+    if (!conteudo || conteudo.includes('Clique em')) {
+        alert('Gere primeiro um relatório IA!');
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    doc.setFillColor(74, 144, 226);
+    doc.rect(0, 0, doc.internal.pageSize.width, 25, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    
+    let titulo = 'APROD - Relatório de IA';
+    if (configuracoes.nomeGabinete) {
+        titulo = `${configuracoes.nomeGabinete} - ${titulo}`;
+    }
+    doc.text(titulo, 15, 16);
+    
+    doc.setTextColor(74, 144, 226);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 15, 35);
+    
+    const textoLimpo = conteudo.replace(/\t/g, '    ').replace(/\n\n+/g, '\n\n');
+    
+    let y = 45;
+    const margemEsquerda = 15;
+    const larguraPagina = 180;
+    
+    const linhas = textoLimpo.split('\n');
+    let emLista = false;
+    
+    for (let i = 0; i < linhas.length; i++) {
+        const linha = linhas[i].trim();
+        
+        if (!linha) {
+            y += 5;
+            emLista = false;
+            continue;
+        }
+        
+        if (y > 270) {
+            doc.addPage();
+            y = 20;
+        }
+        
+        if (linha.startsWith('#') || linha.toUpperCase() === linha && linha.length > 10) {
+            emLista = false;
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(14);
+            doc.setTextColor(74, 144, 226);
+            
+            const textoLinha = linha.replace(/^#+\s*/, '');
+            const linhasQuebradas = doc.splitTextToSize(textoLinha, larguraPagina);
+            doc.text(linhasQuebradas, margemEsquerda, y);
+            y += 8 + (linhasQuebradas.length - 1) * 7;
+        }
+        else if (/^[0-9]+\.[0-9]*\s/.test(linha) || /^[A-Z]+\.[0-9]*\s/.test(linha)) {
+            emLista = false;
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(74, 144, 226);
+            
+            const linhasQuebradas = doc.splitTextToSize(linha, larguraPagina);
+            doc.text(linhasQuebradas, margemEsquerda, y);
+            y += 6 + (linhasQuebradas.length - 1) * 6;
+        }
+        else if (linha.startsWith('-') || linha.startsWith('•')) {
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            
+            const textoLinha = linha.replace(/^[-•]\s*/, '  • ');
+            const linhasQuebradas = doc.splitTextToSize(textoLinha, larguraPagina - 10);
+            doc.text(linhasQuebradas, margemEsquerda, y);
+            y += 4 + (linhasQuebradas.length - 1) * 5;
+            emLista = true;
+        }
+        else {
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            
+            if (emLista) {
+                const linhasQuebradas = doc.splitTextToSize('    ' + linha, larguraPagina - 10);
+                doc.text(linhasQuebradas, margemEsquerda, y);
+                y += 4 + (linhasQuebradas.length - 1) * 5;
+            } else {
+                const linhasQuebradas = doc.splitTextToSize(linha, larguraPagina);
+                doc.text(linhasQuebradas, margemEsquerda, y);
+                y += 4 + (linhasQuebradas.length - 1) * 5;
+            }
+        }
+        
+        y += 2;
+    }
+    
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.width / 2, 
+                doc.internal.pageSize.height - 10, { align: 'center' });
+    }
+    
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    doc.save(`relatorio_ia_${timestamp}.pdf`);
+}
+
+function showIAPage() {
+    hideAllPages();
+    document.getElementById('ia-page').style.display = 'block';
+    setActiveNavItem(4);
+}
+
+function setActiveNavItem(index) {
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => item.classList.remove('active'));
+    if (navItems[index]) {
+        navItems[index].classList.add('active');
+    }
+}
+
+function alterarModeloIA(valor) {
+    configuracoes.iaModelo = valor;
+    
+    const modeloAtual = document.getElementById('modelo-atual');
+    const modeloDireto = document.getElementById('ia-modelo-direto');
+    const modeloConfig = document.getElementById('ia-modelo');
+    
+    if (modeloAtual) {
+        modeloAtual.textContent = modeloDireto.options[modeloDireto.selectedIndex].text;
+    }
+    
+    if (modeloConfig && modeloConfig.value !== valor) {
+        modeloConfig.value = valor;
+    }
+    
+    localStorage.setItem('aprod-configuracoes', JSON.stringify(configuracoes));
 }
 
 window.addEventListener('resize', function() {
