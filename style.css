@@ -649,6 +649,267 @@ body {
     margin: 0 auto;
 }
 
+.mes-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 20px;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.mes-controls .filter-container {
+    flex: 0 0 300px;
+    margin: 0;
+}
+
+.mes-controls .filter-container input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 14px;
+    height: 48px;
+    box-sizing: border-box;
+}
+
+.mes-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1000px;
+    transition: all 0.4s ease;
+}
+
+.mes-table.transitioning {
+    opacity: 0.3;
+    transform: scale(0.98);
+    filter: blur(1px);
+}
+
+.mes-table tbody {
+    transition: all 0.4s ease;
+}
+
+.mes-table tbody.fade-out {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.mes-table tbody.fade-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.mes-table thead {
+    background: var(--accent);
+}
+
+.mes-table th {
+    padding: 12px 6px;
+    text-align: center;
+    font-weight: bold;
+    color: white;
+    font-size: 11px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    min-width: 65px;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.mes-table th .sort-icon {
+    display: inline;
+    margin-left: 2px;
+    font-size: 9px;
+    opacity: 0.7;
+}
+
+.mes-table th.sortable:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.mes-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.mes-table tbody tr:hover {
+    background: var(--hover);
+}
+
+.mes-table td {
+    padding: 10px 6px;
+    text-align: center;
+    color: var(--text-primary);
+    font-size: 11px;
+}
+
+.mes-table .usuario-cell {
+    text-align: left !important;
+    font-weight: bold;
+    color: var(--accent) !important;
+    min-width: 120px;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mes-table .mes-cell {
+    font-weight: 500;
+}
+
+.mes-table .total-cell {
+    font-weight: bold;
+    background: var(--hover);
+    color: var(--accent);
+}
+
+.table-container {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    overflow: auto;
+    margin-bottom: 20px;
+    max-width: 100%;
+}
+
+.mes-table th.mes-vazio {
+    opacity: 0.3;
+    background: var(--text-secondary);
+    color: var(--bg-primary);
+    cursor: default;
+    pointer-events: none;
+}
+
+.mes-table th.mes-vazio .sort-icon {
+    display: none;
+}
+
+.mes-table td.mes-vazio {
+    opacity: 0.3;
+    color: var(--text-secondary);
+    background: var(--hover);
+    font-style: italic;
+}
+
+.mes-table td.mes-vazio::before {
+    content: '—';
+}
+
+.ranking-item.ranking-vazio {
+    opacity: 0.3;
+    background: var(--hover);
+    color: var(--text-secondary);
+}
+
+.ranking-item.ranking-vazio .ranking-icone {
+    filter: grayscale(100%);
+}
+
+.ranking-item.ranking-vazio .ranking-total,
+.ranking-item.ranking-vazio .ranking-porcentagem {
+    font-style: italic;
+    color: var(--text-secondary);
+}
+
+.ranking-item.ranking-vazio .ranking-barra-preenchida {
+    background: var(--text-secondary) !important;
+    opacity: 0.2;
+}
+
+.page-title {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto 30px auto;
+    padding: 0 20px;
+    text-align: center;
+    position: relative;
+    padding-bottom: 70px;
+}
+
+.page-title h1 {
+    color: var(--text-primary);
+    font-size: 2rem;
+    font-weight: 300;
+    margin: 0;
+    position: relative;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.page-title h1::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 1px;
+}
+
+.ano-selector {
+    position: absolute;
+    bottom: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    height: 48px;
+}
+
+.ano-selector {
+    position: absolute;
+    bottom: -90px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    height: 48px;
+}
+
+.ano-chip {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 25px;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    outline: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.ano-chip:hover {
+    background: var(--accent);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.ano-chip.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4);
+}
+
+
 .semana-controls {
     display: flex;
     justify-content: space-between;

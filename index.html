@@ -35,6 +35,10 @@
                         <img src="assets/icons/compara.png" alt="Comparar">
                         <span>Comparar</span>
                     </div>
+                    <div class="nav-item" onclick="showMesPage()">
+                        <img src="assets/icons/mes.png" alt="Mês">
+                        <span>Mês</span>
+                    </div>
                     <div class="nav-item" onclick="showSemanaPage()">
                         <img src="assets/icons/semana.png" alt="Semana">
                         <span>Semana</span>
@@ -283,6 +287,85 @@
                 </div>
             </div>
 
+            <div id="mes-page" class="page-content" style="display: none;">
+                <div class="dashboard">
+                    <div class="page-title">
+                        <h1>Produtividade por Mês</h1>
+                        <div id="seletor-ano" class="ano-selector">
+                        </div>
+                    </div>
+            
+                    <div class="mes-controls">
+                        <div class="filter-container">
+                            <input type="text" id="filtro-mes" placeholder="Filtrar por usuário..." />
+                        </div>
+                        <button class="btn-export" onclick="mostrarPopupExportacaoMes()">
+                            <img src="assets/icons/excel.png" alt="Exportar">
+                            Exportar
+                        </button>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="mes-table">
+                            <thead>
+                                <tr>
+                                    <th onclick="ordenarTabelaMes('usuario')" class="sortable">
+                                        Usuário <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaMes('janeiro')" class="sortable">
+                                        Jan. <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaMes('fevereiro')" class="sortable">
+                                        Fev. <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaMes('marco')" class="sortable">
+                                        Mar. <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaMes('abril')" class="sortable">
+                                        Abr. <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaMes('maio')" class="sortable">
+                                        Mai. <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaMes('junho')" class="sortable">
+                                        Jun. <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaMes('julho')" class="sortable">
+                                        Jul. <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaMes('agosto')" class="sortable">
+                                        Ago. <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaMes('setembro')" class="sortable">
+                                        Set. <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaMes('outubro')" class="sortable">
+                                        Out. <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaMes('novembro')" class="sortable">
+                                        Nov. <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaMes('dezembro')" class="sortable">
+                                        Dez. <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaMes('total')" class="sortable">
+                                        Total <span class="sort-icon">↕</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-mes">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="ranking-container">
+                        <h3>Ranking dos Meses Mais Produtivos</h3>
+                        <div id="ranking-meses" class="ranking-list">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div id="ia-page" class="page-content" style="display: none;">
                 <div class="dashboard">
                     <div class="page-title">
@@ -525,6 +608,35 @@
                     </div>
                     
                     <div class="export-option" onclick="exportarTabelaSemana('xlsx')">
+                        <div class="export-icon excel-icon">📊</div>
+                        <div class="export-info">
+                            <h4>Exportar para Excel</h4>
+                            <p>Planilha editável com formatação completa</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="popup-exportacao-mes" class="popup-overlay" style="display: none;">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3>Selecionar Formato de Exportação</h3>
+                <button class="popup-close" onclick="fecharPopupExportacaoMes()">×</button>
+            </div>
+            
+            <div class="popup-body">
+                <div class="export-options">
+                    <div class="export-option" onclick="exportarTabelaMes('pdf')">
+                        <div class="export-icon pdf-icon">📄</div>
+                        <div class="export-info">
+                            <h4>Exportar para PDF</h4>
+                            <p>Arquivo formatado e pronto para impressão</p>
+                        </div>
+                    </div>
+                    
+                    <div class="export-option" onclick="exportarTabelaMes('xlsx')">
                         <div class="export-icon excel-icon">📊</div>
                         <div class="export-info">
                             <h4>Exportar para Excel</h4>

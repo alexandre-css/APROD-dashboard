@@ -1,3 +1,8 @@
+let anosDisponiveis = [];
+let anoSelecionado = new Date().getFullYear();
+let tabelaMes = [];
+let sortColumnMes = 'usuario';
+let sortAscendingMes = true;
 let tiposPesos = [];
 let pesosAtuais = {};
 let pesosAtivos = true;
@@ -30,9 +35,10 @@ let configuracoes = {
     pesoPadrao: 1.0,
     autoAplicarPesos: false,
     iaHabilitada: false,
-    iaToken: '',
+    iaToken: '6f76bea40d73b6ff291fd29780ca51cc6e12d00c',
     iaModelo: 'finetuned-gpt-neox-20b'
 };
+
 
 function initializeApp() {
     carregarConfiguracoes();
@@ -56,24 +62,31 @@ function showComparacaoPage() {
     gerarDadosComparacao();
 }
 
+function showMesPage() {
+    hideAllPages();
+    document.getElementById('mes-page').style.display = 'block';
+    setActiveNavItem(2);
+    gerarTabelaMes();
+}
+
 function showSemanaPage() {
     hideAllPages();
     document.getElementById('semana-page').style.display = 'block';
-    setActiveNavItem(2);
+    setActiveNavItem(3);
     gerarTabelaSemana();
 }
 
 function showPesosPage() {
     hideAllPages();
     document.getElementById('pesos-page').style.display = 'block';
-    setActiveNavItem(3);
+    setActiveNavItem(4);
     carregarTiposPesos();
 }
 
 function showIAPage() {
     hideAllPages();
     document.getElementById('ia-page').style.display = 'block';
-    setActiveNavItem(4);
+    setActiveNavItem(5);
     
     const modeloSelect = document.getElementById('ia-modelo-direto');
     for (let i = 0; i < modeloSelect.options.length; i++) {
@@ -87,7 +100,7 @@ function showIAPage() {
 function showConfiguracoesPage() {
     hideAllPages();
     document.getElementById('configuracoes-page').style.display = 'block';
-    setActiveNavItem(5);
+    setActiveNavItem(6);
     carregarConfiguracoes();
 }
 
@@ -716,11 +729,15 @@ function fecharPopupExportacao() {
 window.onclick = function(event) {
     const popup = document.getElementById('popup-exportacao');
     const popupDashboard = document.getElementById('popup-exportacao-dashboard');
+    const popupMes = document.getElementById('popup-exportacao-mes');
     if (event.target === popup) {
         fecharPopupExportacao();
     }
     if (event.target === popupDashboard) {
         fecharPopupExportacaoDashboard();
+    }
+    if (event.target === popupMes) {
+        fecharPopupExportacaoMes();
     }
 }
 
@@ -1434,7 +1451,7 @@ function showSemanaPage() {
     document.querySelectorAll('.page-content').forEach(page => page.style.display = 'none');
     document.getElementById('semana-page').style.display = 'block';
     document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-    document.querySelectorAll('.nav-item')[2].classList.add('active');
+    document.querySelectorAll('.nav-item')[3].classList.add('active');
     gerarTabelaSemana();
     setTimeout(() => {
         calcularERenderizarRanking();
@@ -1470,7 +1487,7 @@ function showPesosPage() {
     document.querySelectorAll('.page-content').forEach(page => page.style.display = 'none');
     document.getElementById('pesos-page').style.display = 'block';
     document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-    document.querySelectorAll('.nav-item')[3].classList.add('active');
+    document.querySelectorAll('.nav-item')[4].classList.add('active');
     carregarTiposPesos();
 }
 
@@ -1938,21 +1955,32 @@ document.addEventListener('DOMContentLoaded', function() {
             renderizarTabelaSemana();
         });
     }
-    
+
+    const filtroMes = document.getElementById('filtro-mes');
+    if (filtroMes) {
+        filtroMes.addEventListener('input', function() {
+            renderizarTabelaMes();
+        });
+    }
+
     setTimeout(updateTheme, 100);
 });
 
 function showConfiguracoesPage() {
     hideAllPages();
     document.getElementById('configuracoes-page').style.display = 'block';
-    setActiveNavItem(5);
+    setActiveNavItem(6);
     carregarConfiguracoes();
 }
 
 function carregarConfiguracoes() {
     const configSalvas = localStorage.getItem('aprod-configuracoes');
     if (configSalvas) {
-        configuracoes = { ...configuracoes, ...JSON.parse(configSalvas) };
+        const configCarregadas = JSON.parse(configSalvas);
+        if (!configCarregadas.iaToken) {
+            configCarregadas.iaToken = '6f76bea40d73b6ff291fd29780ca51cc6e12d00c';
+        }
+        configuracoes = { ...configuracoes, ...configCarregadas };
     }
     
     document.getElementById('nome-gabinete').value = configuracoes.nomeGabinete;
@@ -2034,7 +2062,10 @@ function restaurarConfiguracoesPadrao() {
             temaInicial: 'dark',
             itensGrafico: 20,
             pesoPadrao: 1.0,
-            autoAplicarPesos: false
+            autoAplicarPesos: false,
+            iaHabilitada: true,
+            iaToken: '6f76bea40d73b6ff291fd29780ca51cc6e12d00c',
+            iaModelo: 'finetuned-gpt-neox-20b'
         };
         localStorage.setItem('aprod-configuracoes', JSON.stringify(configuracoes));
         carregarConfiguracoes();
@@ -2384,10 +2415,461 @@ function exportarRelatorioIA() {
     doc.save(`relatorio_ia_${timestamp}.pdf`);
 }
 
+function gerarTabelaMes() {
+    if (!excelData || excelData.length === 0) return;
+
+    extrairAnosDisponiveis();
+    
+    let filteredData = excelData.filter(row => {
+        if (!row['Data criação']) return false;
+        
+        const dataCompleta = new Date(row['Data criação']);
+        if (isNaN(dataCompleta.getTime())) return false;
+        
+        return dataCompleta.getFullYear() === anoSelecionado;
+    });
+    
+    if (processedData.mesesAtivos.length > 0 && processedData.mesesAtivos.length < processedData.mesesDisponiveis.length) {
+        filteredData = filteredData.filter(row => {
+            const dataCriacao = row['Data criação'];
+            if (!dataCriacao) return true;
+            
+            const mesAno = extrairMesAno(dataCriacao);
+            return processedData.mesesAtivos.includes(mesAno);
+        });
+    }
+
+    const usuariosMap = new Map();
+    
+    filteredData.forEach(row => {
+        const nroProcesso = row['Nro. processo'];
+        if (!nroProcesso || nroProcesso.trim() === '') return;
+        
+        const usuario = row['Usuário'];
+        if (!usuario || usuario.toString().trim() === '') return;
+        
+        const peso = parseFloat(row['peso']) || 1.0;
+        
+        if (!usuariosMap.has(usuario)) {
+            usuariosMap.set(usuario, {
+                usuario: usuario,
+                janeiro: 0,
+                fevereiro: 0,
+                marco: 0,
+                abril: 0,
+                maio: 0,
+                junho: 0,
+                julho: 0,
+                agosto: 0,
+                setembro: 0,
+                outubro: 0,
+                novembro: 0,
+                dezembro: 0
+            });
+        }
+        
+        if (row['Data criação']) {
+            const dataCompleta = new Date(row['Data criação']);
+            if (!isNaN(dataCompleta.getTime())) {
+                const mes = dataCompleta.getMonth();
+                const meses = ['janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho', 
+                              'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+                
+                const nomeMs = meses[mes];
+                usuariosMap.get(usuario)[nomeMs] += peso;
+            }
+        }
+    });
+
+    tabelaMes = Array.from(usuariosMap.values());
+    renderizarTabelaMes();
+}
+
+function renderizarTabelaMes() {
+    const container = document.getElementById('tabela-mes');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    const filtro = document.getElementById('filtro-mes').value.toLowerCase();
+    const usuariosFiltrados = tabelaMes.filter(usuario => 
+        usuario.usuario.toLowerCase().includes(filtro)
+    );
+
+    usuariosFiltrados.forEach(usuario => {
+        const row = document.createElement('tr');
+        
+        const total = usuario.janeiro + usuario.fevereiro + usuario.marco + 
+                     usuario.abril + usuario.maio + usuario.junho + usuario.julho +
+                     usuario.agosto + usuario.setembro + usuario.outubro + 
+                     usuario.novembro + usuario.dezembro;
+        
+        row.innerHTML = `
+            <td class="usuario-cell">${usuario.usuario}</td>
+            <td class="mes-cell">${Math.round(usuario.janeiro)}</td>
+            <td class="mes-cell">${Math.round(usuario.fevereiro)}</td>
+            <td class="mes-cell">${Math.round(usuario.marco)}</td>
+            <td class="mes-cell">${Math.round(usuario.abril)}</td>
+            <td class="mes-cell">${Math.round(usuario.maio)}</td>
+            <td class="mes-cell">${Math.round(usuario.junho)}</td>
+            <td class="mes-cell">${Math.round(usuario.julho)}</td>
+            <td class="mes-cell">${Math.round(usuario.agosto)}</td>
+            <td class="mes-cell">${Math.round(usuario.setembro)}</td>
+            <td class="mes-cell">${Math.round(usuario.outubro)}</td>
+            <td class="mes-cell">${Math.round(usuario.novembro)}</td>
+            <td class="mes-cell">${Math.round(usuario.dezembro)}</td>
+            <td class="total-cell">${Math.round(total)}</td>
+        `;
+        
+        container.appendChild(row);
+    });
+
+    calcularERenderizarRankingMeses();
+    aplicarEstiloMesesVazios();
+}
+
+function calcularERenderizarRankingMeses() {
+    if (!tabelaMes || tabelaMes.length === 0) {
+        const container = document.getElementById('ranking-meses');
+        if (container) {
+            container.innerHTML = '<div class="ranking-item">Nenhum dado disponível</div>';
+        }
+        return;
+    }
+
+    const mesesTotais = {
+        janeiro: 0,
+        fevereiro: 0,
+        marco: 0,
+        abril: 0,
+        maio: 0,
+        junho: 0,
+        julho: 0,
+        agosto: 0,
+        setembro: 0,
+        outubro: 0,
+        novembro: 0,
+        dezembro: 0
+    };
+
+    tabelaMes.forEach(usuario => {
+        mesesTotais.janeiro += usuario.janeiro || 0;
+        mesesTotais.fevereiro += usuario.fevereiro || 0;
+        mesesTotais.marco += usuario.marco || 0;
+        mesesTotais.abril += usuario.abril || 0;
+        mesesTotais.maio += usuario.maio || 0;
+        mesesTotais.junho += usuario.junho || 0;
+        mesesTotais.julho += usuario.julho || 0;
+        mesesTotais.agosto += usuario.agosto || 0;
+        mesesTotais.setembro += usuario.setembro || 0;
+        mesesTotais.outubro += usuario.outubro || 0;
+        mesesTotais.novembro += usuario.novembro || 0;
+        mesesTotais.dezembro += usuario.dezembro || 0;
+    });
+
+    const mesesNomes = {
+        janeiro: 'Janeiro',
+        fevereiro: 'Fevereiro',
+        marco: 'Março',
+        abril: 'Abril',
+        maio: 'Maio',
+        junho: 'Junho',
+        julho: 'Julho',
+        agosto: 'Agosto',
+        setembro: 'Setembro',
+        outubro: 'Outubro',
+        novembro: 'Novembro',
+        dezembro: 'Dezembro'
+    };
+
+    const rankingOrdenado = Object.entries(mesesTotais)
+        .map(([mes, total]) => ({
+            mes: mesesNomes[mes],
+            chave: mes,
+            total: Math.round(total * 10) / 10
+        }))
+        .sort((a, b) => b.total - a.total);
+
+    renderizarRankingMeses(rankingOrdenado);
+}
+
+function renderizarRankingMeses(rankingData) {
+    const container = document.getElementById('ranking-meses');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (rankingData.length === 0) {
+        container.innerHTML = '<div class="ranking-item">Nenhum dado disponível</div>';
+        return;
+    }
+
+    const mesesComDados = verificarMesesComDadosAno();
+    const mesesMap = {
+        'Janeiro': 0, 'Fevereiro': 1, 'Março': 2, 'Abril': 3,
+        'Maio': 4, 'Junho': 5, 'Julho': 6, 'Agosto': 7,
+        'Setembro': 8, 'Outubro': 9, 'Novembro': 10, 'Dezembro': 11
+    };
+
+    const coresRanking = [
+        '#FFD700', '#C0C0C0', '#CD7F32', '#4a90e2', '#4a90e2', '#4a90e2',
+        '#4a90e2', '#4a90e2', '#4a90e2', '#4a90e2', '#4a90e2', '#4a90e2'
+    ];
+
+    const iconesRanking = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', 
+                          '7️⃣', '8️⃣', '9️⃣', '🔟', '1️⃣1️⃣', '1️⃣2️⃣'];
+
+    rankingData.forEach((item, index) => {
+        const rankingDiv = document.createElement('div');
+        rankingDiv.className = 'ranking-item';
+        
+        const mesIndex = mesesMap[item.mes];
+        const temDados = mesesComDados.includes(mesIndex);
+        
+        if (!temDados) {
+            rankingDiv.classList.add('ranking-vazio');
+        }
+        
+        rankingDiv.style.borderLeftColor = coresRanking[index];
+        
+        const porcentagem = rankingData[0].total > 0 ? 
+            Math.round((item.total / rankingData[0].total) * 100) : 0;
+
+        rankingDiv.innerHTML = `
+            <div class="ranking-posicao">
+                <span class="ranking-icone">${iconesRanking[index]}</span>
+                <span class="ranking-numero">#${index + 1}</span>
+            </div>
+            <div class="ranking-dia">${item.mes}/${anoSelecionado}</div>
+            <div class="ranking-total">${temDados ? item.total + ' minutas' : '—'}</div>
+            <div class="ranking-porcentagem">${temDados ? porcentagem + '%' : '—'}</div>
+            <div class="ranking-barra">
+                <div class="ranking-barra-preenchida" style="width: ${temDados ? porcentagem : 0}%; background-color: ${coresRanking[index]};"></div>
+            </div>
+        `;
+        
+        container.appendChild(rankingDiv);
+    });
+}
+
+function ordenarTabelaMes(coluna) {
+    if (!tabelaMes) return;
+    
+    const isAscending = sortColumnMes === coluna ? !sortAscendingMes : true;
+    sortColumnMes = coluna;
+    sortAscendingMes = isAscending;
+    
+    tabelaMes.sort((a, b) => {
+        let valueA, valueB;
+        
+        if (coluna === 'usuario') {
+            valueA = a.usuario.toLowerCase();
+            valueB = b.usuario.toLowerCase();
+        } else if (coluna === 'total') {
+            valueA = a.janeiro + a.fevereiro + a.marco + a.abril + a.maio + a.junho +
+                    a.julho + a.agosto + a.setembro + a.outubro + a.novembro + a.dezembro;
+            valueB = b.janeiro + b.fevereiro + b.marco + b.abril + b.maio + b.junho +
+                    b.julho + b.agosto + b.setembro + b.outubro + b.novembro + b.dezembro;
+        } else {
+            valueA = a[coluna] || 0;
+            valueB = b[coluna] || 0;
+        }
+        
+        if (valueA < valueB) return isAscending ? -1 : 1;
+        if (valueA > valueB) return isAscending ? 1 : -1;
+        return 0;
+    });
+    
+    renderizarTabelaMes();
+}
+
+function mostrarPopupExportacaoMes() {
+    document.getElementById('popup-exportacao-mes').style.display = 'flex';
+}
+
+function fecharPopupExportacaoMes() {
+    document.getElementById('popup-exportacao-mes').style.display = 'none';
+}
+
+function exportarTabelaMes(formato) {
+    if (!tabelaMes || tabelaMes.length === 0) {
+        alert('Não há dados para exportar!');
+        return;
+    }
+    
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    
+    if (formato === 'pdf') {
+        exportarMesPDF(timestamp);
+    } else if (formato === 'xlsx') {
+        exportarMesExcel(timestamp);
+    }
+    
+    fecharPopupExportacaoMes();
+}
+
+function exportarMesPDF(timestamp) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape');
+    
+    doc.setFillColor(74, 144, 226);
+    doc.rect(0, 0, doc.internal.pageSize.width, 25, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    
+    let titulo = 'APROD - Produtividade por Mês';
+    if (configuracoes.nomeGabinete) {
+        titulo = `${configuracoes.nomeGabinete} - APROD - Produtividade por Mês`;
+    }
+    doc.text(titulo, 15, 16);
+    
+    doc.setTextColor(74, 144, 226);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 15, 35);
+    
+    const tableData = tabelaMes.map(usuario => {
+        const total = usuario.janeiro + usuario.fevereiro + usuario.marco + 
+                     usuario.abril + usuario.maio + usuario.junho + usuario.julho +
+                     usuario.agosto + usuario.setembro + usuario.outubro + 
+                     usuario.novembro + usuario.dezembro;
+        return [
+            usuario.usuario,
+            Math.round(usuario.janeiro),
+            Math.round(usuario.fevereiro),
+            Math.round(usuario.marco),
+            Math.round(usuario.abril),
+            Math.round(usuario.maio),
+            Math.round(usuario.junho),
+            Math.round(usuario.julho),
+            Math.round(usuario.agosto),
+            Math.round(usuario.setembro),
+            Math.round(usuario.outubro),
+            Math.round(usuario.novembro),
+            Math.round(usuario.dezembro),
+            Math.round(total)
+        ];
+    });
+    
+    doc.autoTable({
+        head: [['Usuário', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez', 'Total']],
+        body: tableData,
+        startY: 45,
+        styles: {
+            fontSize: 7,
+            cellPadding: 2,
+            textColor: [35, 41, 70],
+            lineColor: [74, 144, 226],
+            lineWidth: 0.5
+        },
+        headStyles: {
+            fillColor: [74, 144, 226],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            fontSize: 8
+        },
+        alternateRowStyles: {
+            fillColor: [248, 249, 250]
+        },
+        columnStyles: {
+            0: { cellWidth: 25, fontStyle: 'bold' },
+            13: { fillColor: [227, 242, 253], fontStyle: 'bold' }
+        },
+        margin: { left: 15, right: 15 }
+    });
+    
+    doc.save(`tabela_mes_${timestamp}.pdf`);
+}
+
+function exportarMesExcel(timestamp) {
+    const wb = XLSX.utils.book_new();
+    const ws = {};
+    
+    let titulo = 'APROD - Produtividade por Mês';
+    if (configuracoes.nomeGabinete) {
+        titulo = `${configuracoes.nomeGabinete} - APROD - Produtividade por Mês`;
+    }
+    
+    ws['A1'] = { 
+        v: titulo, 
+        t: 's',
+        s: {
+            font: { name: "Calibri", sz: 18, bold: true, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "4A90E2" } },
+            alignment: { horizontal: "center", vertical: "center" }
+        }
+    };
+    
+    const headers = ['Usuário', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro', 'Total'];
+    const headerCells = ['A3', 'B3', 'C3', 'D3', 'E3', 'F3', 'G3', 'H3', 'I3', 'J3', 'K3', 'L3', 'M3', 'N3'];
+    
+    headers.forEach((header, index) => {
+        ws[headerCells[index]] = {
+            v: header,
+            t: 's',
+            s: {
+                font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "FFFFFF" } },
+                fill: { fgColor: { rgb: "4A90E2" } },
+                alignment: { horizontal: "center", vertical: "center" }
+            }
+        };
+    });
+    
+    let row = 4;
+    tabelaMes.forEach(usuario => {
+        const total = usuario.janeiro + usuario.fevereiro + usuario.marco + 
+                     usuario.abril + usuario.maio + usuario.junho + usuario.julho +
+                     usuario.agosto + usuario.setembro + usuario.outubro + 
+                     usuario.novembro + usuario.dezembro;
+        
+        const rowData = [
+            usuario.usuario,
+            Math.round(usuario.janeiro),
+            Math.round(usuario.fevereiro),
+            Math.round(usuario.marco),
+            Math.round(usuario.abril),
+            Math.round(usuario.maio),
+            Math.round(usuario.junho),
+            Math.round(usuario.julho),
+            Math.round(usuario.agosto),
+            Math.round(usuario.setembro),
+            Math.round(usuario.outubro),
+            Math.round(usuario.novembro),
+            Math.round(usuario.dezembro),
+            Math.round(total)
+        ];
+        
+        const columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'];
+        
+        rowData.forEach((value, colIndex) => {
+            const cellAddress = `${columns[colIndex]}${row}`;
+            ws[cellAddress] = {
+                v: value,
+                t: colIndex === 0 ? 's' : 'n',
+                s: {
+                    font: { name: "Calibri", sz: 11 },
+                    alignment: { horizontal: colIndex === 0 ? "left" : "center", vertical: "center" }
+                }
+            };
+        });
+        
+        row++;
+    });
+    
+    ws['!ref'] = `A1:N${row - 1}`;
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 13 } }];
+    
+    XLSX.utils.book_append_sheet(wb, ws, "Produtividade Mensal");
+    XLSX.writeFile(wb, `tabela_mes_${timestamp}.xlsx`);
+}
+
 function showIAPage() {
     hideAllPages();
     document.getElementById('ia-page').style.display = 'block';
-    setActiveNavItem(4);
+    setActiveNavItem(5);
 }
 
 function setActiveNavItem(index) {
@@ -2414,6 +2896,146 @@ function alterarModeloIA(valor) {
     }
     
     localStorage.setItem('aprod-configuracoes', JSON.stringify(configuracoes));
+}
+
+function verificarMesesComDados() {
+    if (!excelData || excelData.length === 0) return [];
+    
+    const mesesComDados = new Set();
+    
+    excelData.forEach(row => {
+        if (row['Data criação']) {
+            const dataCompleta = new Date(row['Data criação']);
+            if (!isNaN(dataCompleta.getTime())) {
+                mesesComDados.add(dataCompleta.getMonth());
+            }
+        }
+    });
+    
+    return Array.from(mesesComDados);
+}
+
+function verificarMesesComDadosAno() {
+    if (!excelData || excelData.length === 0) return [];
+    
+    const mesesComDados = new Set();
+    
+    excelData.forEach(row => {
+        if (row['Data criação']) {
+            const dataCompleta = new Date(row['Data criação']);
+            if (!isNaN(dataCompleta.getTime()) && dataCompleta.getFullYear() === anoSelecionado) {
+                mesesComDados.add(dataCompleta.getMonth());
+            }
+        }
+    });
+    
+    return Array.from(mesesComDados);
+}
+
+function aplicarEstiloMesesVazios() {
+    const mesesComDados = verificarMesesComDadosAno();
+    const meses = ['janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho', 
+                  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    
+    meses.forEach((mes, index) => {
+        const th = document.querySelector(`th[onclick*="${mes}"]`);
+        if (th) {
+            if (mesesComDados.includes(index)) {
+                th.classList.remove('mes-vazio');
+            } else {
+                th.classList.add('mes-vazio');
+            }
+        }
+    });
+    
+    const tbody = document.getElementById('tabela-mes');
+    if (tbody) {
+        tbody.querySelectorAll('tr').forEach(row => {
+            const cells = row.querySelectorAll('td');
+            cells.forEach((cell, cellIndex) => {
+                if (cellIndex > 0 && cellIndex < 13) {
+                    const mesIndex = cellIndex - 1;
+                    if (mesesComDados.includes(mesIndex)) {
+                        cell.classList.remove('mes-vazio');
+                    } else {
+                        cell.classList.add('mes-vazio');
+                        cell.textContent = '';
+                    }
+                }
+            });
+        });
+    }
+}
+
+function extrairAnosDisponiveis() {
+    if (!excelData || excelData.length === 0) {
+        anosDisponiveis = [];
+        return;
+    }
+    
+    const anos = new Set();
+    
+    excelData.forEach(row => {
+        if (row['Data criação']) {
+            const dataCompleta = new Date(row['Data criação']);
+            if (!isNaN(dataCompleta.getTime())) {
+                anos.add(dataCompleta.getFullYear());
+            }
+        }
+    });
+    
+    anosDisponiveis = Array.from(anos).sort((a, b) => b - a);
+    
+    if (anosDisponiveis.length > 0 && !anosDisponiveis.includes(anoSelecionado)) {
+        anoSelecionado = anosDisponiveis[0];
+    }
+    
+    renderizarSeletorAno();
+}
+
+function renderizarSeletorAno() {
+    const container = document.getElementById('seletor-ano');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (anosDisponiveis.length <= 1) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    container.style.display = 'flex';
+    
+    anosDisponiveis.forEach(ano => {
+        const anoButton = document.createElement('button');
+        anoButton.className = `ano-chip ${ano === anoSelecionado ? 'active' : ''}`;
+        anoButton.textContent = ano;
+        anoButton.onclick = () => selecionarAno(ano);
+        container.appendChild(anoButton);
+    });
+}
+
+function selecionarAno(novoAno) {
+    if (anoSelecionado === novoAno) return;
+    
+    anoSelecionado = novoAno;
+    
+    const tabela = document.querySelector('.mes-table tbody');
+    if (tabela) {
+        tabela.style.opacity = '0.3';
+        tabela.style.transform = 'scale(0.95)';
+        
+        setTimeout(() => {
+            gerarTabelaMes();
+            renderizarSeletorAno();
+            
+            tabela.style.opacity = '1';
+            tabela.style.transform = 'scale(1)';
+        }, 300);
+    } else {
+        gerarTabelaMes();
+        renderizarSeletorAno();
+    }
 }
 
 window.addEventListener('resize', function() {
