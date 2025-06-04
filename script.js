@@ -1697,6 +1697,47 @@ function updatePesosButton() {
     }
 }
 
+function importarPesos(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const pesosImportados = JSON.parse(e.target.result);
+            
+            if (typeof pesosImportados !== 'object' || pesosImportados === null) {
+                throw new Error('Formato de arquivo inválido');
+            }
+            
+            let pesosAplicados = 0;
+            Object.keys(pesosImportados).forEach(tipo => {
+                const peso = parseFloat(pesosImportados[tipo]);
+                if (!isNaN(peso) && peso >= 0 && peso <= 10) {
+                    pesosAtuais[tipo] = peso;
+                    pesosAplicados++;
+                }
+            });
+            
+            if (pesosAplicados === 0) {
+                alert('Nenhum peso válido foi encontrado no arquivo!');
+                return;
+            }
+            
+            localStorage.setItem('aprod-pesos', JSON.stringify(pesosAtuais));
+            renderizarTabelaPesos();
+            
+            alert(`Pesos importados com sucesso! ${pesosAplicados} tipos de agendamento foram atualizados.`);
+            
+        } catch (error) {
+            alert('Erro ao importar arquivo: ' + error.message);
+        }
+    };
+    reader.readAsText(file);
+    
+    event.target.value = '';
+}
+
 function aplicarOuRemoverPesos() {
     if (!excelData || excelData.length === 0) return;
 

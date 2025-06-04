@@ -276,6 +276,10 @@
                             <button class="btn-peso" onclick="salvarPesos()">
                                 Salvar Pesos
                             </button>
+                            <input type="file" id="importar-pesos" accept=".json" style="display: none;" onchange="importarPesos(event)">
+                            <button class="btn-peso secondary" onclick="document.getElementById('importar-pesos').click()">
+                                Importar Pesos
+                            </button>
                             <button class="btn-peso secondary" onclick="aplicarPesos()">
                                 Aplicar Alterações
                             </button>
@@ -283,9 +287,6 @@
                                 Restaurar Padrão
                             </button>
                         </div>
-                    </div>
-                </div>
-            </div>
 
             <div id="mes-page" class="page-content" style="display: none;">
                 <div class="dashboard">
