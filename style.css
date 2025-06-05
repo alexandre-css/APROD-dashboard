@@ -631,6 +631,9 @@ body {
     padding: 20px;
     display: flex;
     flex-direction: column;
+    min-height: 400px;
+    height: auto;
+    overflow: hidden;
 }
 
 .grafico-header h3 {
@@ -639,16 +642,259 @@ body {
     margin-bottom: 15px;
 }
 
-.chart-container-comparacao {
-    flex: 1;
+.chart-legend-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--hover) 0%, rgba(74, 144, 226, 0.05) 100%);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(10px);
     position: relative;
-    min-height: 400px;
+    overflow: hidden;
+}
+
+.chart-legend-indicator::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #1565c0, #42a5f5, #1565c0);
+    background-size: 200% 100%;
+    animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% { background-position: 200% 0; }
+    50% { background-position: -200% 0; }
+}
+
+.legend-indicator-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid rgba(74, 144, 226, 0.2);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.legend-indicator-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(74, 144, 226, 0.15);
+    border-color: rgba(74, 144, 226, 0.4);
+}
+
+.legend-type-icon {
+    width: 20px;
+    height: 20px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.acordao-icon .icon-square {
+    width: 14px;
+    height: 14px;
+    background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+    border-radius: 3px;
+    box-shadow: 0 2px 8px rgba(21, 101, 192, 0.3);
+    position: relative;
+}
+
+.acordao-icon .icon-square::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 1px;
+}
+
+.despacho-icon .icon-circle {
+    width: 14px;
+    height: 14px;
+    background: linear-gradient(135deg, #42a5f5 0%, #1976d2 100%);
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(66, 165, 245, 0.3);
+    position: relative;
+}
+
+.despacho-icon .icon-circle::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 4px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+}
+
+.legend-type-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.3px;
+}
+
+.legend-indicator-colors {
+    display: flex;
+    gap: 4px;
+    margin: 0 8px;
+}
+
+.legend-indicator-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease;
+}
+
+.legend-indicator-color:hover {
+    transform: scale(1.2);
+}
+
+.legend-type-description {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-style: italic;
+    opacity: 0.8;
+    font-weight: 400;
+    letter-spacing: 0.2px;
+}
+
+.chart-container-comparacao {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-container-comparacao canvas {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    flex: 1 !important;
+    min-height: 300px !important;
+    max-height: 600px !important;
+}
+
+@media (max-width: 768px) {
+    .chart-legend-indicator {
+        flex-direction: column;
+        gap: 16px;
+        padding: 16px;
+    }
+    
+    .legend-indicator-item {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 16px;
+    }
+    
+    .legend-indicator-colors {
+        margin: 0 4px;
+    }
+}
+
+[data-theme="dark"] .chart-legend-indicator {
+    background: linear-gradient(135deg, rgba(45, 45, 45, 0.8) 0%, rgba(74, 144, 226, 0.08) 100%);
+    border-color: rgba(74, 144, 226, 0.3);
+}
+
+[data-theme="dark"] .legend-indicator-item {
+    background: rgba(45, 45, 45, 0.9);
+    border-color: rgba(74, 144, 226, 0.25);
+}
+
+[data-theme="dark"] .legend-indicator-item:hover {
+    border-color: rgba(74, 144, 226, 0.5);
+    background: rgba(55, 55, 55, 0.9);
 }
 
 .table-container, .ranking-container, .chart-container {
     max-width: 1200px;
     width: 100%;
     margin: 0 auto;
+}
+
+.chart-tooltip-custom {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 12px;
+    line-height: 1.4;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 200px;
+    z-index: 9999;
+    transition: opacity 0.2s ease;
+}
+
+.tooltip-usuario-nome {
+    font-weight: bold;
+    font-size: 14px;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 4px;
+    text-align: center;
+}
+
+.tooltip-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+    padding: 2px 0;
+}
+
+.tooltip-cor-indicador {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+}
+
+.tooltip-texto {
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 12px;
+}
+
+.tooltip-total {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+    font-weight: bold;
+    color: var(--accent);
+    text-align: center;
+    font-size: 13px;
+}
+
+.grafico-comparacao canvas {
+    cursor: default;
 }
 
 .mes-controls {

@@ -231,7 +231,19 @@ function atualizarGraficoComparacao() {
     const usuariosSelecionados = usuariosComparacao.filter(u => u.selecionado);
     
     if (usuariosSelecionados.length === 0) {
-        chartComparacao = new Chart(ctx, {
+        const chartContainer = ctx.parentElement;
+        chartContainer.innerHTML = `
+            <div class="grafico-header">
+                <h3>Comparação de Produtividade</h3>
+            </div>
+            <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                <p>Selecione usuários para visualizar a comparação segmentada</p>
+            </div>
+            <canvas id="comparacao-chart"></canvas>
+        `;
+        
+        const newCtx = document.getElementById('comparacao-chart');
+        chartComparacao = new Chart(newCtx, {
             type: 'bar',
             data: {
                 labels: ['Nenhum usuário selecionado'],
@@ -258,57 +270,184 @@ function atualizarGraficoComparacao() {
         return;
     }
 
+    const detalhesUsuarios = gerarDetalhesTooltipUsuarios(usuariosSelecionados);
+    
+    const chartData = usuariosSelecionados.map(usuario => {
+        const detalhes = detalhesUsuarios[usuario.nome] || [];
+        
+        let acordaoMinutas = 0;
+        let despachoMinutas = 0;
+        
+        detalhes.forEach(tipo => {
+            if (tipo.nome === 'Acórdão') {
+                acordaoMinutas = tipo.minutas;
+            } else {
+                despachoMinutas += tipo.minutas;
+            }
+        });
+        
+        return {
+            nome: usuario.nome,
+            acordao: Math.round(acordaoMinutas * 10) / 10,
+            despacho: Math.round(despachoMinutas * 10) / 10,
+            total: Math.round((acordaoMinutas + despachoMinutas) * 10) / 10
+        };
+    });
+
     const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+
     const cores = [
-        '#4a90e2', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6',
-        '#1abc9c', '#34495e', '#e67e22', '#95a5a6', '#d35400'
+        '#1565c0', '#43a047', '#e53935', '#8e24aa', '#fb8c00',
+        '#00acc1', '#7cb342', '#d81b60', '#5e35b1', '#ff7043',
+        '#26a69a', '#ab47bc', '#42a5f5', '#66bb6a', '#ef5350'
     ];
 
-    chartComparacao = new Chart(ctx, {
+    const coresDespacho = [
+        '#42a5f5', '#66bb6a', '#ef5350', '#ba68c8', '#ffb74d',
+        '#4dd0e1', '#9ccc65', '#f06292', '#7986cb', '#ff8a65',
+        '#4db6ac', '#ce93d8', '#64b5f6', '#81c784', '#e57373'
+    ];
+
+    const acordaoData = chartData.map((usuario, index) => usuario.acordao);
+    const despachoData = chartData.map((usuario, index) => usuario.despacho);
+    const backgroundColorsAcordao = chartData.map((_, index) => cores[index % cores.length]);
+    const backgroundColorsDespacho = chartData.map((_, index) => coresDespacho[index % coresDespacho.length]);
+
+    const chartContainer = ctx.parentElement;
+    chartContainer.innerHTML = `
+        <div class="grafico-header">
+            <h3>Comparação de Produtividade por Tipo</h3>
+        </div>
+        <canvas id="comparacao-chart"></canvas>
+    `;
+
+    const newCtx = document.getElementById('comparacao-chart');
+
+    chartComparacao = new Chart(newCtx, {
         type: 'bar',
         data: {
-            labels: usuariosSelecionados.map(u => u.nome),
-            datasets: [{
-                label: 'Minutas',
-                data: usuariosSelecionados.map(u => Math.round(u.minutas)),
-                backgroundColor: usuariosSelecionados.map((_, index) => cores[index % cores.length]),
-                borderWidth: 0
-            }]
+            labels: chartData.map(u => u.nome),
+            datasets: [
+                {
+                    label: 'Acórdão',
+                    data: acordaoData,
+                    backgroundColor: backgroundColorsAcordao,
+                    borderColor: backgroundColorsAcordao,
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    borderSkipped: false,
+                    stack: 'Stack 0'
+                },
+                {
+                    label: 'Despacho/Decisão',
+                    data: despachoData,
+                    backgroundColor: backgroundColorsDespacho,
+                    borderColor: backgroundColorsDespacho,
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    borderSkipped: false,
+                    stack: 'Stack 0'
+                }
+            ]
         },
         options: {
             indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                title: {
-                    display: true,
-                    text: 'Comparação de Produtividade',
-                    color: isDark ? '#ffffff' : '#232946',
-                    font: {
-                        size: 16,
-                        weight: 'bold'
-                    }
+            layout: {
+                padding: {
+                    right: 40,
+                    left: 10,
+                    top: 10,
+                    bottom: 10
                 }
             },
             scales: {
                 x: {
+                    stacked: true,
                     beginAtZero: true,
                     grid: {
                         color: isDark ? '#404040' : '#e0e0e0'
                     },
                     ticks: {
-                        color: isDark ? '#ffffff' : '#232946'
+                        color: isDark ? '#ffffff' : '#232946',
+                        callback: function(value) {
+                            return value;
+                        },
+                        maxTicksLimit: 10
                     }
                 },
                 y: {
+                    stacked: true,
                     grid: {
                         display: false
                     },
                     ticks: {
-                        color: isDark ? '#ffffff' : '#232946'
+                        color: isDark ? '#ffffff' : '#232946',
+                        maxTicksLimit: Math.min(chartData.length, 15),
+                        font: {
+                            size: Math.max(10, Math.min(12, 400 / chartData.length))
+                        }
                     }
                 }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    position: 'nearest',
+                    animation: {
+                        duration: 0
+                    },
+                    backgroundColor: isDark ? '#2d2d2d' : '#ffffff',
+                    titleColor: isDark ? '#ffffff' : '#232946',
+                    bodyColor: isDark ? '#ffffff' : '#232946',
+                    borderColor: isDark ? '#4a90e2' : '#3cb3e6',
+                    borderWidth: 2,
+                    cornerRadius: 8,
+                    padding: 12,
+                    displayColors: false,
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].label;
+                        },
+                        beforeBody: function(context) {
+                            if (context.length === 0) return [];
+                            
+                            const dataIndex = context[0].dataIndex;
+                            const nomeUsuario = chartData[dataIndex].nome;
+                            const detalhesComparacao = gerarDetalhesTooltipComparacao(usuariosSelecionados);
+                            const dadosUsuario = detalhesComparacao[nomeUsuario];
+                            
+                            if (!dadosUsuario) return [];
+                            
+                            return [
+                                `📊 Acórdão: ${dadosUsuario.acordao.minutas} minutas`,
+                                `📋 Despacho/Decisão: ${dadosUsuario.despacho.minutas} minutas`,
+                                ``,
+                                `📈 Total: ${dadosUsuario.total} minutas`
+                            ];
+                        },
+                        label: function() {
+                            return null;
+                        }
+                    }
+                }
+            },
+            interaction: {
+                mode: 'index',
+                intersect: false,
+                axis: 'y'
+            },
+            animation: {
+                duration: 1000,
+                easing: 'easeOutQuart'
+            },
+            onHover: function(event, activeElements) {
+                event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
             }
         },
         plugins: [{
@@ -316,15 +455,18 @@ function atualizarGraficoComparacao() {
             afterDatasetsDraw: function(chart) {
                 const ctx = chart.ctx;
                 const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-                chart.data.datasets.forEach((dataset, i) => {
-                    const meta = chart.getDatasetMeta(i);
+                
+                chart.data.datasets.forEach((dataset, datasetIndex) => {
+                    const meta = chart.getDatasetMeta(datasetIndex);
                     meta.data.forEach((bar, index) => {
-                        const data = dataset.data[index];
-                        ctx.fillStyle = isDark ? '#ffffff' : '#232946';
-                        ctx.font = 'bold 12px Arial';
-                        ctx.textAlign = 'left';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(data, bar.x + 5, bar.y);
+                        if (datasetIndex === 1) {
+                            const total = chartData[index].total;
+                            ctx.fillStyle = isDark ? '#ffffff' : '#232946';
+                            ctx.font = `bold ${Math.max(10, Math.min(12, 400 / chartData.length))}px Arial`;
+                            ctx.textAlign = 'left';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(Math.round(total), bar.x + 5, bar.y);
+                        }
                     });
                 });
             }
@@ -944,6 +1086,97 @@ function gerarDetalhesTooltipUsuarios(usuarios) {
     });
     
     return usuariosDetalhes;
+}
+
+function gerarDetalhesTooltipComparacao(usuarios) {
+    const cores = [
+        '#1565c0', '#43a047', '#e53935', '#8e24aa', '#fb8c00',
+        '#00acc1', '#7cb342', '#d81b60', '#5e35b1', '#ff7043',
+        '#26a69a', '#ab47bc', '#42a5f5', '#66bb6a', '#ef5350'
+    ];
+
+    const coresDespacho = [
+        '#42a5f5', '#66bb6a', '#ef5350', '#ba68c8', '#ffb74d',
+        '#4dd0e1', '#9ccc65', '#f06292', '#7986cb', '#ff8a65',
+        '#4db6ac', '#ce93d8', '#64b5f6', '#81c784', '#e57373'
+    ];
+
+    const resultado = {};
+    
+    if (!excelData || excelData.length === 0) return resultado;
+    
+    let filteredData = excelData;
+    
+    if (processedData.mesesAtivos && processedData.mesesAtivos.length > 0 && 
+        processedData.mesesDisponiveis && processedData.mesesAtivos.length < processedData.mesesDisponiveis.length) {
+        filteredData = excelData.filter(row => {
+            if (!row['Data criação']) return false;
+            
+            try {
+                let date = row['Data criação'];
+                if (!(date instanceof Date)) {
+                    date = new Date(date);
+                }
+                
+                if (!isNaN(date.getTime())) {
+                    const mesNomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 
+                                     'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+                    const mesAno = `${mesNomes[date.getMonth()]}/${date.getFullYear()}`;
+                    return processedData.mesesAtivos.includes(mesAno);
+                }
+                return false;
+            } catch (e) {
+                return false;
+            }
+        });
+    }
+    
+    usuarios.forEach((usuario, index) => {
+        let acordaoMinutas = 0;
+        let despachoMinutas = 0;
+        
+        filteredData.forEach(row => {
+            const nroProcesso = row['Nro. processo'];
+            if (!nroProcesso || nroProcesso.trim() === '') return;
+            
+            const usuarioRow = row['Usuário'];
+            if (!usuarioRow || usuarioRow.toString().trim() === '') return;
+            
+            if (usuarioRow !== usuario.nome) return;
+            
+            const peso = parseFloat(row['peso']) || 1.0;
+            const tipoValue = row['Tipo'];
+            const agendamentoValue = row['Agendamento'];
+            
+            if (tipoValue && typeof tipoValue === 'string') {
+                const tipoLimpo = tipoValue.toString().trim().toUpperCase();
+                
+                if (tipoLimpo === 'ACÓRDÃO' || tipoLimpo === 'VOTO-VISTA' || tipoLimpo === 'VOTO DIVERGENTE') {
+                    acordaoMinutas += peso;
+                } else if (tipoLimpo === 'DESPACHO/DECISÃO') {
+                    despachoMinutas += peso;
+                } else {
+                    despachoMinutas += peso;
+                }
+            } else {
+                despachoMinutas += peso;
+            }
+        });
+        
+        resultado[usuario.nome] = {
+            acordao: {
+                minutas: Math.round(acordaoMinutas * 10) / 10,
+                cor: cores[index % cores.length]
+            },
+            despacho: {
+                minutas: Math.round(despachoMinutas * 10) / 10,
+                cor: coresDespacho[index % coresDespacho.length]
+            },
+            total: Math.round((acordaoMinutas + despachoMinutas) * 10) / 10
+        };
+    });
+    
+    return resultado;
 }
 
 function reprocessarDados() {
