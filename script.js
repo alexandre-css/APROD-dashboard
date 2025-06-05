@@ -408,6 +408,22 @@ function toggleMonth(month) {
     
     if (excelData && excelData.length > 0) {
         processExcelData();
+        
+        const detalhesUsuario = document.querySelector('.detalhes-usuario');
+        if (detalhesUsuario) {
+            const titulo = detalhesUsuario.querySelector('h3');
+            if (titulo) {
+                const nomeUsuario = titulo.textContent.replace('Detalhamento - ', '');
+                const chartData = processedData.usuarios ? processedData.usuarios.slice(0, 20) : [];
+                const usuarioAtual = chartData.find(u => u.nome === nomeUsuario);
+                
+                if (usuarioAtual) {
+                    const tiposDetalhados = gerarDetalhesTooltipUsuarios(chartData);
+                    const detalhes = tiposDetalhados[nomeUsuario];
+                    mostrarDetalhesUsuario(nomeUsuario, detalhes, usuarioAtual.minutas);
+                }
+            }
+        }
     }
 }
 
@@ -471,6 +487,8 @@ function createChart() {
         return;
     }
     
+    const tiposDetalhados = gerarDetalhesTooltipUsuarios(chartData);
+    
     chartInstance = new Chart(context, {
         type: 'bar',
         data: {
@@ -487,6 +505,14 @@ function createChart() {
             indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
+            onClick: (event, activeElements) => {
+                if (activeElements.length > 0) {
+                    const index = activeElements[0].index;
+                    const nomeUsuario = chartData[index].nome;
+                    const detalhes = tiposDetalhados[nomeUsuario];
+                    mostrarDetalhesUsuario(nomeUsuario, detalhes, chartData[index].minutas);
+                }
+            },
             plugins: {
                 legend: {
                     display: false
@@ -498,6 +524,49 @@ function createChart() {
                     font: {
                         size: 16,
                         weight: 'bold'
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].label;
+                        },
+                        label: function(context) {
+                            const nomeUsuario = context.label;
+                            const detalhes = tiposDetalhados[nomeUsuario];
+                            
+                            if (!detalhes || detalhes.length === 0) {
+                                return [`Total: ${Math.round(context.raw)} minutas`, 'Clique para mais detalhes'];
+                            }
+                            
+                            const acordao = detalhes.find(d => d.nome === 'Acórdão')?.minutas || 0;
+                            const outrosTotal = detalhes.filter(d => d.nome !== 'Acórdão')
+                                                      .reduce((sum, item) => sum + item.minutas, 0);
+                            
+                            return [
+                                `Total: ${Math.round(context.raw)} minutas`,
+                                '',
+                                `Acórdão: ${Math.round(acordao)} minutas`,
+                                `Despacho/Decisão: ${Math.round(outrosTotal)} minutas`,
+                                '',
+                                'Clique para mais detalhes'
+                            ];
+                        }
+                    },
+                    backgroundColor: isDark ? '#2d2d2d' : '#ffffff',
+                    titleColor: isDark ? '#ffffff' : '#232946',
+                    bodyColor: isDark ? '#ffffff' : '#232946',
+                    borderColor: isDark ? '#4a90e2' : '#3cb3e6',
+                    borderWidth: 2,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    padding: 12,
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 12
                     }
                 }
             },
@@ -547,6 +616,393 @@ function createChart() {
         }]
     });
 }
+
+function mostrarDetalhesUsuario(nomeUsuario, detalhes, totalMinutas) {
+    const chartContainer = document.querySelector('.chart-container');
+    
+    chartContainer.style.transition = 'all 0.3s ease';
+    chartContainer.style.opacity = '0';
+    chartContainer.style.transform = 'scale(0.95)';
+    
+    setTimeout(() => {
+        const acordaoMinutas = detalhes.find(d => d.nome === 'Acórdão')?.minutas || 0;
+        const despachoMinutas = totalMinutas - acordaoMinutas;
+        
+        const outrosTipos = detalhes.filter(d => d.nome !== 'Acórdão');
+        
+        chartContainer.innerHTML = `
+            <div class="detalhes-usuario">
+                <div class="detalhes-header">
+                    <div class="detalhes-titulo">
+                        <div class="detalhes-icone-titulo">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <rect x="3" y="4" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
+                                <path d="M7 8h10M7 12h7" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </div>
+                        <div class="detalhes-texto">
+                            <h3>Detalhamento - ${nomeUsuario}</h3>
+                            <div class="detalhes-total">Total: ${Math.round(totalMinutas)} minutas</div>
+                        </div>
+                    </div>
+                    <button class="btn-voltar" onclick="voltarGrafico()">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        <span>Voltar ao Gráfico</span>
+                    </button>
+                </div>
+                
+                <div class="detalhes-conteudo">
+                    <div class="categoria-detalhes acordao-categoria">
+                        <div class="categoria-header">
+                            <div class="categoria-icone">
+                                <canvas id="chart-acordao-${Date.now()}"></canvas>
+                            </div>
+                            <div class="categoria-info">
+                                <h4>Acórdão</h4>
+                                <div class="categoria-valor">${Math.round(acordaoMinutas)} minutas</div>
+                                <div class="categoria-percentual">${Math.round((acordaoMinutas / totalMinutas) * 100)}% do total</div>
+                            </div>
+                        </div>
+                        <div class="categoria-barra">
+                            <div class="barra-preenchida acordao-barra" style="width: ${(acordaoMinutas / totalMinutas) * 100}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="categoria-detalhes despacho-categoria">
+                        <div class="categoria-header">
+                            <div class="categoria-icone">
+                                <canvas id="chart-despacho-${Date.now()}"></canvas>
+                            </div>
+                            <div class="categoria-info">
+                                <h4>Despacho/Decisão</h4>
+                                <div class="categoria-valor">${Math.round(despachoMinutas)} minutas</div>
+                                <div class="categoria-percentual">${Math.round((despachoMinutas / totalMinutas) * 100)}% do total</div>
+                            </div>
+                        </div>
+                        <div class="categoria-barra">
+                            <div class="barra-preenchida despacho-barra" style="width: ${(despachoMinutas / totalMinutas) * 100}%"></div>
+                        </div>
+                        
+                        ${outrosTipos.length > 0 ? `
+                            <div class="subcategorias">
+                                <div class="subcategorias-header">
+                                    <svg viewBox="0 0 24 24" fill="none">
+                                        <path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                    <h5>Subcategorias</h5>
+                                </div>
+                                <div class="subcategorias-lista">
+                                    ${outrosTipos.map(tipo => `
+                                        <div class="subcategoria-item">
+                                            <div class="subcategoria-indicador"></div>
+                                            <span class="subcategoria-nome">${tipo.nome}</span>
+                                            <span class="subcategoria-valor">${Math.round(tipo.minutas)} minutas</span>
+                                            <div class="subcategoria-barra-mini">
+                                                <div class="subcategoria-preenchida" style="width: ${(tipo.minutas / despachoMinutas) * 100}%"></div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                <div class="detalhes-resumo">
+                    <div class="resumo-estatisticas">
+                        <div class="stat-item">
+                            <span class="stat-label">Tipo Predominante</span>
+                            <span class="stat-valor">${acordaoMinutas > despachoMinutas ? 'Acórdão' : 'Despacho/Decisão'}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Variedade</span>
+                            <span class="stat-valor">${detalhes.length} tipo${detalhes.length > 1 ? 's' : ''}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Eficiência</span>
+                            <span class="stat-valor">${totalMinutas > 50 ? 'Alta' : totalMinutas > 20 ? 'Média' : 'Baixa'}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        chartContainer.style.opacity = '1';
+        chartContainer.style.transform = 'scale(1)';
+        
+        setTimeout(() => {
+            criarMiniGraficosPizza(acordaoMinutas, despachoMinutas, totalMinutas);
+            
+            setTimeout(() => {
+                const acordaoIcone = document.querySelector('.acordao-categoria .categoria-icone');
+                const despachoIcone = document.querySelector('.despacho-categoria .categoria-icone');
+                
+                if (acordaoIcone) {
+                    acordaoIcone.classList.add('pulse');
+                    setTimeout(() => acordaoIcone.classList.remove('pulse'), 4000);
+                }
+                
+                if (despachoIcone) {
+                    despachoIcone.classList.add('pulse');
+                    setTimeout(() => despachoIcone.classList.remove('pulse'), 4000);
+                }
+            }, 800);
+            
+            const elementos = chartContainer.querySelectorAll('.categoria-detalhes, .subcategoria-item');
+            elementos.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    el.style.transition = 'all 0.3s ease';
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        }, 100);
+        
+    }, 300);
+}
+
+function criarMiniGraficosPizza(acordaoMinutas, despachoMinutas, totalMinutas) {
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    
+    const acordaoCanvas = document.querySelector('[id^="chart-acordao-"]');
+    const despachoCanvas = document.querySelector('[id^="chart-despacho-"]');
+    
+    if (acordaoCanvas) {
+        const ctx = acordaoCanvas.getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [acordaoMinutas, despachoMinutas],
+                    backgroundColor: ['#FFFFFF', '#1565c0'],
+                    borderWidth: 2,
+                    borderColor: ['#1565c0', '#1565c0'],
+                    offset: [12, 0]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                cutout: '65%',
+                animation: {
+                    animateRotate: true,
+                    duration: 1500,
+                    easing: 'easeOutCubic'
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false }
+                }
+            }
+        });
+    }
+    
+    if (despachoCanvas) {
+        const ctx = despachoCanvas.getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [acordaoMinutas, despachoMinutas],
+                    backgroundColor: ['#1565c0', '#FFFFFF'],
+                    borderWidth: 2,
+                    borderColor: ['#1565c0', '#4a90e2'],
+                    offset: [0, 12]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                cutout: '65%',
+                animation: {
+                    animateRotate: true,
+                    duration: 1500,
+                    easing: 'easeOutCubic'
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false }
+                }
+            }
+        });
+    }
+}
+
+function voltarGrafico() {
+    const chartContainer = document.querySelector('.chart-container');
+    
+    chartContainer.style.transition = 'all 0.3s ease';
+    chartContainer.style.opacity = '0';
+    chartContainer.style.transform = 'scale(0.95)';
+    
+    setTimeout(() => {
+        chartContainer.innerHTML = '<canvas id="produtividade-chart"></canvas>';
+        chartContainer.style.opacity = '1';
+        chartContainer.style.transform = 'scale(1)';
+        
+        setTimeout(() => {
+            createChart();
+        }, 100);
+    }, 300);
+}
+
+function gerarDetalhesTooltipUsuarios(usuarios) {
+    if (!excelData || excelData.length === 0) return {};
+    
+    const usuariosDetalhes = {};
+    
+    usuarios.forEach(usuario => {
+        usuariosDetalhes[usuario.nome] = [];
+    });
+    
+    let filteredData = excelData;
+    
+    if (processedData.mesesAtivos && processedData.mesesAtivos.length > 0 && 
+        processedData.mesesDisponiveis && processedData.mesesAtivos.length < processedData.mesesDisponiveis.length) {
+        filteredData = excelData.filter(row => {
+            if (!row['Data criação']) return false;
+            
+            try {
+                let date = row['Data criação'];
+                if (!(date instanceof Date)) {
+                    date = new Date(date);
+                }
+                
+                if (!isNaN(date.getTime())) {
+                    const mesNomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 
+                                     'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+                    const mesAno = `${mesNomes[date.getMonth()]}/${date.getFullYear()}`;
+                    return processedData.mesesAtivos.includes(mesAno);
+                }
+                return false;
+            } catch (e) {
+                return false;
+            }
+        });
+    }
+    
+    filteredData.forEach(row => {
+        const nroProcesso = row['Nro. processo'];
+        if (!nroProcesso || nroProcesso.trim() === '') return;
+        
+        const usuario = row['Usuário'];
+        if (!usuario || usuario.toString().trim() === '') return;
+        
+        if (!usuariosDetalhes[usuario]) return;
+        
+        const peso = parseFloat(row['peso']) || 1.0;
+        const tipoValue = row['Tipo'];
+        const agendamentoValue = row['Agendamento'];
+        
+        let tipoFinal = 'Outros';
+        
+        if (tipoValue && typeof tipoValue === 'string') {
+            const tipoLimpo = tipoValue.toString().trim().toUpperCase();
+            
+            if (tipoLimpo === 'ACÓRDÃO' || tipoLimpo === 'VOTO-VISTA' || tipoLimpo === 'VOTO DIVERGENTE') {
+                tipoFinal = 'Acórdão';
+            }
+            else if (tipoLimpo === 'DESPACHO/DECISÃO') {
+                if (agendamentoValue && typeof agendamentoValue === 'string') {
+                    let agendamentoLimpo = agendamentoValue.toString().trim();
+                    
+                    if (agendamentoLimpo.includes('(') && agendamentoLimpo.includes(')')) {
+                        agendamentoLimpo = agendamentoLimpo.substring(0, agendamentoLimpo.indexOf('(')).trim();
+                    }
+                    
+                    if (agendamentoLimpo && agendamentoLimpo !== '') {
+                        tipoFinal = agendamentoLimpo;
+                    }
+                }
+            }
+            else if (tipoLimpo !== '' && tipoLimpo !== 'TIPO') {
+                tipoFinal = tipoValue.toString().trim();
+            }
+        }
+        
+        const tipoExistente = usuariosDetalhes[usuario].find(t => t.nome === tipoFinal);
+        if (tipoExistente) {
+            tipoExistente.minutas += peso;
+        } else {
+            usuariosDetalhes[usuario].push({
+                nome: tipoFinal,
+                minutas: peso
+            });
+        }
+    });
+    
+    Object.keys(usuariosDetalhes).forEach(usuario => {
+        usuariosDetalhes[usuario].sort((a, b) => {
+            if (a.nome === 'Acórdão') return -1;
+            if (b.nome === 'Acórdão') return 1;
+            return b.minutas - a.minutas;
+        });
+    });
+    
+    return usuariosDetalhes;
+}
+    
+    filteredData.forEach(row => {
+        const nroProcesso = row['Nro. processo'];
+        if (!nroProcesso || nroProcesso.trim() === '') return;
+        
+        const usuario = row['Usuário'];
+        if (!usuario || usuario.toString().trim() === '') return;
+        
+        if (!usuariosDetalhes[usuario]) return;
+        
+        const peso = parseFloat(row['peso']) || 1.0;
+        const tipoValue = row['Tipo'];
+        const agendamentoValue = row['Agendamento'];
+        
+        let tipoFinal = 'Outros';
+        
+        if (tipoValue && typeof tipoValue === 'string') {
+            const tipoLimpo = tipoValue.toString().trim().toUpperCase();
+            
+            if (tipoLimpo === 'ACÓRDÃO' || tipoLimpo === 'VOTO-VISTA' || tipoLimpo === 'VOTO DIVERGENTE') {
+                tipoFinal = 'Acórdão';
+            }
+            else if (tipoLimpo === 'DESPACHO/DECISÃO') {
+                if (agendamentoValue && typeof agendamentoValue === 'string') {
+                    let agendamentoLimpo = agendamentoValue.toString().trim();
+                    
+                    if (agendamentoLimpo.includes('(') && agendamentoLimpo.includes(')')) {
+                        agendamentoLimpo = agendamentoLimpo.substring(0, agendamentoLimpo.indexOf('(')).trim();
+                    }
+                    
+                    if (agendamentoLimpo && agendamentoLimpo !== '') {
+                        tipoFinal = agendamentoLimpo;
+                    }
+                }
+            }
+            else if (tipoLimpo !== '' && tipoLimpo !== 'TIPO') {
+                tipoFinal = tipoValue.toString().trim();
+            }
+        }
+        
+        const tipoExistente = usuariosDetalhes[usuario].find(t => t.nome === tipoFinal);
+        if (tipoExistente) {
+            tipoExistente.minutas += peso;
+        } else {
+            usuariosDetalhes[usuario].push({
+                nome: tipoFinal,
+                minutas: peso
+            });
+        }
+    });
+    
+    Object.keys(usuariosDetalhes).forEach(usuario => {
+        usuariosDetalhes[usuario].sort((a, b) => {
+            if (a.nome === 'Acórdão') return -1;
+            if (b.nome === 'Acórdão') return 1;
+            return b.minutas - a.minutas;
+        });
+    });
 
 function reprocessarDados() {
     if (excelData && excelData.length > 0) {
@@ -865,8 +1321,8 @@ function processExcelData() {
     createChart();
 }
 
-function calcularERenderizarRanking() {
-    if (!tabelaSemana || tabelaSemana.length === 0) {
+function calcularERenderizarRankingDias() {
+    if (!excelData || excelData.length === 0) {
         const container = document.getElementById('ranking-dias');
         if (container) {
             container.innerHTML = '<div class="ranking-item">Nenhum dado disponível</div>';
@@ -874,48 +1330,43 @@ function calcularERenderizarRanking() {
         return;
     }
 
-    const diasTotais = {
-        segunda: 0,
-        terca: 0,
-        quarta: 0,
-        quinta: 0,
-        sexta: 0,
-        sabado: 0,
-        domingo: 0
-    };
-
-    tabelaSemana.forEach(usuario => {
-        diasTotais.segunda += usuario.segunda || 0;
-        diasTotais.terca += usuario.terca || 0;
-        diasTotais.quarta += usuario.quarta || 0;
-        diasTotais.quinta += usuario.quinta || 0;
-        diasTotais.sexta += usuario.sexta || 0;
-        diasTotais.sabado += usuario.sabado || 0;
-        diasTotais.domingo += usuario.domingo || 0;
+    const diasTotais = {};
+    
+    excelData.forEach(row => {
+        const nroProcesso = row['Nro. processo'];
+        if (!nroProcesso || nroProcesso.trim() === '') return;
+        
+        const usuario = row['Usuário'];
+        if (!usuario || usuario.toString().trim() === '') return;
+        
+        const peso = parseFloat(row['peso']) || 1.0;
+        
+        if (row['Data criação']) {
+            const dataCompleta = new Date(row['Data criação']);
+            if (!isNaN(dataCompleta.getTime())) {
+                const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 
+                                  'Quinta-feira', 'Sexta-feira', 'Sábado'];
+                const diaSemana = diasSemana[dataCompleta.getDay()];
+                
+                if (!diasTotais[diaSemana]) {
+                    diasTotais[diaSemana] = 0;
+                }
+                diasTotais[diaSemana] += peso;
+            }
+        }
     });
 
-    const diasNomes = {
-        segunda: 'Segunda-feira',
-        terca: 'Terça-feira',
-        quarta: 'Quarta-feira',
-        quinta: 'Quinta-feira',
-        sexta: 'Sexta-feira',
-        sabado: 'Sábado',
-        domingo: 'Domingo'
-    };
-
     const rankingOrdenado = Object.entries(diasTotais)
-        .map(([dia, total]) => ({
-            dia: diasNomes[dia],
-            chave: dia,
+        .map(([diaSemana, total]) => ({
+            dia: diaSemana,
             total: Math.round(total * 10) / 10
         }))
         .sort((a, b) => b.total - a.total);
 
-    renderizarRanking(rankingOrdenado);
+    renderizarRankingDias(rankingOrdenado);
 }
 
-function renderizarRanking(rankingData) {
+function renderizarRankingDias(rankingData) {
     const container = document.getElementById('ranking-dias');
     if (!container) return;
 
@@ -927,35 +1378,33 @@ function renderizarRanking(rankingData) {
     }
 
     const coresRanking = [
-        '#FFD700', // Ouro - 1º lugar
-        '#C0C0C0', // Prata - 2º lugar  
-        '#CD7F32', // Bronze - 3º lugar
-        '#4a90e2', // Azul padrão - outros
-        '#4a90e2',
-        '#4a90e2',
-        '#4a90e2'
+        '#FFD700', '#C0C0C0', '#CD7F32', '#4a90e2', '#4a90e2', '#4a90e2', '#4a90e2'
     ];
 
-    const iconesRanking = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣'];
+    const iconesRanking = ['🏆', '🥈', '🥉', '4', '5', '6', '7'];
 
-    rankingData.forEach((item, index) => {
+    rankingData.slice(0, 7).forEach((item, index) => {
         const rankingDiv = document.createElement('div');
         rankingDiv.className = 'ranking-item';
-        rankingDiv.style.borderLeftColor = coresRanking[index];
+        rankingDiv.style.borderLeftColor = coresRanking[Math.min(index, 6)];
         
         const porcentagem = rankingData[0].total > 0 ? 
             Math.round((item.total / rankingData[0].total) * 100) : 0;
 
+        const icone = index < iconesRanking.length ? 
+            iconesRanking[index] : 
+            `#${index + 1}`;
+
         rankingDiv.innerHTML = `
             <div class="ranking-posicao">
-                <span class="ranking-icone">${iconesRanking[index]}</span>
+                <div class="ranking-medal ${index < 3 ? 'medal-' + (index + 1) : ''}">${icone}</div>
                 <span class="ranking-numero">#${index + 1}</span>
             </div>
             <div class="ranking-dia">${item.dia}</div>
             <div class="ranking-total">${item.total} minutas</div>
             <div class="ranking-porcentagem">${porcentagem}%</div>
             <div class="ranking-barra">
-                <div class="ranking-barra-preenchida" style="width: ${porcentagem}%; background-color: ${coresRanking[index]};"></div>
+                <div class="ranking-barra-preenchida" style="width: ${porcentagem}%; background-color: ${coresRanking[Math.min(index, 6)]};"></div>
             </div>
         `;
         
@@ -1069,7 +1518,7 @@ function renderizarTabelaSemana() {
         container.appendChild(row);
     });
 
-    calcularERenderizarRanking();
+    calcularERenderizarRankingDias();
 }
 
 function exportarTabelaSemana(formato) {
@@ -1501,32 +1950,44 @@ function carregarTiposPesos() {
     const tipos = new Set();
     
     console.log('Total de registros para análise:', excelData.length);
-    console.log('Primeiros 5 registros:', excelData.slice(0, 5));
     
     excelData.forEach((row, index) => {
-        if (index < 10) {
-            console.log(`Registro ${index}:`, row);
-        }
+        const tipoValue = row['Tipo'];
+        const agendamentoValue = row['Agendamento'];
         
-        Object.keys(row).forEach(key => {
-            if (key.toLowerCase().includes('tipo') || key.toLowerCase().includes('agendamento')) {
-                const valor = row[key];
-                if (valor !== undefined && valor !== null && valor !== '') {
-                    const valorStr = valor.toString().trim();
-                    if (valorStr !== '' && valorStr.toLowerCase() !== 'tipo' && valorStr.toLowerCase() !== 'agendamento') {
-                        tipos.add(valorStr);
-                        console.log(`Tipo encontrado na coluna "${key}": "${valorStr}"`);
+        if (tipoValue && typeof tipoValue === 'string') {
+            const tipoLimpo = tipoValue.toString().trim().toUpperCase();
+            
+            if (tipoLimpo === 'ACÓRDÃO' || tipoLimpo === 'VOTO-VISTA' || tipoLimpo === 'VOTO DIVERGENTE') {
+                tipos.add('Acórdão');
+                console.log(`Tipo "${tipoValue}" convertido para "Acórdão"`);
+            }
+            else if (tipoLimpo === 'DESPACHO/DECISÃO') {
+                if (agendamentoValue && typeof agendamentoValue === 'string') {
+                    let agendamentoLimpo = agendamentoValue.toString().trim();
+                    
+                    if (agendamentoLimpo.includes('(') && agendamentoLimpo.includes(')')) {
+                        agendamentoLimpo = agendamentoLimpo.substring(0, agendamentoLimpo.indexOf('(')).trim();
+                    }
+                    
+                    if (agendamentoLimpo && agendamentoLimpo !== '') {
+                        tipos.add(agendamentoLimpo);
+                        console.log(`DESPACHO/DECISÃO com agendamento: "${agendamentoLimpo}"`);
                     }
                 }
             }
-        });
+            else if (tipoLimpo !== '' && tipoLimpo !== 'TIPO') {
+                tipos.add(tipoValue.toString().trim());
+                console.log(`Tipo padrão encontrado: "${tipoValue}"`);
+            }
+        }
     });
 
     console.log('Tipos únicos encontrados:', Array.from(tipos));
 
     if (tipos.size === 0) {
         const container = document.getElementById('tabela-pesos');
-        container.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">Nenhum tipo de agendamento válido encontrado nos dados importados. Verifique se a coluna existe e tem dados.</td></tr>';
+        container.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">Nenhum tipo válido encontrado. Verifique se as colunas "Tipo" e "Agendamento" existem.</td></tr>';
         return;
     }
 
@@ -1641,24 +2102,33 @@ function aplicarPesos() {
     excelData.forEach(row => {
         let pesoAplicado = 1.0;
         
-        Object.keys(row).forEach(key => {
-            if (key.toLowerCase().includes('tipo') || key.toLowerCase().includes('agendamento')) {
-                const valor = row[key];
-                if (valor !== undefined && valor !== null && valor !== '') {
-                    const valorStr = valor.toString().trim();
+        const tipoValue = row['Tipo'];
+        const agendamentoValue = row['Agendamento'];
+        
+        if (tipoValue && typeof tipoValue === 'string') {
+            const tipoLimpo = tipoValue.toString().trim().toUpperCase();
+            
+            if (tipoLimpo === 'ACÓRDÃO' || tipoLimpo === 'VOTO-VISTA' || tipoLimpo === 'VOTO DIVERGENTE') {
+                pesoAplicado = pesosAtuais['Acórdão'] || 1.0;
+            }
+            else if (tipoLimpo === 'DESPACHO/DECISÃO') {
+                if (agendamentoValue && typeof agendamentoValue === 'string') {
+                    let agendamentoLimpo = agendamentoValue.toString().trim();
                     
-                    let tipoLimpo = valorStr;
-                    if (valorStr.includes('(') && valorStr.includes(')')) {
-                        tipoLimpo = valorStr.substring(0, valorStr.indexOf('(')).trim();
+                    if (agendamentoLimpo.includes('(') && agendamentoLimpo.includes(')')) {
+                        agendamentoLimpo = agendamentoLimpo.substring(0, agendamentoLimpo.indexOf('(')).trim();
                     }
                     
-                    pesoAplicado = pesosAtuais[valorStr] || pesosAtuais[tipoLimpo] || 1.0;
-                    pesosAplicados++;
+                    pesoAplicado = pesosAtuais[agendamentoLimpo] || pesosAtuais[agendamentoValue.toString().trim()] || 1.0;
                 }
             }
-        });
+            else {
+                pesoAplicado = pesosAtuais[tipoValue.toString().trim()] || 1.0;
+            }
+        }
         
         row['peso'] = pesoAplicado;
+        pesosAplicados++;
     });
 
     console.log(`Total de pesos aplicados: ${pesosAplicados}`);
@@ -1694,6 +2164,55 @@ function updatePesosButton() {
             button.title = 'Ativar Pesos';
             button.classList.add('inactive');
         }
+    }
+}
+
+function aplicarOuRemoverPesos() {
+    if (!excelData || excelData.length === 0) return;
+
+    excelData.forEach(row => {
+        if (pesosAtivos) {
+            let pesoAplicado = 1.0;
+            
+            const tipoValue = row['Tipo'];
+            const agendamentoValue = row['Agendamento'];
+            
+            if (tipoValue && typeof tipoValue === 'string') {
+                const tipoLimpo = tipoValue.toString().trim().toUpperCase();
+                
+                if (tipoLimpo === 'ACÓRDÃO' || tipoLimpo === 'VOTO-VISTA' || tipoLimpo === 'VOTO DIVERGENTE') {
+                    pesoAplicado = pesosAtuais['Acórdão'] || 1.0;
+                }
+                else if (tipoLimpo === 'DESPACHO/DECISÃO') {
+                    if (agendamentoValue && typeof agendamentoValue === 'string') {
+                        let agendamentoLimpo = agendamentoValue.toString().trim();
+                        
+                        if (agendamentoLimpo.includes('(') && agendamentoLimpo.includes(')')) {
+                            agendamentoLimpo = agendamentoLimpo.substring(0, agendamentoLimpo.indexOf('(')).trim();
+                        }
+                        
+                        pesoAplicado = pesosAtuais[agendamentoLimpo] || pesosAtuais[agendamentoValue.toString().trim()] || 1.0;
+                    }
+                }
+                else {
+                    pesoAplicado = pesosAtuais[tipoValue.toString().trim()] || 1.0;
+                }
+            }
+            
+            row['peso'] = pesoAplicado;
+        } else {
+            row['peso'] = 1.0;
+        }
+    });
+
+    processExcelData();
+    
+    if (document.getElementById('semana-page').style.display === 'block') {
+        gerarTabelaSemana();
+    }
+    
+    if (document.getElementById('comparar-page').style.display === 'block') {
+        gerarDadosComparacao();
     }
 }
 
@@ -1736,46 +2255,6 @@ function importarPesos(event) {
     reader.readAsText(file);
     
     event.target.value = '';
-}
-
-function aplicarOuRemoverPesos() {
-    if (!excelData || excelData.length === 0) return;
-
-    excelData.forEach(row => {
-        if (pesosAtivos) {
-            let pesoAplicado = 1.0;
-            
-            Object.keys(row).forEach(key => {
-                if (key.toLowerCase().includes('tipo') || key.toLowerCase().includes('agendamento')) {
-                    const valor = row[key];
-                    if (valor !== undefined && valor !== null && valor !== '') {
-                        const valorStr = valor.toString().trim();
-                        
-                        let tipoLimpo = valorStr;
-                        if (valorStr.includes('(') && valorStr.includes(')')) {
-                            tipoLimpo = valorStr.substring(0, valorStr.indexOf('(')).trim();
-                        }
-                        
-                        pesoAplicado = pesosAtuais[valorStr] || pesosAtuais[tipoLimpo] || 1.0;
-                    }
-                }
-            });
-            
-            row['peso'] = pesoAplicado;
-        } else {
-            row['peso'] = 1.0;
-        }
-    });
-
-    processExcelData();
-    
-    if (document.getElementById('semana-page').style.display === 'block') {
-        gerarTabelaSemana();
-    }
-    
-    if (document.getElementById('comparar-page').style.display === 'block') {
-        gerarDadosComparacao();
-    }
 }
 
 function restaurarPesosPadrao() {
@@ -2570,7 +3049,7 @@ function renderizarTabelaMes() {
 }
 
 function calcularERenderizarRankingMeses() {
-    if (!tabelaMes || tabelaMes.length === 0) {
+    if (!excelData || excelData.length === 0) {
         const container = document.getElementById('ranking-meses');
         if (container) {
             container.innerHTML = '<div class="ranking-item">Nenhum dado disponível</div>';
@@ -2578,55 +3057,35 @@ function calcularERenderizarRankingMeses() {
         return;
     }
 
-    const mesesTotais = {
-        janeiro: 0,
-        fevereiro: 0,
-        marco: 0,
-        abril: 0,
-        maio: 0,
-        junho: 0,
-        julho: 0,
-        agosto: 0,
-        setembro: 0,
-        outubro: 0,
-        novembro: 0,
-        dezembro: 0
-    };
-
-    tabelaMes.forEach(usuario => {
-        mesesTotais.janeiro += usuario.janeiro || 0;
-        mesesTotais.fevereiro += usuario.fevereiro || 0;
-        mesesTotais.marco += usuario.marco || 0;
-        mesesTotais.abril += usuario.abril || 0;
-        mesesTotais.maio += usuario.maio || 0;
-        mesesTotais.junho += usuario.junho || 0;
-        mesesTotais.julho += usuario.julho || 0;
-        mesesTotais.agosto += usuario.agosto || 0;
-        mesesTotais.setembro += usuario.setembro || 0;
-        mesesTotais.outubro += usuario.outubro || 0;
-        mesesTotais.novembro += usuario.novembro || 0;
-        mesesTotais.dezembro += usuario.dezembro || 0;
+    const mesesTotais = {};
+    
+    excelData.forEach(row => {
+        const nroProcesso = row['Nro. processo'];
+        if (!nroProcesso || nroProcesso.trim() === '') return;
+        
+        const usuario = row['Usuário'];
+        if (!usuario || usuario.toString().trim() === '') return;
+        
+        const peso = parseFloat(row['peso']) || 1.0;
+        
+        if (row['Data criação']) {
+            const dataCompleta = new Date(row['Data criação']);
+            if (!isNaN(dataCompleta.getTime())) {
+                const mesNomes = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                const mesAno = `${mesNomes[dataCompleta.getMonth()]}/${dataCompleta.getFullYear()}`;
+                
+                if (!mesesTotais[mesAno]) {
+                    mesesTotais[mesAno] = 0;
+                }
+                mesesTotais[mesAno] += peso;
+            }
+        }
     });
 
-    const mesesNomes = {
-        janeiro: 'Janeiro',
-        fevereiro: 'Fevereiro',
-        marco: 'Março',
-        abril: 'Abril',
-        maio: 'Maio',
-        junho: 'Junho',
-        julho: 'Julho',
-        agosto: 'Agosto',
-        setembro: 'Setembro',
-        outubro: 'Outubro',
-        novembro: 'Novembro',
-        dezembro: 'Dezembro'
-    };
-
     const rankingOrdenado = Object.entries(mesesTotais)
-        .map(([mes, total]) => ({
-            mes: mesesNomes[mes],
-            chave: mes,
+        .map(([mesAno, total]) => ({
+            mes: mesAno,
             total: Math.round(total * 10) / 10
         }))
         .sort((a, b) => b.total - a.total);
@@ -2645,47 +3104,35 @@ function renderizarRankingMeses(rankingData) {
         return;
     }
 
-    const mesesComDados = verificarMesesComDadosAno();
-    const mesesMap = {
-        'Janeiro': 0, 'Fevereiro': 1, 'Março': 2, 'Abril': 3,
-        'Maio': 4, 'Junho': 5, 'Julho': 6, 'Agosto': 7,
-        'Setembro': 8, 'Outubro': 9, 'Novembro': 10, 'Dezembro': 11
-    };
-
     const coresRanking = [
         '#FFD700', '#C0C0C0', '#CD7F32', '#4a90e2', '#4a90e2', '#4a90e2',
         '#4a90e2', '#4a90e2', '#4a90e2', '#4a90e2', '#4a90e2', '#4a90e2'
     ];
 
-    const iconesRanking = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', 
-                          '7️⃣', '8️⃣', '9️⃣', '🔟', '1️⃣1️⃣', '1️⃣2️⃣'];
+    const iconesRanking = ['🏆', '🥈', '🥉', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
 
-    rankingData.forEach((item, index) => {
+    rankingData.slice(0, 12).forEach((item, index) => {
         const rankingDiv = document.createElement('div');
         rankingDiv.className = 'ranking-item';
-        
-        const mesIndex = mesesMap[item.mes];
-        const temDados = mesesComDados.includes(mesIndex);
-        
-        if (!temDados) {
-            rankingDiv.classList.add('ranking-vazio');
-        }
-        
-        rankingDiv.style.borderLeftColor = coresRanking[index];
+        rankingDiv.style.borderLeftColor = coresRanking[Math.min(index, 11)];
         
         const porcentagem = rankingData[0].total > 0 ? 
             Math.round((item.total / rankingData[0].total) * 100) : 0;
 
+        const icone = index < iconesRanking.length ? 
+            iconesRanking[index] : 
+            `#${index + 1}`;
+
         rankingDiv.innerHTML = `
             <div class="ranking-posicao">
-                <span class="ranking-icone">${iconesRanking[index]}</span>
+                <div class="ranking-medal ${index < 3 ? 'medal-' + (index + 1) : ''}">${icone}</div>
                 <span class="ranking-numero">#${index + 1}</span>
             </div>
-            <div class="ranking-dia">${item.mes}/${anoSelecionado}</div>
-            <div class="ranking-total">${temDados ? item.total + ' minutas' : '—'}</div>
-            <div class="ranking-porcentagem">${temDados ? porcentagem + '%' : '—'}</div>
+            <div class="ranking-dia">${item.mes}</div>
+            <div class="ranking-total">${item.total} minutas</div>
+            <div class="ranking-porcentagem">${porcentagem}%</div>
             <div class="ranking-barra">
-                <div class="ranking-barra-preenchida" style="width: ${temDados ? porcentagem : 0}%; background-color: ${coresRanking[index]};"></div>
+                <div class="ranking-barra-preenchida" style="width: ${porcentagem}%; background-color: ${coresRanking[Math.min(index, 11)]};"></div>
             </div>
         `;
         
