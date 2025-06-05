@@ -945,64 +945,6 @@ function gerarDetalhesTooltipUsuarios(usuarios) {
     
     return usuariosDetalhes;
 }
-    
-    filteredData.forEach(row => {
-        const nroProcesso = row['Nro. processo'];
-        if (!nroProcesso || nroProcesso.trim() === '') return;
-        
-        const usuario = row['Usuário'];
-        if (!usuario || usuario.toString().trim() === '') return;
-        
-        if (!usuariosDetalhes[usuario]) return;
-        
-        const peso = parseFloat(row['peso']) || 1.0;
-        const tipoValue = row['Tipo'];
-        const agendamentoValue = row['Agendamento'];
-        
-        let tipoFinal = 'Outros';
-        
-        if (tipoValue && typeof tipoValue === 'string') {
-            const tipoLimpo = tipoValue.toString().trim().toUpperCase();
-            
-            if (tipoLimpo === 'ACÓRDÃO' || tipoLimpo === 'VOTO-VISTA' || tipoLimpo === 'VOTO DIVERGENTE') {
-                tipoFinal = 'Acórdão';
-            }
-            else if (tipoLimpo === 'DESPACHO/DECISÃO') {
-                if (agendamentoValue && typeof agendamentoValue === 'string') {
-                    let agendamentoLimpo = agendamentoValue.toString().trim();
-                    
-                    if (agendamentoLimpo.includes('(') && agendamentoLimpo.includes(')')) {
-                        agendamentoLimpo = agendamentoLimpo.substring(0, agendamentoLimpo.indexOf('(')).trim();
-                    }
-                    
-                    if (agendamentoLimpo && agendamentoLimpo !== '') {
-                        tipoFinal = agendamentoLimpo;
-                    }
-                }
-            }
-            else if (tipoLimpo !== '' && tipoLimpo !== 'TIPO') {
-                tipoFinal = tipoValue.toString().trim();
-            }
-        }
-        
-        const tipoExistente = usuariosDetalhes[usuario].find(t => t.nome === tipoFinal);
-        if (tipoExistente) {
-            tipoExistente.minutas += peso;
-        } else {
-            usuariosDetalhes[usuario].push({
-                nome: tipoFinal,
-                minutas: peso
-            });
-        }
-    });
-    
-    Object.keys(usuariosDetalhes).forEach(usuario => {
-        usuariosDetalhes[usuario].sort((a, b) => {
-            if (a.nome === 'Acórdão') return -1;
-            if (b.nome === 'Acórdão') return 1;
-            return b.minutas - a.minutas;
-        });
-    });
 
 function reprocessarDados() {
     if (excelData && excelData.length > 0) {
@@ -1034,6 +976,7 @@ function importData() {
         let processedFiles = 0;
         let totalRows = 0;
         let fileNames = [];
+        let allErrors = [];
         excelData = [];
         
         files.forEach((file, index) => {
@@ -1046,18 +989,27 @@ function importData() {
                     const worksheet = workbook.Sheets[sheetName];
                     
                     const range = XLSX.utils.decode_range(worksheet['!ref']);
+                    
+                    const colunaMapping = detectarColunas(worksheet, range);
+                    if (colunaMapping.errors.length > 0) {
+                        allErrors.push(`${file.name}: ${colunaMapping.errors.join(', ')}`);
+                        processedFiles++;
+                        checkProcessingComplete();
+                        return;
+                    }
+                    
                     let currentFileRows = 0;
                     
-                    for (let R = 1; R <= range.e.r; ++R) {
+                    for (let R = 2; R <= range.e.r; ++R) {
                         const row = {};
                         
-                        const tipoCell = worksheet[XLSX.utils.encode_cell({r: R, c: 0})];
-                        const codigoCell = worksheet[XLSX.utils.encode_cell({r: R, c: 1})];
-                        const nroProcessoCell = worksheet[XLSX.utils.encode_cell({r: R, c: 2})];
-                        const usuarioCell = worksheet[XLSX.utils.encode_cell({r: R, c: 3})];
-                        const dataCell = worksheet[XLSX.utils.encode_cell({r: R, c: 4})];
-                        const statusCell = worksheet[XLSX.utils.encode_cell({r: R, c: 5})];
-                        const agendamentoCell = worksheet[XLSX.utils.encode_cell({r: R, c: 6})];
+                        const tipoCell = worksheet[XLSX.utils.encode_cell({r: R, c: colunaMapping.tipo})];
+                        const codigoCell = worksheet[XLSX.utils.encode_cell({r: R, c: colunaMapping.codigo})];
+                        const nroProcessoCell = worksheet[XLSX.utils.encode_cell({r: R, c: colunaMapping.processo})];
+                        const usuarioCell = worksheet[XLSX.utils.encode_cell({r: R, c: colunaMapping.usuario})];
+                        const dataCell = worksheet[XLSX.utils.encode_cell({r: R, c: colunaMapping.data})];
+                        const statusCell = worksheet[XLSX.utils.encode_cell({r: R, c: colunaMapping.status})];
+                        const agendamentoCell = worksheet[XLSX.utils.encode_cell({r: R, c: colunaMapping.agendamento})];
                         
                         if (!usuarioCell || !usuarioCell.v) continue;
                         
@@ -1070,11 +1022,19 @@ function importData() {
                             continue;
                         }
                         
-                        row['Tipo'] = tipoCell && tipoCell.v ? tipoCell.v.toString().trim() : '';
+                        const tipo = tipoCell && tipoCell.v ? tipoCell.v.toString().trim() : '';
+                        const status = statusCell && statusCell.v ? statusCell.v.toString().trim() : '';
+                        const nroProcesso = nroProcessoCell && nroProcessoCell.v ? nroProcessoCell.v.toString().trim() : '';
+                        
+                        if (!isValidStatus(status)) continue;
+                        if (!isValidTipo(tipo)) continue;
+                        if (!nroProcesso || nroProcesso === '') continue;
+                        
+                        row['Tipo'] = tipo;
                         row['Código'] = codigoCell && codigoCell.v ? codigoCell.v.toString().trim() : '';
-                        row['Nro. processo'] = nroProcessoCell && nroProcessoCell.v ? nroProcessoCell.v.toString().trim() : '';
+                        row['Nro. processo'] = nroProcesso;
                         row['Usuário'] = usuario;
-                        row['Status'] = statusCell && statusCell.v ? statusCell.v.toString().trim() : '';
+                        row['Status'] = status;
                         row['Agendamento'] = agendamentoCell && agendamentoCell.v ? agendamentoCell.v.toString().trim() : '';
                         
                         if (dataCell && dataCell.v) {
@@ -1101,28 +1061,32 @@ function importData() {
                     fileNames.push(file.name);
                     processedFiles++;
                     
-                    if (processedFiles === files.length) {
-                        extractMonthsFromData();
-                        processExcelData();
-                        
-                        const fileList = fileNames.map(name => `• ${name}`).join('\n');
-                        alert(`Dados carregados com sucesso!\n\nArquivos processados:\n${fileList}\n\nTotal de registros: ${totalRows}`);
-                    }
+                    checkProcessingComplete();
+                    
                 } catch (error) {
                     console.error('Erro ao processar arquivo:', file.name, error);
+                    allErrors.push(`${file.name}: Erro na leitura do arquivo`);
                     processedFiles++;
-                    
-                    if (processedFiles === files.length && excelData.length > 0) {
-                        extractMonthsFromData();
-                        processExcelData();
-                        
-                        const fileList = fileNames.map(name => `• ${name}`).join('\n');
-                        alert(`Alguns arquivos foram processados!\n\nArquivos processados:\n${fileList}\n\nTotal de registros: ${totalRows}`);
-                    }
+                    checkProcessingComplete();
                 }
             };
             reader.readAsArrayBuffer(file);
         });
+        
+        function checkProcessingComplete() {
+            if (processedFiles === files.length) {
+                if (allErrors.length > 0) {
+                    alert(`Alguns arquivos não puderam ser processados:\n\n${allErrors.join('\n')}\n\nArquivos processados com sucesso:\n${fileNames.map(name => `• ${name}`).join('\n')}\n\nTotal de registros válidos: ${totalRows}`);
+                } else {
+                    alert(`Dados carregados com sucesso!\n\nArquivos processados:\n${fileNames.map(name => `• ${name}`).join('\n')}\n\nTotal de registros válidos: ${totalRows}`);
+                }
+                
+                if (excelData.length > 0) {
+                    extractMonthsFromData();
+                    processExcelData();
+                }
+            }
+        }
     };
     
     input.click();
@@ -1319,6 +1283,103 @@ function processExcelData() {
     
     updateKPIs();
     createChart();
+}
+
+function detectarColunas(worksheet, range) {
+    const headers = {};
+    const errors = [];
+    const colunaMapping = {};
+    
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+        const headerCell = worksheet[XLSX.utils.encode_cell({r: 1, c: C})];
+        if (headerCell && headerCell.v) {
+            const headerValue = headerCell.v.toString().trim();
+            headers[C] = headerValue;
+        }
+    }
+    
+    const colunasNecessarias = {
+        'Tipo': ['Tipo'],
+        'Código': ['Código'],
+        'Nro. processo': ['Nro. processo'],
+        'Usuário': ['Usuário'],
+        'Data criação': ['Data criação'],
+        'Status': ['Status'],
+        'Agendamento': ['Agendamento']
+    };
+    
+    Object.keys(colunasNecessarias).forEach(coluna => {
+        let encontrada = false;
+        Object.keys(headers).forEach(indice => {
+            const headerValue = headers[indice];
+            if (colunasNecessarias[coluna].includes(headerValue)) {
+                switch(coluna) {
+                    case 'Tipo':
+                        colunaMapping.tipo = parseInt(indice);
+                        break;
+                    case 'Código':
+                        colunaMapping.codigo = parseInt(indice);
+                        break;
+                    case 'Nro. processo':
+                        colunaMapping.processo = parseInt(indice);
+                        break;
+                    case 'Usuário':
+                        colunaMapping.usuario = parseInt(indice);
+                        break;
+                    case 'Data criação':
+                        colunaMapping.data = parseInt(indice);
+                        break;
+                    case 'Status':
+                        colunaMapping.status = parseInt(indice);
+                        break;
+                    case 'Agendamento':
+                        colunaMapping.agendamento = parseInt(indice);
+                        break;
+                }
+                encontrada = true;
+            }
+        });
+        
+        if (!encontrada) {
+            errors.push(`Coluna "${coluna}" não encontrada`);
+        }
+    });
+    
+    return {
+        ...colunaMapping,
+        errors: errors
+    };
+}
+
+
+
+function isValidStatus(status) {
+    if (!status || status === '') return false;
+    
+    const statusValidos = [
+        'Anexada ao processo',
+        'Assinada',
+        'Conferida',
+        'Enviada para jurisprudência',
+        'Enviada para o diário eletrônico',
+        'Para assinar',
+        'Para conferir'
+    ];
+    
+    return statusValidos.includes(status);
+}
+
+function isValidTipo(tipo) {
+    if (!tipo || tipo === '') return false;
+    
+    const tiposValidos = [
+        'ACÓRDÃO',
+        'DESPACHO/DECISÃO',
+        'VOTO DIVERGENTE',
+        'VOTO-VISTA'
+    ];
+    
+    return tiposValidos.includes(tipo);
 }
 
 function calcularERenderizarRankingDias() {
