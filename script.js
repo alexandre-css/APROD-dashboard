@@ -973,6 +973,8 @@ function importData() {
         const files = Array.from(event.target.files);
         if (files.length === 0) return;
         
+        logger.info(`Iniciando importação de ${files.length} arquivo(s)`, { arquivos: files.map(f => f.name) });
+        
         let processedFiles = 0;
         let totalRows = 0;
         let fileNames = [];
@@ -983,6 +985,8 @@ function importData() {
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
+                    logger.info(`Processando arquivo: ${file.name}`);
+                    
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
                     const sheetName = workbook.SheetNames[0];
@@ -992,15 +996,20 @@ function importData() {
                     
                     const colunaMapping = detectarColunas(worksheet, range);
                     if (colunaMapping.errors.length > 0) {
-                        allErrors.push(`${file.name}: ${colunaMapping.errors.join(', ')}`);
+                        const errorMsg = `Colunas não encontradas: ${colunaMapping.errors.join(', ')}`;
+                        logger.error(`Arquivo ${file.name}: ${errorMsg}`, { erros: colunaMapping.errors });
+                        allErrors.push(`${file.name}: ${errorMsg}`);
                         processedFiles++;
                         checkProcessingComplete();
                         return;
                     }
                     
                     let currentFileRows = 0;
+                    let invalidRows = 0;
+                    let linhasExcluidas = [];
                     
                     for (let R = 2; R <= range.e.r; ++R) {
+                        const numeroLinha = R + 1;
                         const row = {};
                         
                         const tipoCell = worksheet[XLSX.utils.encode_cell({r: R, c: colunaMapping.tipo})];
@@ -1011,7 +1020,14 @@ function importData() {
                         const statusCell = worksheet[XLSX.utils.encode_cell({r: R, c: colunaMapping.status})];
                         const agendamentoCell = worksheet[XLSX.utils.encode_cell({r: R, c: colunaMapping.agendamento})];
                         
-                        if (!usuarioCell || !usuarioCell.v) continue;
+                        if (!usuarioCell || !usuarioCell.v) {
+                            invalidRows++;
+                            linhasExcluidas.push({
+                                linha: numeroLinha,
+                                motivo: "Usuário vazio ou inexistente"
+                            });
+                            continue;
+                        }
                         
                         let usuario = usuarioCell.v.toString().trim();
                         if (!usuario || usuario === '' || 
@@ -1019,6 +1035,11 @@ function importData() {
                             usuario.toUpperCase() === "SECAUTOLOC" ||
                             usuario.toUpperCase() === "USUÁRIO" ||
                             usuario.toUpperCase() === "USUARIO") {
+                            invalidRows++;
+                            linhasExcluidas.push({
+                                linha: numeroLinha,
+                                motivo: `Usuário inválido: "${usuario}"`
+                            });
                             continue;
                         }
                         
@@ -1026,9 +1047,30 @@ function importData() {
                         const status = statusCell && statusCell.v ? statusCell.v.toString().trim() : '';
                         const nroProcesso = nroProcessoCell && nroProcessoCell.v ? nroProcessoCell.v.toString().trim() : '';
                         
-                        if (!isValidStatus(status)) continue;
-                        if (!isValidTipo(tipo)) continue;
-                        if (!nroProcesso || nroProcesso === '') continue;
+                        if (!isValidStatus(status)) {
+                            invalidRows++;
+                            linhasExcluidas.push({
+                                linha: numeroLinha,
+                                motivo: `Status inválido: "${status}"`
+                            });
+                            continue;
+                        }
+                        if (!isValidTipo(tipo)) {
+                            invalidRows++;
+                            linhasExcluidas.push({
+                                linha: numeroLinha,
+                                motivo: `Tipo inválido: "${tipo}"`
+                            });
+                            continue;
+                        }
+                        if (!nroProcesso || nroProcesso === '') {
+                            invalidRows++;
+                            linhasExcluidas.push({
+                                linha: numeroLinha,
+                                motivo: "Número do processo vazio"
+                            });
+                            continue;
+                        }
                         
                         row['Tipo'] = tipo;
                         row['Código'] = codigoCell && codigoCell.v ? codigoCell.v.toString().trim() : '';
@@ -1057,6 +1099,42 @@ function importData() {
                         currentFileRows++;
                     }
                     
+                    if (linhasExcluidas.length > 0) {
+                        const exemploPorMotivo = {};
+                        const contagemPorMotivo = {};
+                        
+                        linhasExcluidas.forEach(item => {
+                            const categoria = item.motivo.split(':')[0];
+                            
+                            if (!contagemPorMotivo[categoria]) {
+                                contagemPorMotivo[categoria] = 0;
+                                exemploPorMotivo[categoria] = [];
+                            }
+                            
+                            contagemPorMotivo[categoria]++;
+                            
+                            if (exemploPorMotivo[categoria].length < 10) {
+                                exemploPorMotivo[categoria].push(item);
+                            }
+                        });
+                        
+                        logger.warn(`Linhas excluídas no arquivo ${file.name}`, {
+                            totalExcluidas: linhasExcluidas.length,
+                            resumoDetalhado: Object.keys(contagemPorMotivo).map(categoria => ({
+                                categoria: categoria,
+                                total: contagemPorMotivo[categoria],
+                                exemplos: exemploPorMotivo[categoria]
+                            })),
+                            resumoMotivos: contagemPorMotivo
+                        });
+                    }
+                    
+                    logger.info(`Arquivo ${file.name} processado`, { 
+                        registrosValidos: currentFileRows, 
+                        registrosInvalidos: invalidRows,
+                        totalLinhas: range.e.r - 1
+                    });
+                    
                     totalRows += currentFileRows;
                     fileNames.push(file.name);
                     processedFiles++;
@@ -1064,7 +1142,7 @@ function importData() {
                     checkProcessingComplete();
                     
                 } catch (error) {
-                    console.error('Erro ao processar arquivo:', file.name, error);
+                    logger.error(`Erro ao processar arquivo ${file.name}`, error);
                     allErrors.push(`${file.name}: Erro na leitura do arquivo`);
                     processedFiles++;
                     checkProcessingComplete();
@@ -1075,6 +1153,13 @@ function importData() {
         
         function checkProcessingComplete() {
             if (processedFiles === files.length) {
+                logger.info(`Importação finalizada`, { 
+                    totalArquivos: files.length,
+                    arquivosProcessados: fileNames.length,
+                    totalRegistros: totalRows,
+                    erros: allErrors.length
+                });
+                
                 if (allErrors.length > 0) {
                     alert(`Alguns arquivos não puderam ser processados:\n\n${allErrors.join('\n')}\n\nArquivos processados com sucesso:\n${fileNames.map(name => `• ${name}`).join('\n')}\n\nTotal de registros válidos: ${totalRows}`);
                 } else {
@@ -1351,7 +1436,78 @@ function detectarColunas(worksheet, range) {
     };
 }
 
+let cacheProcessamento = {
+    dadosOriginais: null,
+    hashDados: null,
+    resultadoProcessado: null
+};
 
+function gerarHashDados(dados) {
+    return dados.length + '_' + dados.map(r => r['Nro. processo']).join('').slice(0, 50);
+}
+
+function validarDadosCompletos(row) {
+    const camposObrigatorios = ['Nro. processo', 'Usuário', 'Tipo', 'Status', 'Data criação'];
+    const erros = [];
+    
+    camposObrigatorios.forEach(campo => {
+        if (!row[campo] || row[campo].toString().trim() === '') {
+            erros.push(`Campo "${campo}" vazio`);
+        }
+    });
+    
+    if (row['Data criação'] && isNaN(new Date(row['Data criação']).getTime())) {
+        erros.push('Data inválida');
+    }
+    
+    return {
+        valido: erros.length === 0,
+        erros: erros
+    };
+}
+
+function processarComValidacao(row, numeroLinha) {
+    const validacao = validarDadosCompletos(row);
+    
+    if (!validacao.valido) {
+        console.warn(`Linha ${numeroLinha}: ${validacao.erros.join(', ')}`);
+        return false;
+    }
+    
+    return true;
+}
+
+function processExcelDataComCache() {
+    if (!excelData || excelData.length === 0) {
+        processedData = {
+            usuarios: [],
+            totalMinutas: 0,
+            mediaUsuario: 0,
+            usuariosAtivos: 0,
+            diaProdutivo: '--',
+            topUsers: [],
+            mesesAtivos: processedData ? processedData.mesesAtivos : [],
+            mesesDisponiveis: processedData ? processedData.mesesDisponiveis : []
+        };
+        updateKPIs();
+        createChart();
+        return;
+    }
+
+    const hashAtual = gerarHashDados(excelData) + '_' + processedData.mesesAtivos.join(',');
+    
+    if (cacheProcessamento.hashDados === hashAtual && cacheProcessamento.resultadoProcessado) {
+        processedData = { ...cacheProcessamento.resultadoProcessado };
+        updateKPIs();
+        createChart();
+        return;
+    }
+
+    processExcelData();
+    
+    cacheProcessamento.hashDados = hashAtual;
+    cacheProcessamento.resultadoProcessado = { ...processedData };
+}
 
 function isValidStatus(status) {
     if (!status || status === '') return false;
@@ -1380,6 +1536,250 @@ function isValidTipo(tipo) {
     ];
     
     return tiposValidos.includes(tipo);
+}
+
+async function processarDadosEmLotes(dados, tamanhoLote = 1000) {
+    const resultados = [];
+    
+    for (let i = 0; i < dados.length; i += tamanhoLote) {
+        const lote = dados.slice(i, i + tamanhoLote);
+        const resultadoLote = await processarLote(lote);
+        resultados.push(...resultadoLote);
+        
+        if (i % (tamanhoLote * 5) === 0) {
+            await new Promise(resolve => setTimeout(resolve, 10));
+        }
+    }
+    
+    return resultados;
+}
+
+function gerarRelatorioQualidade(dados) {
+    const relatorio = {
+        totalRegistros: dados.length,
+        registrosValidos: 0,
+        registrosInvalidos: 0,
+        camposVazios: {},
+        tiposEncontrados: new Set(),
+        statusEncontrados: new Set(),
+        periodoCoberto: { inicio: null, fim: null },
+        usuariosUnicos: new Set()
+    };
+    
+    dados.forEach(row => {
+        let registroValido = true;
+        
+        Object.keys(row).forEach(campo => {
+            if (!row[campo] || row[campo].toString().trim() === '') {
+                relatorio.camposVazios[campo] = (relatorio.camposVazios[campo] || 0) + 1;
+                registroValido = false;
+            }
+        });
+        
+        if (row['Tipo']) relatorio.tiposEncontrados.add(row['Tipo']);
+        if (row['Status']) relatorio.statusEncontrados.add(row['Status']);
+        if (row['Usuário']) relatorio.usuariosUnicos.add(row['Usuário']);
+        
+        if (row['Data criação']) {
+            const data = new Date(row['Data criação']);
+            if (!isNaN(data.getTime())) {
+                if (!relatorio.periodoCoberto.inicio || data < relatorio.periodoCoberto.inicio) {
+                    relatorio.periodoCoberto.inicio = data;
+                }
+                if (!relatorio.periodoCoberto.fim || data > relatorio.periodoCoberto.fim) {
+                    relatorio.periodoCoberto.fim = data;
+                }
+            }
+        }
+        
+        if (registroValido) {
+            relatorio.registrosValidos++;
+        } else {
+            relatorio.registrosInvalidos++;
+        }
+    });
+    
+    console.log('Relatório de Qualidade dos Dados:', relatorio);
+    return relatorio;
+}
+
+const logger = {
+    logs: [],
+    
+    info(mensagem, dados = null) {
+        const log = {
+            nivel: 'INFO',
+            timestamp: new Date().toISOString(),
+            mensagem,
+            dados
+        };
+        this.logs.push(log);
+        console.log(`[INFO] ${mensagem}`, dados);
+    },
+    
+    warn(mensagem, dados = null) {
+        const log = {
+            nivel: 'WARN',
+            timestamp: new Date().toISOString(),
+            mensagem,
+            dados
+        };
+        this.logs.push(log);
+        console.warn(`[WARN] ${mensagem}`, dados);
+    },
+    
+    error(mensagem, erro = null) {
+        const log = {
+            nivel: 'ERROR',
+            timestamp: new Date().toISOString(),
+            mensagem,
+            erro: erro ? erro.message : null
+        };
+        this.logs.push(log);
+        console.error(`[ERROR] ${mensagem}`, erro);
+    },
+    
+    exportarLogs() {
+        const blob = new Blob([JSON.stringify(this.logs, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `aprod_logs_${new Date().toISOString().slice(0, 10)}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+    }
+};
+
+function mostrarLogsProcessamento() {
+    const logsContainer = document.createElement('div');
+    logsContainer.className = 'logs-container';
+    logsContainer.innerHTML = `
+        <div class="logs-overlay">
+            <div class="logs-modal">
+                <div class="logs-header">
+                    <h3>Logs de Processamento</h3>
+                    <button onclick="fecharLogsProcessamento()" class="btn-fechar">×</button>
+                </div>
+                <div class="logs-content">
+                    <div class="logs-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Total de Logs:</span>
+                            <span class="stat-valor">${logger.logs.length}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Erros:</span>
+                            <span class="stat-valor">${logger.logs.filter(l => l.nivel === 'ERROR').length}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Avisos:</span>
+                            <span class="stat-valor">${logger.logs.filter(l => l.nivel === 'WARN').length}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Dados Importados:</span>
+                            <span class="stat-valor">${excelData ? excelData.length : 0} registros</span>
+                        </div>
+                    </div>
+                    <div class="logs-list">
+                        ${logger.logs.length === 0 ? 
+                            '<div class="log-item info"><div class="log-mensagem">Nenhum log de processamento disponível ainda. Os logs são gerados durante a importação de dados.</div></div>' :
+                            logger.logs.map(log => `
+                                <div class="log-item ${log.nivel.toLowerCase()}">
+                                    <div class="log-header">
+                                        <span class="log-nivel">${log.nivel}</span>
+                                        <span class="log-timestamp">${new Date(log.timestamp).toLocaleString('pt-BR')}</span>
+                                    </div>
+                                    <div class="log-mensagem">${log.mensagem}</div>
+                                    ${log.dados ? `<div class="log-dados">${JSON.stringify(log.dados)}</div>` : ''}
+                                    ${log.erro ? `<div class="log-dados">Erro: ${log.erro}</div>` : ''}
+                                </div>
+                            `).join('')
+                        }
+                    </div>
+                </div>
+                <div class="logs-footer">
+                    <button onclick="logger.exportarLogs()" class="btn-exportar" ${logger.logs.length === 0 ? 'disabled' : ''}>
+                        Exportar Logs
+                    </button>
+                    <button onclick="limparLogs()" class="btn-limpar" ${logger.logs.length === 0 ? 'disabled' : ''}>
+                        Limpar Logs
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(logsContainer);
+}
+
+function fecharLogsProcessamento() {
+    const container = document.querySelector('.logs-container');
+    if (container) {
+        container.remove();
+    }
+}
+
+function limparLogs() {
+    if (confirm('Tem certeza que deseja limpar todos os logs?')) {
+        logger.logs = [];
+        fecharLogsProcessamento();
+        alert('Logs limpos com sucesso!');
+    }
+}
+
+function processarComFallback(dados) {
+    try {
+        return processExcelData();
+    } catch (erro) {
+        logger.error('Erro no processamento principal, tentando fallback', erro);
+        
+        try {
+            return processarModoPadrao(dados);
+        } catch (erroFallback) {
+            logger.error('Erro também no fallback', erroFallback);
+            return processarModoSeguro(dados);
+        }
+    }
+}
+
+function processarModoSeguro(dados) {
+    const dadosBasicos = dados.filter(row => 
+        row['Nro. processo'] && 
+        row['Usuário'] && 
+        row['Tipo'] && 
+        row['Status']
+    );
+    
+    logger.info(`Modo seguro: processando ${dadosBasicos.length} de ${dados.length} registros`);
+    
+    return {
+        usuarios: [],
+        totalMinutas: dadosBasicos.length,
+        mediaUsuario: 0,
+        usuariosAtivos: new Set(dadosBasicos.map(r => r['Usuário'])).size,
+        diaProdutivo: '--',
+        topUsers: [],
+        mesesAtivos: [],
+        mesesDisponiveis: []
+    };
+}
+
+function processarLote(lote) {
+    return new Promise(resolve => {
+        const processados = lote.filter(row => {
+            const nroProcesso = row['Nro. processo'];
+            if (!nroProcesso || nroProcesso.trim() === '') return false;
+            
+            const usuario = row['Usuário'];
+            if (!usuario || usuario.toString().trim() === '') return false;
+            
+            const tipo = row['Tipo'] ? row['Tipo'].toString().trim() : '';
+            const status = row['Status'] ? row['Status'].toString().trim() : '';
+            
+            return isValidStatus(status) && isValidTipo(tipo);
+        });
+        
+        resolve(processados);
+    });
 }
 
 function calcularERenderizarRankingDias() {
