@@ -893,6 +893,24 @@ body {
     font-size: 13px;
 }
 
+.chart-tooltip-custom .tooltip-color-acordao::before {
+    content: '●';
+    margin-right: 8px;
+    font-size: 14px;
+}
+
+.chart-tooltip-custom .tooltip-color-despacho::before {
+    content: '●';
+    margin-right: 8px;
+    font-size: 14px;
+}
+
+.chart-tooltip-custom .tooltip-color-total::before {
+    content: '■';
+    margin-right: 8px;
+    font-size: 12px;
+}
+
 .grafico-comparacao canvas {
     cursor: default;
 }

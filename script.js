@@ -396,44 +396,71 @@ function atualizarGraficoComparacao() {
                     display: false
                 },
                 tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    position: 'nearest',
-                    animation: {
-                        duration: 0
-                    },
-                    backgroundColor: isDark ? '#2d2d2d' : '#ffffff',
-                    titleColor: isDark ? '#ffffff' : '#232946',
-                    bodyColor: isDark ? '#ffffff' : '#232946',
-                    borderColor: isDark ? '#4a90e2' : '#3cb3e6',
-                    borderWidth: 2,
-                    cornerRadius: 8,
-                    padding: 12,
-                    displayColors: false,
-                    callbacks: {
-                        title: function(context) {
-                            return context[0].label;
-                        },
-                        beforeBody: function(context) {
-                            if (context.length === 0) return [];
-                            
-                            const dataIndex = context[0].dataIndex;
+                    enabled: false,
+                    external: function(context) {
+                        const chart = context.chart;
+                        const tooltip = context.tooltip;
+                        
+                        let tooltipEl = chart.canvas.parentNode.querySelector('.chart-tooltip-custom');
+                        
+                        if (!tooltipEl) {
+                            tooltipEl = document.createElement('div');
+                            tooltipEl.className = 'chart-tooltip-custom';
+                            tooltipEl.style.cssText = `
+                                position: absolute;
+                                pointer-events: none;
+                                z-index: 1000;
+                                background: var(--card-bg);
+                                border: 2px solid var(--border-color);
+                                border-radius: 8px;
+                                padding: 12px;
+                                font-size: 12px;
+                                line-height: 1.4;
+                                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                                min-width: 200px;
+                                transition: opacity 0.2s ease;
+                            `;
+                            chart.canvas.parentNode.appendChild(tooltipEl);
+                        }
+                        
+                        if (tooltip.opacity === 0) {
+                            tooltipEl.style.opacity = '0';
+                            return;
+                        }
+                        
+                        if (tooltip.body && tooltip.dataPoints && tooltip.dataPoints.length > 0) {
+                            const activePoint = tooltip.dataPoints[0];
+                            const dataIndex = activePoint.dataIndex;
                             const nomeUsuario = chartData[dataIndex].nome;
                             const detalhesComparacao = gerarDetalhesTooltipComparacao(usuariosSelecionados);
                             const dadosUsuario = detalhesComparacao[nomeUsuario];
                             
-                            if (!dadosUsuario) return [];
-                            
-                            return [
-                                `📊 Acórdão: ${dadosUsuario.acordao.minutas} minutas`,
-                                `📋 Despacho/Decisão: ${dadosUsuario.despacho.minutas} minutas`,
-                                ``,
-                                `📈 Total: ${dadosUsuario.total} minutas`
-                            ];
-                        },
-                        label: function() {
-                            return null;
+                            if (dadosUsuario) {
+                                tooltipEl.innerHTML = `
+                                    <div style="font-weight: bold; font-size: 14px; color: var(--text-primary); margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; text-align: center;">
+                                        ${nomeUsuario}
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px; margin: 6px 0; padding: 2px 0;">
+                                        <div style="width: 14px; height: 14px; border-radius: 3px; background-color: ${dadosUsuario.acordao.cor}; border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); flex-shrink: 0;"></div>
+                                        <span style="color: var(--text-primary); font-weight: 500; font-size: 12px;">Acórdão: ${dadosUsuario.acordao.minutas} minutas</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px; margin: 6px 0; padding: 2px 0;">
+                                        <div style="width: 14px; height: 14px; border-radius: 3px; background-color: ${dadosUsuario.despacho.cor}; border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); flex-shrink: 0;"></div>
+                                        <span style="color: var(--text-primary); font-weight: 500; font-size: 12px;">Despacho/Decisão: ${dadosUsuario.despacho.minutas} minutas</span>
+                                    </div>
+                                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-color); font-weight: bold; color: var(--accent); text-align: center; font-size: 13px;">
+                                        Total: ${dadosUsuario.total} minutas
+                                    </div>
+                                `;
+                            }
                         }
+                        
+                        const canvasRect = chart.canvas.getBoundingClientRect();
+                        const containerRect = chart.canvas.parentNode.getBoundingClientRect();
+                        
+                        tooltipEl.style.left = (tooltip.caretX + canvasRect.left - containerRect.left) + 'px';
+                        tooltipEl.style.top = (tooltip.caretY + canvasRect.top - containerRect.top) + 'px';
+                        tooltipEl.style.opacity = '1';
                     }
                 }
             },
