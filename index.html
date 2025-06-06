@@ -43,6 +43,10 @@
                         <img src="assets/icons/semana.png" alt="Semana">
                         <span>Semana</span>
                     </div>
+                    <div class="nav-item" onclick="showAssuntosPage()">
+                        <img src="assets/icons/assunto.png" alt="Assuntos">
+                        <span>Assuntos</span>
+                    </div>
                     <div class="nav-item" onclick="showPesosPage()">
                         <img src="assets/icons/peso.png" alt="Pesos">
                         <span>Pesos</span>
@@ -180,117 +184,6 @@
                 </div>
             </div>
 
-            <div id="semana-page" class="page-content" style="display: none;">
-                <div class="dashboard">
-                    <div class="page-title">
-                        <h1>Produtividade por Dia da Semana</h1>
-                    </div>
-
-                    <div class="semana-controls">
-                        <div class="filter-container">
-                            <input type="text" id="filtro-semana" placeholder="Filtrar por usuário..." />
-                        </div>
-                        <button class="btn-export" onclick="mostrarPopupExportacao()">
-                            <img src="assets/icons/export.png" alt="Exportar">
-                            Exportar
-                        </button>
-                    </div>
-
-                    <div class="table-container">
-                        <table class="semana-table">
-                            <thead>
-                                <tr>
-                                    <th onclick="ordenarTabelaSemana('usuario')" class="sortable">
-                                        Usuário
-                                        <span class="sort-icon">↕</span>
-                                    </th>
-                                    <th onclick="ordenarTabelaSemana('segunda')" class="sortable">
-                                        Segunda
-                                        <span class="sort-icon">↕</span>
-                                    </th>
-                                    <th onclick="ordenarTabelaSemana('terca')" class="sortable">
-                                        Terça
-                                        <span class="sort-icon">↕</span>
-                                    </th>
-                                    <th onclick="ordenarTabelaSemana('quarta')" class="sortable">
-                                        Quarta
-                                        <span class="sort-icon">↕</span>
-                                    </th>
-                                    <th onclick="ordenarTabelaSemana('quinta')" class="sortable">
-                                        Quinta
-                                        <span class="sort-icon">↕</span>
-                                    </th>
-                                    <th onclick="ordenarTabelaSemana('sexta')" class="sortable">
-                                        Sexta
-                                        <span class="sort-icon">↕</span>
-                                    </th>
-                                    <th onclick="ordenarTabelaSemana('sabado')" class="sortable">
-                                        Sábado
-                                        <span class="sort-icon">↕</span>
-                                    </th>
-                                    <th onclick="ordenarTabelaSemana('domingo')" class="sortable">
-                                        Domingo
-                                        <span class="sort-icon">↕</span>
-                                    </th>
-                                    <th onclick="ordenarTabelaSemana('total')" class="sortable">
-                                        Total
-                                        <span class="sort-icon">↕</span>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabela-semana">
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="ranking-container">
-                        <h3>Ranking dos Dias Mais Produtivos</h3>
-                        <div id="ranking-dias" class="ranking-list">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="pesos-page" class="page-content" style="display: none;">
-                <div class="dashboard">
-                    <div class="page-title">
-                        <h1>Atribuição de Pesos</h1>
-                    </div>
-        
-                    <div class="pesos-container">
-                        <div class="table-container">
-                            <table class="pesos-table">
-                                <thead>
-                                    <tr>
-                                        <th>Tipo de Agendamento</th>
-                                        <th>Peso</th>
-                                        <th>Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabela-pesos">
-                                </tbody>
-                            </table>
-                        </div>
-        
-                        <div class="pesos-controls">
-                            <button class="btn-peso" onclick="salvarPesos()">
-                                Salvar Pesos
-                            </button>
-                            <input type="file" id="importar-pesos" accept=".json" style="display: none;" onchange="importarPesos(event)">
-                            <button class="btn-peso secondary" onclick="document.getElementById('importar-pesos').click()">
-                                Importar Pesos
-                            </button>
-                            <button class="btn-peso secondary" onclick="aplicarPesos()">
-                                Aplicar Alterações
-                            </button>
-                            <button class="btn-peso danger" onclick="restaurarPesosPadrao()">
-                                Restaurar Padrão
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>   
-
             <div id="mes-page" class="page-content" style="display: none;">
                 <div class="dashboard">
                     <div class="page-title">
@@ -365,6 +258,156 @@
                     <div class="ranking-container">
                         <h3>Ranking dos Meses Mais Produtivos</h3>
                         <div id="ranking-meses" class="ranking-list">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="semana-page" class="page-content" style="display: none;">
+                <div class="dashboard">
+                    <div class="page-title">
+                        <h1>Produtividade por Dia da Semana</h1>
+                    </div>
+
+                    <div class="semana-controls">
+                        <div class="filter-container">
+                            <input type="text" id="filtro-semana" placeholder="Filtrar por usuário..." />
+                        </div>
+                        <button class="btn-export" onclick="mostrarPopupExportacao()">
+                            <img src="assets/icons/export.png" alt="Exportar">
+                            Exportar
+                        </button>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="semana-table">
+                            <thead>
+                                <tr>
+                                    <th onclick="ordenarTabelaSemana('usuario')" class="sortable">
+                                        Usuário
+                                        <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaSemana('segunda')" class="sortable">
+                                        Segunda
+                                        <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaSemana('terca')" class="sortable">
+                                        Terça
+                                        <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaSemana('quarta')" class="sortable">
+                                        Quarta
+                                        <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaSemana('quinta')" class="sortable">
+                                        Quinta
+                                        <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaSemana('sexta')" class="sortable">
+                                        Sexta
+                                        <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaSemana('sabado')" class="sortable">
+                                        Sábado
+                                        <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaSemana('domingo')" class="sortable">
+                                        Domingo
+                                        <span class="sort-icon">↕</span>
+                                    </th>
+                                    <th onclick="ordenarTabelaSemana('total')" class="sortable">
+                                        Total
+                                        <span class="sort-icon">↕</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-semana">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="ranking-container">
+                        <h3>Ranking dos Dias Mais Produtivos</h3>
+                        <div id="ranking-dias" class="ranking-list">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="assuntos-page" class="page-content" style="display: none;">
+                <div class="dashboard">
+                    <div class="page-title">
+                        <h1>Produtividade por Assunto</h1>
+                    </div>
+
+                    <div class="assuntos-controls">
+                        <div class="filter-container">
+                            <input type="text" id="filtro-assuntos" placeholder="Filtrar por descrição do assunto..." />
+                        </div>
+                        <button class="btn-export" onclick="mostrarPopupExportacaoAssuntos()">
+                            <img src="assets/icons/export.png" alt="Exportar">
+                            Exportar
+                        </button>
+                    </div>
+                    
+                    <div class="resumo-assuntos-container">
+                        <div id="resumo-assuntos" class="resumo-assuntos">
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="assuntos-table">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" onclick="ordenarTabelaAssuntos('posicao')"># <span class="sort-icon">↕</span></th>
+                                    <th class="sortable" onclick="ordenarTabelaAssuntos('descricao')">Descrição do Assunto <span class="sort-icon">↕</span></th>
+                                    <th class="sortable" onclick="ordenarTabelaAssuntos('minutas')">Minutas <span class="sort-icon">↕</span></th>
+                                    <th class="sortable" onclick="ordenarTabelaAssuntos('processos')">Processos <span class="sort-icon">↕</span></th>
+                                    <th>Percentuais</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-assuntos">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pesos-page" class="page-content" style="display: none;">
+                <div class="dashboard">
+                    <div class="page-title">
+                        <h1>Atribuição de Pesos</h1>
+                    </div>
+        
+                    <div class="pesos-container">
+                        <div class="table-container">
+                            <table class="pesos-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo de Agendamento</th>
+                                        <th>Peso</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela-pesos">
+                                </tbody>
+                            </table>
+                        </div>
+        
+                        <div class="pesos-controls">
+                            <button class="btn-peso" onclick="salvarPesos()">
+                                Salvar Pesos
+                            </button>
+                            <input type="file" id="importar-pesos" accept=".json" style="display: none;" onchange="importarPesos(event)">
+                            <button class="btn-peso secondary" onclick="document.getElementById('importar-pesos').click()">
+                                Importar Pesos
+                            </button>
+                            <button class="btn-peso secondary" onclick="aplicarPesos()">
+                                Aplicar Alterações
+                            </button>
+                            <button class="btn-peso danger" onclick="restaurarPesosPadrao()">
+                                Restaurar Padrão
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -568,6 +611,35 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <div id="popup-exportacao-assuntos" class="popup-overlay" style="display: none;">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3>Exportar Produtividade por Assunto</h3>
+                <button class="popup-close" onclick="fecharPopupExportacaoAssuntos()">×</button>
+            </div>
+            
+            <div class="popup-body">
+                <div class="export-options">
+                    <div class="export-option" onclick="exportarTabelaAssuntos('pdf')">
+                        <div class="export-icon pdf-icon">📄</div>
+                        <div class="export-info">
+                            <h4>Exportar para PDF</h4>
+                            <p>Relatório formatado com ranking de assuntos</p>
+                        </div>
+                    </div>
+                    
+                    <div class="export-option" onclick="exportarTabelaAssuntos('xlsx')">
+                        <div class="export-icon excel-icon">📊</div>
+                        <div class="export-info">
+                            <h4>Exportar para Excel</h4>
+                            <p>Planilha detalhada com dados de minutas e processos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="popup-exportacao-dashboard" class="popup-overlay" style="display: none;">

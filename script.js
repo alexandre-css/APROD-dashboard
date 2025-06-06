@@ -1,3 +1,7 @@
+let sortColumnAssuntos = 'minutas';
+let sortAscendingAssuntos = false;
+let chartAssuntos = null;
+let assuntosJSON = null;
 let anosDisponiveis = [];
 let anoSelecionado = new Date().getFullYear();
 let tabelaMes = [];
@@ -38,7 +42,14 @@ let configuracoes = {
     iaToken: '6f76bea40d73b6ff291fd29780ca51cc6e12d00c',
     iaModelo: 'finetuned-gpt-neox-20b'
 };
-
+let assuntosData = [];
+let assuntosProcessados = {
+    minutasPorAssunto: new Map(),
+    processosPorAssunto: new Map(),
+    codigosAssuntos: new Map(),
+    totalMinutasAssuntos: 0,
+    totalProcessosAssuntos: 0
+};
 
 function initializeApp() {
     carregarConfiguracoes();
@@ -76,23 +87,52 @@ function showSemanaPage() {
     gerarTabelaSemana();
 }
 
+async function showAssuntosPage() {
+    hideAllPages();
+    document.getElementById('assuntos-page').style.display = 'block';
+    setActiveNavItem(4);
+    
+    try {
+        await carregarAssuntosJSON();
+        await gerarDadosAssuntos();
+        gerarTabelaAssuntos();
+        renderizarResumoAssuntos();
+        criarGraficoVariacaoAssuntos();
+    } catch (error) {
+        console.error('Erro ao carregar página de assuntos:', error);
+        
+        try {
+            await gerarDadosAssuntos();
+            gerarTabelaAssuntos();
+            renderizarResumoAssuntos();
+            criarGraficoVariacaoAssuntos();
+        } catch (fallbackError) {
+            console.error('Erro no fallback:', fallbackError);
+            document.getElementById('tabela-assuntos').innerHTML = 
+                '<tr><td colspan="5" style="text-align: center; padding: 40px; color: var(--text-secondary);">Erro ao carregar dados de assuntos. Verifique se há dados importados.</td></tr>';
+        }
+    }
+}
+
 function showPesosPage() {
     hideAllPages();
     document.getElementById('pesos-page').style.display = 'block';
-    setActiveNavItem(4);
+    setActiveNavItem(5);
     carregarTiposPesos();
 }
 
 function showIAPage() {
     hideAllPages();
     document.getElementById('ia-page').style.display = 'block';
-    setActiveNavItem(5);
+    setActiveNavItem(6);
     
     const modeloSelect = document.getElementById('ia-modelo-direto');
-    for (let i = 0; i < modeloSelect.options.length; i++) {
-        if (modeloSelect.options[i].value === configuracoes.iaModelo) {
-            modeloSelect.selectedIndex = i;
-            break;
+    if (modeloSelect) {
+        for (let i = 0; i < modeloSelect.options.length; i++) {
+            if (modeloSelect.options[i].value === configuracoes.iaModelo) {
+                modeloSelect.selectedIndex = i;
+                break;
+            }
         }
     }
 }
@@ -100,7 +140,7 @@ function showIAPage() {
 function showConfiguracoesPage() {
     hideAllPages();
     document.getElementById('configuracoes-page').style.display = 'block';
-    setActiveNavItem(6);
+    setActiveNavItem(7);
     carregarConfiguracoes();
 }
 
@@ -182,13 +222,18 @@ function renderizarListaUsuarios() {
     usuariosFiltrados.forEach((usuario, index) => {
         const usuarioDiv = document.createElement('div');
         usuarioDiv.className = `usuario-item ${usuario.selecionado ? 'selected' : ''}`;
+        usuarioDiv.onclick = function() {
+            toggleUsuarioComparacao(usuario.nome);
+        };
+        
         usuarioDiv.innerHTML = `
             <div class="usuario-checkbox">
                 <input type="checkbox" 
                        id="user-${index}" 
                        ${usuario.selecionado ? 'checked' : ''}
+                       onclick="event.stopPropagation();"
                        onchange="toggleUsuarioComparacao('${usuario.nome}')">
-                <label for="user-${index}"></label>
+                <label for="user-${index}" onclick="event.stopPropagation();"></label>
             </div>
             <div class="usuario-info">
                 <span class="usuario-nome">${usuario.nome}</span>
@@ -458,8 +503,30 @@ function atualizarGraficoComparacao() {
                         const canvasRect = chart.canvas.getBoundingClientRect();
                         const containerRect = chart.canvas.parentNode.getBoundingClientRect();
                         
-                        tooltipEl.style.left = (tooltip.caretX + canvasRect.left - containerRect.left) + 'px';
-                        tooltipEl.style.top = (tooltip.caretY + canvasRect.top - containerRect.top) + 'px';
+                        let left = tooltip.caretX + canvasRect.left - containerRect.left;
+                        let top = tooltip.caretY + canvasRect.top - containerRect.top;
+                        
+                        const tooltipWidth = tooltipEl.offsetWidth;
+                        const tooltipHeight = tooltipEl.offsetHeight;
+                        const containerWidth = containerRect.width;
+                        const containerHeight = containerRect.height;
+                        
+                        if (left + tooltipWidth > containerWidth - 20) {
+                            left = containerWidth - tooltipWidth - 20;
+                        }
+                        if (left < 20) {
+                            left = 20;
+                        }
+                        
+                        if (top + tooltipHeight > containerHeight - 20) {
+                            top = top - tooltipHeight - 20;
+                        }
+                        if (top < 20) {
+                            top = 20;
+                        }
+                        
+                        tooltipEl.style.left = left + 'px';
+                        tooltipEl.style.top = top + 'px';
                         tooltipEl.style.opacity = '1';
                     }
                 }
@@ -1333,7 +1400,7 @@ function importData() {
                         }
                         
                         row['Tipo'] = tipo;
-                        row['Código'] = codigoCell && codigoCell.v ? codigoCell.v.toString().trim() : '';
+                        row['Cod. assunto'] = codigoCell && codigoCell.v ? codigoCell.v.toString().trim() : '';
                         row['Nro. processo'] = nroProcesso;
                         row['Usuário'] = usuario;
                         row['Status'] = status;
@@ -1437,6 +1504,15 @@ function importData() {
     input.click();
 }
 
+
+function extrairMesAno(data) {
+    const date = new Date(data);
+    if (isNaN(date.getTime())) return null;
+    
+    const mesNomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 
+                     'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+    return `${mesNomes[date.getMonth()]}/${date.getFullYear()}`;
+}
 
 function extractMonthsFromData() {
     if (!excelData || excelData.length === 0) {
@@ -1645,7 +1721,7 @@ function detectarColunas(worksheet, range) {
     
     const colunasNecessarias = {
         'Tipo': ['Tipo'],
-        'Código': ['Código'],
+        'Cod. assunto': ['Código', 'Cod. assunto'],
         'Nro. processo': ['Nro. processo'],
         'Usuário': ['Usuário'],
         'Data criação': ['Data criação'],
@@ -1662,7 +1738,7 @@ function detectarColunas(worksheet, range) {
                     case 'Tipo':
                         colunaMapping.tipo = parseInt(indice);
                         break;
-                    case 'Código':
+                    case 'Cod. assunto':
                         colunaMapping.codigo = parseInt(indice);
                         break;
                     case 'Nro. processo':
@@ -2617,17 +2693,6 @@ function calcularRankingDias() {
         .sort((a, b) => b.total - a.total);
 }
 
-function showSemanaPage() {
-    document.querySelectorAll('.page-content').forEach(page => page.style.display = 'none');
-    document.getElementById('semana-page').style.display = 'block';
-    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-    document.querySelectorAll('.nav-item')[3].classList.add('active');
-    gerarTabelaSemana();
-    setTimeout(() => {
-        calcularERenderizarRanking();
-    }, 100);
-}
-
 function toggleTheme() {
     isDarkTheme = !isDarkTheme;
     updateTheme();
@@ -2651,14 +2716,6 @@ function updateTheme() {
     }
     
     localStorage.setItem('theme', theme);
-}
-
-function showPesosPage() {
-    document.querySelectorAll('.page-content').forEach(page => page.style.display = 'none');
-    document.getElementById('pesos-page').style.display = 'block';
-    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-    document.querySelectorAll('.nav-item')[4].classList.add('active');
-    carregarTiposPesos();
 }
 
 function carregarTiposPesos() {
@@ -3204,15 +3261,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    const filtroAssuntos = document.getElementById('filtro-assuntos');
+    if (filtroAssuntos) {
+        filtroAssuntos.addEventListener('input', function() {
+            const container = document.getElementById('tabela-assuntos');
+            if (container) {
+                container.setAttribute('data-expandido', 'false');
+            }
+            renderizarTabelaAssuntos();
+        });
+    }
+
     setTimeout(updateTheme, 100);
 });
-
-function showConfiguracoesPage() {
-    hideAllPages();
-    document.getElementById('configuracoes-page').style.display = 'block';
-    setActiveNavItem(6);
-    carregarConfiguracoes();
-}
 
 function carregarConfiguracoes() {
     const configSalvas = localStorage.getItem('aprod-configuracoes');
@@ -4075,20 +4136,6 @@ function exportarMesExcel(timestamp) {
     XLSX.writeFile(wb, `tabela_mes_${timestamp}.xlsx`);
 }
 
-function showIAPage() {
-    hideAllPages();
-    document.getElementById('ia-page').style.display = 'block';
-    setActiveNavItem(5);
-}
-
-function setActiveNavItem(index) {
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => item.classList.remove('active'));
-    if (navItems[index]) {
-        navItems[index].classList.add('active');
-    }
-}
-
 function alterarModeloIA(valor) {
     configuracoes.iaModelo = valor;
     
@@ -4244,6 +4291,915 @@ function selecionarAno(novoAno) {
     } else {
         gerarTabelaMes();
         renderizarSeletorAno();
+    }
+}
+
+async function gerarDadosAssuntos() {
+    if (!excelData || excelData.length === 0) {
+        alert('Nenhum dado foi importado ainda. Por favor, importe um arquivo Excel primeiro.');
+        return;
+    }
+
+    console.log('Iniciando processamento de assuntos...');
+    
+    assuntosProcessados = {
+        minutasPorAssunto: new Map(),
+        processosPorAssunto: new Map(),
+        codigosAssuntos: new Map(),
+        totalMinutasAssuntos: 0,
+        totalProcessosAssuntos: 0,
+        assuntosPorMes: new Map()
+    };
+
+    let filteredData = excelData;
+    
+    if (processedData.mesesAtivos.length > 0 && processedData.mesesAtivos.length < processedData.mesesDisponiveis.length) {
+        const mesesAtivosSet = new Set(processedData.mesesAtivos);
+        filteredData = excelData.filter(row => {
+            const data = row['Data criação'];
+            if (!data) return false;
+            const mesAno = extrairMesAno(data);
+            return mesAno && mesesAtivosSet.has(mesAno);
+        });
+    }
+
+    filteredData.forEach(row => {
+        const codigoAssunto = row['Cod. assunto'];
+        const usuario = row['Usuário'];
+        const data = row['Data criação'];
+        
+        if (!codigoAssunto || !usuario) return;
+
+        const peso = pesosAtivos && pesosAtuais[row['Tipo']] ? pesosAtuais[row['Tipo']] : 1;
+        const minutas = peso;
+
+        if (!assuntosProcessados.minutasPorAssunto.has(codigoAssunto)) {
+            assuntosProcessados.minutasPorAssunto.set(codigoAssunto, 0);
+            assuntosProcessados.processosPorAssunto.set(codigoAssunto, new Set());
+            assuntosProcessados.codigosAssuntos.set(codigoAssunto, {
+                codigo: codigoAssunto,
+                descricao: obterDescricaoAssunto(codigoAssunto),
+                usuarios: new Map(),
+                porMes: new Map()
+            });
+        }
+
+        assuntosProcessados.minutasPorAssunto.set(
+            codigoAssunto,
+            assuntosProcessados.minutasPorAssunto.get(codigoAssunto) + minutas
+        );
+
+        assuntosProcessados.processosPorAssunto.get(codigoAssunto).add(row['Nro. processo']);
+
+        const dadosAssunto = assuntosProcessados.codigosAssuntos.get(codigoAssunto);
+        if (!dadosAssunto.usuarios.has(usuario)) {
+            dadosAssunto.usuarios.set(usuario, 0);
+        }
+        dadosAssunto.usuarios.set(usuario, dadosAssunto.usuarios.get(usuario) + minutas);
+
+        const mesAno = extrairMesAno(data);
+        if (mesAno) {
+            if (!dadosAssunto.porMes.has(mesAno)) {
+                dadosAssunto.porMes.set(mesAno, 0);
+            }
+            dadosAssunto.porMes.set(mesAno, dadosAssunto.porMes.get(mesAno) + minutas);
+        }
+
+        assuntosProcessados.totalMinutasAssuntos += minutas;
+    });
+
+    assuntosProcessados.totalProcessosAssuntos = new Set(filteredData.map(row => row['Nro. processo'])).size;
+
+    assuntosData = Array.from(assuntosProcessados.minutasPorAssunto.entries())
+        .map(([codigo, minutas]) => {
+            const dadosAssunto = assuntosProcessados.codigosAssuntos.get(codigo);
+            return {
+                codigo,
+                descricao: dadosAssunto.descricao,
+                minutas,
+                processos: assuntosProcessados.processosPorAssunto.get(codigo).size,
+                percentualMinutas: (minutas / assuntosProcessados.totalMinutasAssuntos) * 100,
+                percentualProcessos: (assuntosProcessados.processosPorAssunto.get(codigo).size / assuntosProcessados.totalProcessosAssuntos) * 100,
+                topUsuarios: Array.from(dadosAssunto.usuarios.entries())
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 3),
+                porMes: dadosAssunto.porMes
+            };
+        })
+        .sort((a, b) => b.minutas - a.minutas);
+
+    console.log('Dados de assuntos processados:', assuntosData);
+}
+
+async function carregarAssuntosJSON() {
+    try {
+        const response = await fetch('assets/data/assuntos.json');
+        if (!response.ok) {
+            console.warn('Arquivo assuntos.json não encontrado, usando modo básico');
+            assuntosJSON = null;
+            return;
+        }
+        assuntosJSON = await response.json();
+        console.log('Arquivo assuntos.json carregado com sucesso');
+    } catch (error) {
+        console.warn('Não foi possível carregar assuntos.json, usando modo básico:', error.message);
+        assuntosJSON = null;
+    }
+}
+
+function obterDescricaoAssunto(codigo) {
+    if (!codigo) {
+        return 'Assunto não informado';
+    }
+
+    codigo = codigo.toString().trim();
+
+    if (codigo.includes(',')) {
+        const codigos = codigo.split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
+        const descricoes = codigos.map(c => {
+            if (assuntosJSON && assuntosJSON["Assunto Judicial"]) {
+                const assunto = assuntosJSON["Assunto Judicial"].find(item => 
+                    item["Cod. Assunto"] && item["Cod. Assunto"].toString().trim() === c
+                );
+                return assunto ? assunto.Assunto : `Assunto ${c}`;
+            }
+            return `Assunto ${c}`;
+        });
+        return descricoes.join(' + ');
+    }
+
+    codigo = codigo.replace(/^["']|["']$/g, '');
+    
+    if (assuntosJSON && assuntosJSON["Assunto Judicial"]) {
+        const assunto = assuntosJSON["Assunto Judicial"].find(item => 
+            item["Cod. Assunto"] && item["Cod. Assunto"].toString().trim() === codigo
+        );
+        return assunto ? assunto.Assunto : `Assunto ${codigo}`;
+    }
+
+    return `Assunto ${codigo}`;
+}
+
+function initializeApp() {
+    carregarConfiguracoes();
+    updateTheme();
+    updatePesosButton();
+    createChart();
+    renderMonths();
+    updateKPIs();
+    carregarAssuntosJSON();
+}
+
+function gerarTabelaAssuntos() {
+    if (!assuntosData || assuntosData.length === 0) {
+        document.getElementById('tabela-assuntos').innerHTML = 
+            '<tr><td colspan="5" style="text-align: center; padding: 40px; color: var(--text-secondary);">Nenhum dado de assuntos encontrado.</td></tr>';
+        return;
+    }
+
+    renderizarTabelaAssuntos();
+}
+
+function renderizarTabelaAssuntos() {
+    const container = document.getElementById('tabela-assuntos');
+    if (!container || !assuntosData) return;
+    
+    container.innerHTML = '';
+    
+    const filtro = document.getElementById('filtro-assuntos')?.value.toLowerCase() || '';
+    let assuntosFiltrados = assuntosData;
+    
+    if (filtro) {
+        assuntosFiltrados = assuntosData.filter(assunto => 
+            assunto.descricao.toLowerCase().includes(filtro) ||
+            assunto.codigo.toString().toLowerCase().includes(filtro)
+        );
+    }
+
+    const limitePadrao = 20;
+    const mostrarTodos = container.getAttribute('data-expandido') === 'true';
+    const assuntosParaMostrar = mostrarTodos ? assuntosFiltrados : assuntosFiltrados.slice(0, limitePadrao);
+
+    assuntosParaMostrar.forEach((assunto, index) => {
+        const posicaoReal = assuntosFiltrados.findIndex(a => a === assunto) + 1;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="posicao-cell">${posicaoReal}</td>
+            <td class="descricao-cell" title="${assunto.descricao}">${assunto.descricao}</td>
+            <td class="minutas-cell">${Math.round(assunto.minutas)}</td>
+            <td class="processos-cell">${assunto.processos}</td>
+            <td class="percentuais-cell">
+                <div class="percentual-minutas">${assunto.percentualMinutas.toFixed(1)}%</div>
+                <div class="percentual-processos">${assunto.percentualProcessos.toFixed(1)}%</div>
+            </td>
+        `;
+        container.appendChild(row);
+    });
+
+    if (assuntosFiltrados.length > limitePadrao && !filtro) {
+        const expandirRow = document.createElement('tr');
+        expandirRow.className = 'expandir-row';
+        expandirRow.innerHTML = `
+            <td colspan="5" class="expandir-cell">
+                <button class="btn-expandir" onclick="toggleExpandirTabela()">
+                    ${mostrarTodos ? 
+                        `🔼 Mostrar apenas top ${limitePadrao}` : 
+                        `🔽 Mostrar todos os ${assuntosFiltrados.length} assuntos`
+                    }
+                </button>
+            </td>
+        `;
+        container.appendChild(expandirRow);
+    }
+
+    atualizarIconesOrdenacao(document.querySelector('.assuntos-table'), sortColumnAssuntos, sortAscendingAssuntos);
+}
+
+function toggleExpandirTabela() {
+    const container = document.getElementById('tabela-assuntos');
+    const expandido = container.getAttribute('data-expandido') === 'true';
+    container.setAttribute('data-expandido', !expandido);
+    renderizarTabelaAssuntos();
+}
+
+function renderizarResumoAssuntos() {
+    const container = document.getElementById('resumo-assuntos');
+    if (!container || !assuntosData || assuntosData.length === 0) return;
+
+    const top5Assuntos = assuntosData.slice(0, 5);
+    const topUsuarios = gerarTopUsuariosPorAssunto();
+
+    container.innerHTML = `
+        <div class="resumo-item top-assuntos">
+            <div class="resumo-label">Top 5 Assuntos</div>
+            <div class="top-list">
+                ${top5Assuntos.map((assunto, index) => `
+                    <div class="top-item">
+                        <span class="top-posicao">${index + 1}º</span>
+                        <span class="top-nome" title="${assunto.descricao}">${assunto.descricao}</span>
+                        <span class="top-minutas">${Math.round(assunto.minutas)}</span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+
+        <div class="resumo-item top-usuarios">
+            <div class="resumo-label">Top 3 Usuários por Assunto</div>
+            <div class="usuarios-list">
+                ${topUsuarios.slice(0, 3).map(usuario => `
+                    <div class="usuario-assunto-item">
+                        <div class="usuario-nome-assunto">${usuario.nome}</div>
+                        <div class="usuario-top-assuntos">
+                            ${usuario.topAssuntos.slice(0, 3).map((assunto, index) => `
+                                <div class="assunto-item-linha">
+                                    <span class="assunto-posicao-badge">${index + 1}</span>
+                                    <span class="assunto-nome-mini" title="${assunto.descricao}">${assunto.descricao}</span>
+                                    <span class="assunto-minutas-mini">${Math.round(assunto.minutas)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+
+        <div class="grafico-assuntos-container">
+            <div class="grafico-header">
+                <h3>Variação de Minutas por Assunto ao Longo dos Meses</h3>
+            </div>
+            <div class="grafico-chart-container">
+                <canvas id="chart-variacao-assuntos"></canvas>
+            </div>
+        </div>
+    `;
+}
+
+function gerarTopUsuariosPorAssunto() {
+    if (!excelData || excelData.length === 0) return [];
+
+    const usuariosAssuntos = new Map();
+
+    let filteredData = excelData;
+    if (processedData.mesesAtivos.length > 0 && processedData.mesesAtivos.length < processedData.mesesDisponiveis.length) {
+        const mesesAtivosSet = new Set(processedData.mesesAtivos);
+        filteredData = excelData.filter(row => {
+            const data = row['Data criação'];
+            if (!data) return false;
+            const mesAno = extrairMesAno(data);
+            return mesAno && mesesAtivosSet.has(mesAno);
+        });
+    }
+
+    filteredData.forEach(row => {
+        const usuario = row['Usuário'];
+        const codigoAssunto = row['Cod. assunto'];
+        
+        if (!usuario || !codigoAssunto) return;
+
+        const peso = pesosAtivos && pesosAtuais[row['Tipo']] ? pesosAtuais[row['Tipo']] : 1;
+
+        if (!usuariosAssuntos.has(usuario)) {
+            usuariosAssuntos.set(usuario, new Map());
+        }
+
+        const assuntosUsuario = usuariosAssuntos.get(usuario);
+        if (!assuntosUsuario.has(codigoAssunto)) {
+            assuntosUsuario.set(codigoAssunto, {
+                codigo: codigoAssunto,
+                descricao: obterDescricaoAssunto(codigoAssunto),
+                minutas: 0
+            });
+        }
+
+        const assunto = assuntosUsuario.get(codigoAssunto);
+        assunto.minutas += peso;
+    });
+
+    return Array.from(usuariosAssuntos.entries())
+        .map(([nome, assuntos]) => ({
+            nome,
+            totalMinutas: Array.from(assuntos.values()).reduce((sum, a) => sum + a.minutas, 0),
+            topAssuntos: Array.from(assuntos.values()).sort((a, b) => b.minutas - a.minutas)
+        }))
+        .sort((a, b) => b.totalMinutas - a.totalMinutas);
+}
+
+function toggleTodosAssuntos(checked) {
+    const checkboxes = document.querySelectorAll('#assuntos-checkboxes input[type="checkbox"]:not(#todos-assuntos)');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = checked;
+    });
+    atualizarGraficoAssuntos();
+}
+
+function atualizarGraficoAssuntos() {
+    const checkboxesTodos = document.getElementById('todos-assuntos');
+    const checkboxes = document.querySelectorAll('#assuntos-checkboxes input[type="checkbox"]:not(#todos-assuntos)');
+    const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+    
+    if (checkboxesTodos) {
+        checkboxesTodos.checked = checkedCount === checkboxes.length;
+        checkboxesTodos.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+    }
+    
+    criarGraficoVariacaoAssuntos();
+}
+
+function criarGraficoVariacaoAssuntos() {
+    const container = document.querySelector('.grafico-assuntos-container');
+    if (!container || !assuntosData || assuntosData.length === 0) return;
+
+    if (chartAssuntos) {
+        chartAssuntos.destroy();
+    }
+
+    const canvasId = 'chart-variacao-assuntos';
+    container.innerHTML = `
+        <div class="grafico-header">
+            <h3>Variação de Minutas por Assunto ao Longo dos Meses</h3>
+        </div>
+        <div class="grafico-chart-container">
+            <canvas id="${canvasId}"></canvas>
+        </div>
+    `;
+
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+
+    const top6Assuntos = assuntosData.slice(0, 6);
+    const mesesOrdenados = processedData.mesesDisponiveis.sort((a, b) => {
+        const [mesA, anoA] = a.split('/');
+        const [mesB, anoB] = b.split('/');
+        const dataA = new Date(parseInt(anoA), obterNumeroMes(mesA), 1);
+        const dataB = new Date(parseInt(anoB), obterNumeroMes(mesB), 1);
+        return dataA - dataB;
+    });
+
+    const cores = [
+        '#1565c0', '#43a047', '#e53935', '#8e24aa', '#fb8c00', '#00acc1'
+    ];
+
+    const datasets = top6Assuntos.map((assunto, index) => {
+        const dados = mesesOrdenados.map(mes => {
+            const minutas = assunto.porMes.get(mes) || 0;
+            return Math.round(minutas);
+        });
+
+        return {
+            label: assunto.descricao.length > 30 ? 
+                   assunto.descricao.substring(0, 30) + '...' : 
+                   assunto.descricao,
+            data: dados,
+            borderColor: cores[index],
+            backgroundColor: cores[index] + '20',
+            borderWidth: 3,
+            fill: false,
+            tension: 0.4,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            pointBackgroundColor: cores[index],
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2
+        };
+    });
+
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+
+    chartAssuntos = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: mesesOrdenados,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                title: {
+                    display: false
+                },
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        color: isDark ? '#ffffff' : '#232946',
+                        font: {
+                            size: 12
+                        },
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: isDark ? '#2d2d2d' : '#ffffff',
+                    titleColor: isDark ? '#ffffff' : '#232946',
+                    bodyColor: isDark ? '#ffffff' : '#232946',
+                    borderColor: isDark ? '#4a90e2' : '#3cb3e6',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: true,
+                    callbacks: {
+                        title: function(context) {
+                            return `Mês: ${context[0].label}`;
+                        },
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.parsed.y} minutas`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: isDark ? '#404040' : '#e0e0e0',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: isDark ? '#ffffff' : '#232946',
+                        font: {
+                            size: 11
+                        },
+                        maxRotation: 45
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: isDark ? '#404040' : '#e0e0e0',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: isDark ? '#ffffff' : '#232946',
+                        font: {
+                            size: 11
+                        },
+                        callback: function(value) {
+                            return Math.round(value);
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 1500,
+                easing: 'easeInOutQuart'
+            }
+        }
+    });
+}
+
+function obterNumeroMes(nomeAbreviado) {
+    const meses = {
+        'jan': 0, 'fev': 1, 'mar': 2, 'abr': 3, 'mai': 4, 'jun': 5,
+        'jul': 6, 'ago': 7, 'set': 8, 'out': 9, 'nov': 10, 'dez': 11
+    };
+    return meses[nomeAbreviado] || 0;
+}
+
+function gerarDadosVariacaoMensal(assuntosSelecionados) {
+    const mesesDisponiveis = processedData.mesesDisponiveis || [];
+    const dadosPorAssunto = {};
+    
+    assuntosSelecionados.forEach(assunto => {
+        dadosPorAssunto[assunto] = {};
+        mesesDisponiveis.forEach(mes => {
+            dadosPorAssunto[assunto][mes] = 0;
+        });
+    });
+    
+    if (!excelData || excelData.length === 0) {
+        return { labels: mesesDisponiveis, dados: dadosPorAssunto };
+    }
+
+    excelData.forEach(row => {
+        const codigoAssunto = row['Cod. assunto'];
+        const tipo = row['Tipo'];
+        const dataRow = row['Data criação'];
+        
+        if (!codigoAssunto || !tipo || !dataRow) return;
+        
+        const descricaoAssunto = obterDescricaoAssunto(codigoAssunto);
+        const chaveAssunto = `${codigoAssunto} - ${descricaoAssunto}`;
+        
+        if (!assuntosSelecionados.includes(chaveAssunto)) return;
+        
+        const data = new Date(dataRow);
+        if (isNaN(data.getTime())) return;
+        
+        const mesAno = `${String(data.getMonth() + 1).padStart(2, '0')}/${data.getFullYear()}`;
+        
+        if (mesesDisponiveis.includes(mesAno)) {
+            const peso = pesosAtivos && pesosAtuais[tipo] ? pesosAtuais[tipo] : 1;
+            dadosPorAssunto[chaveAssunto][mesAno] += peso;
+        }
+    });
+    
+    return { labels: mesesDisponiveis, dados: dadosPorAssunto };
+}
+
+function ordenarTabelaAssuntos(coluna) {
+    if (!assuntosData) return;
+    
+    const isAscending = sortColumnAssuntos === coluna ? !sortAscendingAssuntos : false;
+    sortColumnAssuntos = coluna;
+    sortAscendingAssuntos = isAscending;
+    
+    const filtro = document.getElementById('filtro-assuntos')?.value.toLowerCase() || '';
+    let dadosParaOrdenar = assuntosData;
+    
+    if (filtro) {
+        dadosParaOrdenar = assuntosData.filter(assunto => 
+            assunto.descricao.toLowerCase().includes(filtro) ||
+            assunto.codigo.toString().toLowerCase().includes(filtro)
+        );
+    }
+    
+    dadosParaOrdenar.sort((a, b) => {
+        let valorA, valorB;
+        
+        switch(coluna) {
+            case 'posicao':
+                return isAscending ? 1 : -1;
+            case 'descricao':
+                valorA = a.descricao.toLowerCase();
+                valorB = b.descricao.toLowerCase();
+                break;
+            case 'minutas':
+                valorA = a.minutas;
+                valorB = b.minutas;
+                break;
+            case 'processos':
+                valorA = a.processos;
+                valorB = b.processos;
+                break;
+            default:
+                return 0;
+        }
+        
+        if (typeof valorA === 'string') {
+            return isAscending ? valorA.localeCompare(valorB) : valorB.localeCompare(valorA);
+        } else {
+            return isAscending ? valorA - valorB : valorB - valorA;
+        }
+    });
+    
+    if (filtro) {
+        assuntosData = dadosParaOrdenar.concat(
+            assuntosData.filter(assunto => 
+                !assunto.descricao.toLowerCase().includes(filtro) &&
+                !assunto.codigo.toString().toLowerCase().includes(filtro)
+            )
+        );
+    } else {
+        assuntosData = dadosParaOrdenar;
+    }
+    
+    renderizarTabelaAssuntos();
+}
+
+function atualizarIconesOrdenacao(tabela, colunaAtiva, ascending) {
+    if (!tabela) return;
+    
+    const headers = tabela.querySelectorAll('th.sortable');
+    headers.forEach(header => {
+        const icon = header.querySelector('.sort-icon');
+        if (icon) {
+            icon.textContent = '↕';
+            icon.style.opacity = '0.5';
+        }
+    });
+    
+    const activeHeader = tabela.querySelector(`th[onclick*="${colunaAtiva}"]`);
+    if (activeHeader) {
+        const icon = activeHeader.querySelector('.sort-icon');
+        if (icon) {
+            icon.textContent = ascending ? '↑' : '↓';
+            icon.style.opacity = '1';
+        }
+    }
+}
+
+function mostrarPopupExportacaoAssuntos() {
+    document.getElementById('popup-exportacao-assuntos').style.display = 'flex';
+}
+
+function fecharPopupExportacaoAssuntos() {
+    document.getElementById('popup-exportacao-assuntos').style.display = 'none';
+}
+
+function exportarTabelaAssuntos(formato) {
+    if (!assuntosData || assuntosData.length === 0) {
+        alert('Não há dados para exportar!');
+        return;
+    }
+    
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    
+    if (formato === 'pdf') {
+        exportarAssuntosPDF(timestamp);
+    } else if (formato === 'xlsx') {
+        exportarAssuntosExcel(timestamp);
+    }
+    
+    fecharPopupExportacaoAssuntos();
+}
+
+function exportarAssuntosPDF(timestamp) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape');
+    
+    doc.setFillColor(74, 144, 226);
+    doc.rect(0, 0, doc.internal.pageSize.width, 25, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    
+    let titulo = 'APROD - Produtividade por Assunto';
+    if (configuracoes.nomeGabinete) {
+        titulo = `${configuracoes.nomeGabinete} - APROD - Produtividade por Assunto`;
+    }
+    doc.text(titulo, 15, 16);
+    
+    doc.setTextColor(74, 144, 226);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 15, 35);
+    
+    let mesesTexto = `Meses: ${processedData.mesesAtivos.join(', ')}`;
+    if (processedData.mesesAtivos.length === 0) {
+        mesesTexto = 'Meses: Todos os meses disponíveis';
+    }
+    doc.text(mesesTexto, 15, 42);
+    
+    const tableData = assuntosData.map((assunto, index) => [
+        index + 1,
+        assunto.descricao.length > 70 ? assunto.descricao.substring(0, 67) + '...' : assunto.descricao,
+        Math.round(assunto.minutas),
+        assunto.processos,
+        `${assunto.percentualMinutas.toFixed(1)}% / ${assunto.percentualProcessos.toFixed(1)}%`
+    ]);
+    
+    doc.autoTable({
+        head: [['#', 'Descrição do Assunto', 'Minutas', 'Processos', '% Min / % Proc']],
+        body: tableData,
+        startY: 52,
+        styles: {
+            fontSize: 8,
+            cellPadding: 3,
+            textColor: [35, 41, 70],
+            lineColor: [74, 144, 226],
+            lineWidth: 0.5
+        },
+        headStyles: {
+            fillColor: [74, 144, 226],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            fontSize: 9
+        },
+        alternateRowStyles: {
+            fillColor: [248, 249, 250]
+        },
+        columnStyles: {
+            0: { cellWidth: 15, halign: 'center' },
+            1: { cellWidth: 110 },
+            2: { cellWidth: 25, halign: 'center', fontStyle: 'bold' },
+            3: { cellWidth: 25, halign: 'center' },
+            4: { cellWidth: 35, halign: 'center', fontSize: 7 }
+        },
+        margin: { left: 15, right: 15 }
+    });
+    
+    const totalGeral = Math.round(assuntosProcessados.totalMinutasAssuntos);
+    const totalProcessos = assuntosProcessados.totalProcessosAssuntos;
+    
+    const finalY = doc.previousAutoTable.finalY + 10;
+    doc.setFillColor(227, 242, 253);
+    doc.rect(15, finalY, doc.internal.pageSize.width - 30, 15, 'F');
+    
+    doc.setTextColor(74, 144, 226);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Totais: ${totalGeral} minutas • ${totalProcessos} processos • ${assuntosData.length} assuntos`, 20, finalY + 10);
+    
+    doc.save(`assuntos_${timestamp}.pdf`);
+}
+
+function exportarAssuntosExcel(timestamp) {
+    let mesesTexto = `Meses: ${processedData.mesesAtivos.join(', ')}`;
+    if (processedData.mesesAtivos.length === 0) {
+        mesesTexto = 'Período: Todos os meses disponíveis';
+    }
+    
+    const wb = XLSX.utils.book_new();
+    const ws = {};
+    
+    let titulo = 'APROD - Produtividade por Assunto';
+    if (configuracoes.nomeGabinete) {
+        titulo = `${configuracoes.nomeGabinete} - ${titulo}`;
+    }
+    
+    ws['A1'] = { 
+        v: titulo, 
+        t: 's',
+        s: {
+            font: { name: "Calibri", sz: 18, bold: true, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "4A90E2" } },
+            alignment: { horizontal: "center", vertical: "center" },
+            border: {
+                top: { style: "thick", color: { rgb: "4A90E2" } },
+                bottom: { style: "thick", color: { rgb: "4A90E2" } },
+                left: { style: "thick", color: { rgb: "4A90E2" } },
+                right: { style: "thick", color: { rgb: "4A90E2" } }
+            }
+        }
+    };
+    
+    ws['A3'] = { 
+        v: `Gerado em: ${new Date().toLocaleString('pt-BR')}`, 
+        t: 's',
+        s: {
+            font: { name: "Calibri", sz: 11, color: { rgb: "4A90E2" } },
+            alignment: { horizontal: "left", vertical: "center" }
+        }
+    };
+    
+    ws['A4'] = { 
+        v: mesesTexto, 
+        t: 's',
+        s: {
+            font: { name: "Calibri", sz: 11, color: { rgb: "4A90E2" } },
+            alignment: { horizontal: "left", vertical: "center" }
+        }
+    };
+    
+    const headers = ['Posição', 'Descrição do Assunto', 'Minutas', 'Processos', '% Minutas', '% Processos'];
+    const headerCells = ['A6', 'B6', 'C6', 'D6', 'E6', 'F6'];
+    
+    headers.forEach((header, index) => {
+        ws[headerCells[index]] = {
+            v: header,
+            t: 's',
+            s: {
+                font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "FFFFFF" } },
+                fill: { fgColor: { rgb: "4A90E2" } },
+                alignment: { horizontal: "center", vertical: "center" },
+                border: {
+                    top: { style: "medium", color: { rgb: "4A90E2" } },
+                    bottom: { style: "medium", color: { rgb: "4A90E2" } },
+                    left: { style: "medium", color: { rgb: "4A90E2" } },
+                    right: { style: "medium", color: { rgb: "4A90E2" } }
+                }
+            }
+        };
+    });
+    
+    let row = 7;
+    assuntosData.forEach((assunto, index) => {
+        const rowData = [
+            index + 1,
+            assunto.descricao,
+            Math.round(assunto.minutas),
+            assunto.processos,
+            `${assunto.percentualMinutas.toFixed(1)}%`,
+            `${assunto.percentualProcessos.toFixed(1)}%`
+        ];
+        
+        const columns = ['A', 'B', 'C', 'D', 'E', 'F'];
+        
+        rowData.forEach((value, colIndex) => {
+            const cellAddress = `${columns[colIndex]}${row}`;
+            ws[cellAddress] = {
+                v: value,
+                t: colIndex === 1 ? 's' : (colIndex === 4 || colIndex === 5 ? 's' : 'n'),
+                s: {
+                    font: { name: "Calibri", sz: 11 },
+                    alignment: { horizontal: colIndex === 1 ? "left" : "center", vertical: "center" },
+                    border: {
+                        top: { style: "thin", color: { rgb: "E0E0E0" } },
+                        bottom: { style: "thin", color: { rgb: "E0E0E0" } },
+                        left: { style: "thin", color: { rgb: "E0E0E0" } },
+                        right: { style: "thin", color: { rgb: "E0E0E0" } }
+                    }
+                }
+            };
+        });
+        
+        row++;
+    });
+    
+    const totalGeral = Math.round(assuntosProcessados.totalMinutasAssuntos);
+    const totalProcessos = assuntosProcessados.totalProcessosAssuntos;
+    
+    row += 1;
+    const totalColumns = ['A', 'B', 'C', 'D', 'E', 'F'];
+    const totalValues = ['TOTAIS:', `${assuntosData.length} assuntos`, totalGeral, totalProcessos, '100%', '100%'];
+    
+    totalValues.forEach((value, colIndex) => {
+        const cellAddress = `${totalColumns[colIndex]}${row}`;
+        ws[cellAddress] = {
+            v: value,
+            t: colIndex === 1 ? 's' : (colIndex === 4 || colIndex === 5 ? 's' : 'n'),
+            s: {
+                font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "4A90E2" } },
+                fill: { fgColor: { rgb: "E3F2FD" } },
+                alignment: { horizontal: colIndex === 1 ? "left" : "center", vertical: "center" },
+                border: {
+                    top: { style: "thick", color: { rgb: "4A90E2" } },
+                    bottom: { style: "thick", color: { rgb: "4A90E2" } },
+                    left: { style: "thick", color: { rgb: "4A90E2" } },
+                    right: { style: "thick", color: { rgb: "4A90E2" } }
+                }
+            }
+        };
+    });
+    
+    const lastRow = row;
+    ws['!ref'] = `A1:F${lastRow}`;
+    
+    ws['!cols'] = [
+        { wch: 10 }, { wch: 60 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }
+    ];
+    
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }];
+    
+    ws['!rows'] = [
+        { hpt: 30 },
+        { hpt: 15 },
+        { hpt: 18 },
+        { hpt: 18 },
+        { hpt: 15 },
+        { hpt: 25 }
+    ];
+    
+    for (let i = 6; i < lastRow; i++) {
+        ws[`!rows`][i] = { hpt: 20 };
+    }
+    
+    XLSX.utils.book_append_sheet(wb, ws, "Produtividade por Assunto");
+    XLSX.writeFile(wb, `assuntos_${timestamp}.xlsx`);
+}
+
+window.onclick = function(event) {
+    const popup = document.getElementById('popup-exportacao');
+    const popupDashboard = document.getElementById('popup-exportacao-dashboard');
+    const popupMes = document.getElementById('popup-exportacao-mes');
+    const popupAssuntos = document.getElementById('popup-exportacao-assuntos');
+    if (event.target === popup) {
+        fecharPopupExportacao();
+    }
+    if (event.target === popupDashboard) {
+        fecharPopupExportacaoDashboard();
+    }
+    if (event.target === popupMes) {
+        fecharPopupExportacaoMes();
+    }
+    if (event.target === popupAssuntos) {
+        fecharPopupExportacaoAssuntos();
     }
 }
 
