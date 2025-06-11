@@ -50,14 +50,29 @@ let assuntosProcessados = {
     totalMinutasAssuntos: 0,
     totalProcessosAssuntos: 0
 };
+let CNJ_API_KEY = '';
+let dadosCNJ = {
+    movimentacoes: [],
+    assuntos: [],
+    ultimaConsulta: null,
+    totalRegistros: 0
+};
+const CNJ_API_BASE = 'https://api-publica.datajud.cnj.jus.br';
+const CNJ_ENDPOINTS = {
+    TJSC: '/api_publica_tjsc/_search',
+    TRF4: '/api_publica_trf4/_search',
+    STATUS: '/status'
+};
 
 function initializeApp() {
     carregarConfiguracoes();
+    carregarChaveCNJ();
     updateTheme();
     updatePesosButton();
     createChart();
     renderMonths();
     updateKPIs();
+    carregarAssuntosJSON();
 }
 
 function showDashboard() {
@@ -114,6 +129,7 @@ async function showAssuntosPage() {
     }
 }
 
+
 function showPesosPage() {
     hideAllPages();
     document.getElementById('pesos-page').style.display = 'block';
@@ -121,10 +137,164 @@ function showPesosPage() {
     carregarTiposPesos();
 }
 
+function showCNJPage() {
+    hideAllPages();
+    
+    const content = document.getElementById('content');
+    const existingPage = document.getElementById('cnj-page-dynamic');
+    
+    if (existingPage) {
+        existingPage.style.display = 'block';
+        setActiveNavItem(6);
+        carregarChaveCNJ();
+        return;
+    }
+    
+    if (!content) {
+        const mainContent = document.querySelector('.main-content');
+        if (!mainContent) {
+            console.error('Main content não encontrado');
+            return;
+        }
+        
+        const existingContent = mainContent.querySelector('.page-content');
+        if (existingContent) {
+            existingContent.style.display = 'none';
+        }
+        
+        const cnjPageContent = document.createElement('div');
+        cnjPageContent.className = 'page-content';
+        cnjPageContent.id = 'cnj-page-dynamic';
+        
+        cnjPageContent.innerHTML = `
+            <div class="dashboard">
+                <div class="page-title">
+                    <h1>Integração CNJ DataJud</h1>
+                </div>
+                
+                <div class="cnj-container">
+                    <div class="cnj-info-card">
+                        <div class="cnj-info-header">
+                            <div class="cnj-info-icon">⚖️</div>
+                            <div class="cnj-info-text">
+                                <h4>API Pública DataJud</h4>
+                                <p>Integração com dados processuais dos tribunais brasileiros. Configure sua chave de API para acessar movimentações processuais oficiais.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cnj-config-card">
+                        <div class="cnj-header">
+                            <h3>Configuração de Acesso</h3>
+                            <div class="cnj-status ${CNJ_API_KEY ? 'conectado' : 'desconectado'}">
+                                ${CNJ_API_KEY ? '🟢 Configurado' : '🔴 Não Configurado'}
+                            </div>
+                        </div>
+
+                        <form class="cnj-form" id="cnj-form" autocomplete="on" method="post" action="#" novalidate>
+                            <input type="hidden" name="form_type" value="cnj_configuration">
+                            <input type="hidden" name="csrf_token" value="cnj_form_token">
+                            
+                            <div class="cnj-field">
+                                <label for="cnj-username">Usuário</label>
+                                <input type="text" 
+                                       id="cnj-username" 
+                                       name="username"
+                                       autocomplete="username"
+                                       placeholder="Seu usuário (se necessário)"
+                                       value="">
+                            </div>
+                        
+                            <div class="cnj-field">
+                                <label for="cnj-api-key">Senha/Token API</label>
+                                <input type="password" 
+                                       id="cnj-api-key" 
+                                       name="password"
+                                       autocomplete="current-password"
+                                       placeholder="Digite sua chave da API CNJ" 
+                                       value="${CNJ_API_KEY}"
+                                       spellcheck="false"
+                                       data-lpignore="true"
+                                       required>
+                            </div>
+                        
+                            <div class="cnj-field">
+                                <label for="cnj-tribunal">Tribunal</label>
+                                <select id="cnj-tribunal" name="tribunal" autocomplete="organization">
+                                    <option value="TJSC" selected>TJSC - Tribunal de Justiça de SC</option>
+                                    <option value="TJSP">TJSP - Tribunal de Justiça de SP</option>
+                                    <option value="TRF1">TRF 1ª Região</option>
+                                    <option value="TRF2">TRF 2ª Região</option>
+                                    <option value="TRF3">TRF 3ª Região</option>
+                                    <option value="TRF4">TRF 4ª Região</option>
+                                    <option value="TRF5">TRF 5ª Região</option>
+                                    <option value="TRF6">TRF 6ª Região</option>
+                                    <option value="TST">Tribunal Superior do Trabalho</option>
+                                    <option value="STJ">Superior Tribunal de Justiça</option>
+                                    <option value="STF">Supremo Tribunal Federal</option>
+                                </select>
+                            </div>
+                        
+                            <div class="cnj-field">
+                                <label for="cnj-data-inicio">Data Início</label>
+                                <input type="date" 
+                                       id="cnj-data-inicio" 
+                                       name="data_inicio"
+                                       autocomplete="off"
+                                       value="${new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}">
+                            </div>
+                        
+                            <div class="cnj-field">
+                                <label for="cnj-data-fim">Data Fim</label>
+                                <input type="date" 
+                                       id="cnj-data-fim" 
+                                       name="data_fim"
+                                       autocomplete="off"
+                                       value="${new Date().toISOString().split('T')[0]}">
+                            </div>
+                        
+                            <button type="submit" style="position: absolute; left: -9999px; width: 1px; height: auto; opacity: 0;" tabindex="-1" aria-hidden="true">Entrar</button>
+                        </form>
+
+                        <div class="cnj-actions">
+                            <button type="button" class="btn-cnj" id="btn-salvar-cnj">
+                                💾 Salvar Configuração
+                            </button>
+                            <button type="button" class="btn-cnj" id="btn-consultar-cnj">
+                                📊 Consultar Dados
+                            </button>
+                            <button type="button" class="btn-cnj secondary" id="btn-integrar-cnj">
+                                🔄 Integrar com Sistema
+                            </button>
+                        </div>
+
+                        <div id="cnj-mensagem"></div>
+                    </div>
+
+                    <div class="cnj-resultados" id="cnj-resultados">
+                        <h3>Resultados da Consulta</h3>
+                        <div class="cnj-stats" id="cnj-stats"></div>
+                        <div id="cnj-dados-container"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        mainContent.appendChild(cnjPageContent);
+        cnjPageContent.style.display = 'block';
+        
+        adicionarEventListenersCNJ();
+        setTimeout(carregarChaveCNJ, 100);
+    }
+
+    setActiveNavItem(6);
+    carregarEstatisticasCNJ();
+}
+
 function showIAPage() {
     hideAllPages();
     document.getElementById('ia-page').style.display = 'block';
-    setActiveNavItem(6);
+    setActiveNavItem(7);
     
     const modeloSelect = document.getElementById('ia-modelo-direto');
     if (modeloSelect) {
@@ -140,12 +310,17 @@ function showIAPage() {
 function showConfiguracoesPage() {
     hideAllPages();
     document.getElementById('configuracoes-page').style.display = 'block';
-    setActiveNavItem(7);
+    setActiveNavItem(8);
     carregarConfiguracoes();
 }
 
 function hideAllPages() {
     document.querySelectorAll('.page-content').forEach(page => page.style.display = 'none');
+    
+    const dynamicCnjPage = document.getElementById('cnj-page-dynamic');
+    if (dynamicCnjPage) {
+        dynamicCnjPage.style.display = 'none';
+    }
 }
 
 function setActiveNavItem(index) {
@@ -155,6 +330,753 @@ function setActiveNavItem(index) {
         navItems[index].classList.add('active');
     }
 }
+
+async function consultarDadosCNJ() {
+    const dataInicio = document.getElementById('cnj-data-inicio').value;
+    const dataFim = document.getElementById('cnj-data-fim').value;
+    const tribunal = document.getElementById('cnj-tribunal')?.value || 'TJSC';
+
+    if (!CNJ_API_KEY || !dataInicio || !dataFim) {
+        mostrarMensagemCNJ('Preencha todos os campos obrigatórios.', 'error');
+        return;
+    }
+
+    const inicio = new Date(dataInicio);
+    const fim = new Date(dataFim);
+    const diffHoras = Math.ceil((fim - inicio) / (1000 * 60 * 60));
+    
+    if (diffHoras > 72) {
+        mostrarMensagemCNJ(`⚠️ Período muito extenso (${diffHoras} horas). Recomendado: máximo 72 horas.`, 'error');
+        return;
+    }
+
+    mostrarLoadingCNJ('Consultando dados do CNJ...');
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    
+    try {
+        const query = {
+            size: 50,
+            timeout: "30s",
+            query: {
+                bool: {
+                    must: [
+                        {
+                            range: {
+                                dataAjuizamento: {
+                                    gte: `${dataInicio}T00:00:00.000Z`,
+                                    lte: `${dataFim}T23:59:59.000Z`,
+                                    format: "date_time"
+                                }
+                            }
+                        }
+                    ],
+                    filter: [
+                        {
+                            term: {
+                                tribunal: tribunal
+                            }
+                        }
+                    ]
+                }
+            },
+            sort: [
+                {
+                    "dataAjuizamento": {
+                        order: "desc"
+                    }
+                },
+                {
+                    "@timestamp": {
+                        order: "desc"
+                    }
+                }
+            ],
+            _source: [
+                "id",
+                "tribunal",
+                "numeroProcesso", 
+                "dataAjuizamento",
+                "grau",
+                "nivelSigilo",
+                "classe.codigo",
+                "classe.nome",
+                "assuntos.codigo",
+                "assuntos.nome",
+                "orgaoJulgador.codigo",
+                "orgaoJulgador.nome",
+                "orgaoJulgador.codigoMunicipioIBGE",
+                "movimentos.codigo",
+                "movimentos.nome", 
+                "movimentos.dataHora",
+                "sistema.nome",
+                "formato.nome",
+                "dataHoraUltimaAtualizacao"
+            ]
+        };
+
+        console.log('Query CNJ DataJud:', JSON.stringify(query, null, 2));
+
+        const response = await fetch(`https://api-publica.datajud.cnj.jus.br/api_publica_${tribunal.toLowerCase()}/_search`, {
+            method: 'POST',
+            headers: {
+                'Authorization': CNJ_API_KEY,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(query),
+            signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (response.status === 400) {
+            const errorDetails = await response.text();
+            mostrarMensagemCNJ(`❌ Query inválida: ${errorDetails}`, 'error');
+            return;
+        }
+
+        if (response.status === 401) {
+            mostrarMensagemCNJ(`❌ Chave API rejeitada. Verifique o formato: "APIKey sua_chave_aqui"`, 'error');
+            return;
+        }
+
+        if (response.status === 408 || response.status === 504) {
+            mostrarMensagemCNJ(`⏱️ Timeout na API CNJ. Tente com período menor (24-48 horas).`, 'error');
+            return;
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`API retornou ${response.status}: ${errorText}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.timed_out) {
+            mostrarMensagemCNJ(`⏱️ Consulta expirou na API CNJ. Use período de 24-48 horas no máximo.`, 'error');
+            return;
+        }
+        
+        processarDadosCNJ(data);
+        exibirResultadosCNJ(data);
+        
+        const total = data.hits?.hits?.length || 0;
+        const disponivel = data.hits?.total?.value || 0;
+        
+        mostrarMensagemCNJ(`✅ Consulta realizada! ${total} registros encontrados de ${disponivel} disponíveis.`, 'success');
+        
+        ocultarLoadingCNJ();
+        
+    } catch (error) {
+        clearTimeout(timeoutId);
+        ocultarLoadingCNJ();
+        
+        if (error.name === 'AbortError') {
+            mostrarMensagemCNJ(`⏱️ Timeout: Consulta cancelada após 15 segundos. Use período menor.`, 'error');
+        } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+            mostrarMensagemCNJ(`❌ Erro de rede. Verifique CORS ou conexão com a internet.`, 'error');
+        } else {
+            mostrarMensagemCNJ(`❌ Erro na consulta: ${error.message}`, 'error');
+        }
+    }
+}
+
+function carregarChaveCNJ() {
+    const chaveSalva = localStorage.getItem('cnj_api_key');
+    if (chaveSalva) {
+        CNJ_API_KEY = chaveSalva;
+        console.log('Chave CNJ carregada do localStorage:', CNJ_API_KEY.substring(0, 20) + '...');
+        
+        const apiKeyElement = document.getElementById('cnj-api-key');
+        if (apiKeyElement) {
+            apiKeyElement.value = chaveSalva;
+        }
+        
+        const statusElement = document.querySelector('.cnj-status');
+        if (statusElement) {
+            statusElement.className = 'cnj-status conectado';
+            statusElement.textContent = '🟢 Configurado';
+        }
+        
+        const form = document.getElementById('cnj-form');
+        if (form) {
+            form.setAttribute('data-cnj-configured', 'true');
+        }
+    } else {
+        CNJ_API_KEY = 'APIKey cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw==';
+        console.log('Usando chave CNJ padrão');
+        
+        const apiKeyElement = document.getElementById('cnj-api-key');
+        if (apiKeyElement) {
+            apiKeyElement.value = CNJ_API_KEY;
+        }
+        
+        const statusElement = document.querySelector('.cnj-status');
+        if (statusElement) {
+            statusElement.className = 'cnj-status conectado';
+            statusElement.textContent = '🟢 Configurado';
+        }
+    }
+}
+
+function salvarConfigCNJ() {
+    const form = document.getElementById('cnj-form');
+    const apiKeyElement = document.getElementById('cnj-api-key');
+    
+    if (!form || !apiKeyElement) {
+        console.error('Elementos do formulário não encontrados');
+        return;
+    }
+
+    const apiKey = apiKeyElement.value.trim();
+    
+    if (!apiKey) {
+        mostrarMensagemCNJ('Por favor, insira uma chave de API válida.', 'error');
+        return;
+    }
+
+    if (!apiKey.startsWith('APIKey ')) {
+        mostrarMensagemCNJ('Formato inválido. A chave deve começar com "APIKey " (com espaço)', 'error');
+        return;
+    }
+
+    CNJ_API_KEY = apiKey;
+    
+    try {
+        localStorage.setItem('cnj_api_key', apiKey);
+    } catch (error) {
+        console.error('Erro ao salvar chave API:', error);
+        mostrarMensagemCNJ('Erro ao salvar configuração. Verifique o armazenamento local.', 'error');
+        return;
+    }
+    
+    const statusElement = document.querySelector('.cnj-status');
+    if (statusElement) {
+        statusElement.className = 'cnj-status conectado';
+        statusElement.textContent = '🟢 Configurado';
+    }
+    
+    apiKeyElement.setAttribute('data-saved', 'true');
+    form.setAttribute('data-cnj-configured', 'true');
+    
+    mostrarMensagemCNJ('Configuração salva com sucesso!', 'success');
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        return false;
+    });
+}
+
+async function consultarComPaginacao(searchAfter = null) {
+    const query = {
+        size: 100,
+        query: {
+            bool: {
+                must: [
+                    {
+                        range: {
+                            dataAjuizamento: {
+                                gte: `${dataInicio}T00:00:00.000Z`,
+                                lte: `${dataFim}T23:59:59.000Z`
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        sort: [
+            {
+                "@timestamp": {
+                    order: "asc"
+                }
+            }
+        ]
+    };
+    
+    if (searchAfter) {
+        query.search_after = searchAfter;
+    }
+    
+    return query;
+}
+
+function processarDadosCNJ(dados) {
+    console.log('Dados recebidos da API CNJ:', dados);
+    
+    if (!dados || !dados.hits) {
+        mostrarMensagemCNJ('❌ Estrutura de resposta inválida da API CNJ', 'error');
+        return;
+    }
+    
+    const hits = dados.hits.hits || [];
+    
+    if (hits.length === 0) {
+        mostrarMensagemCNJ(`📊 Nenhum registro encontrado no período consultado.`, 'success');
+        dadosCNJ = { 
+            movimentacoes: [], 
+            ultimaConsulta: new Date(), 
+            totalRegistros: 0,
+            totalDisponivel: dados.hits?.total?.value || 0
+        };
+        localStorage.setItem('cnj_dados', JSON.stringify(dadosCNJ));
+        return;
+    }
+
+    dadosCNJ.movimentacoes = [];
+    
+    hits.forEach(hit => {
+        const source = hit._source || {};
+        
+        const movimentosProcessuais = source.movimentos || [];
+        
+        movimentosProcessuais.forEach(movimento => {
+            const minutas = calcularMinutasPorMovimento(movimento.codigo, movimento.nome);
+            
+            dadosCNJ.movimentacoes.push({
+                id: source.id || hit._id,
+                numeroProcesso: source.numeroProcesso || 'N/A',
+                tribunal: source.tribunal || 'TJSC',
+                dataAjuizamento: source.dataAjuizamento || new Date().toISOString(),
+                grau: source.grau || 'G1',
+                nivelSigilo: source.nivelSigilo || 0,
+                classe: {
+                    codigo: source.classe?.codigo || 0,
+                    nome: source.classe?.nome || 'N/A'
+                },
+                assuntos: source.assuntos?.map(a => ({
+                    codigo: a.codigo,
+                    nome: a.nome
+                })) || [],
+                orgaoJulgador: {
+                    codigo: source.orgaoJulgador?.codigo || 0,
+                    nome: source.orgaoJulgador?.nome || 'TJSC',
+                    municipioIBGE: source.orgaoJulgador?.codigoMunicipioIBGE
+                },
+                movimento: {
+                    codigo: movimento.codigo,
+                    nome: movimento.nome,
+                    dataHora: movimento.dataHora,
+                    orgaoJulgador: movimento.orgaoJulgador
+                },
+                sistema: source.sistema?.nome || 'PJe',
+                formato: source.formato?.nome || 'Eletrônico',
+                minutas: minutas,
+                dataUltimaAtualizacao: source.dataHoraUltimaAtualizacao,
+                timestamp: source['@timestamp']
+            });
+        });
+        
+        if (movimentosProcessuais.length === 0) {
+            dadosCNJ.movimentacoes.push({
+                id: source.id || hit._id,
+                numeroProcesso: source.numeroProcesso || 'N/A',
+                tribunal: source.tribunal || 'TJSC',
+                dataAjuizamento: source.dataAjuizamento || new Date().toISOString(),
+                grau: source.grau || 'G1',
+                nivelSigilo: source.nivelSigilo || 0,
+                classe: {
+                    codigo: source.classe?.codigo || 0,
+                    nome: source.classe?.nome || 'N/A'
+                },
+                assuntos: source.assuntos?.map(a => ({
+                    codigo: a.codigo,
+                    nome: a.nome
+                })) || [],
+                orgaoJulgador: {
+                    codigo: source.orgaoJulgador?.codigo || 0,
+                    nome: source.orgaoJulgador?.nome || 'TJSC',
+                    municipioIBGE: source.orgaoJulgador?.codigoMunicipioIBGE
+                },
+                movimento: {
+                    codigo: 0,
+                    nome: 'Processo sem movimentações',
+                    dataHora: source.dataAjuizamento,
+                    orgaoJulgador: null
+                },
+                sistema: source.sistema?.nome || 'PJe',
+                formato: source.formato?.nome || 'Eletrônico',
+                minutas: 30,
+                dataUltimaAtualizacao: source.dataHoraUltimaAtualizacao,
+                timestamp: source['@timestamp']
+            });
+        }
+    });
+
+    dadosCNJ.ultimaConsulta = new Date();
+    dadosCNJ.totalRegistros = dadosCNJ.movimentacoes.length;
+    dadosCNJ.totalDisponivel = dados.hits?.total?.value || 0;
+    
+    console.log(`Movimentações processadas: ${dadosCNJ.movimentacoes.length}`);
+    
+    localStorage.setItem('cnj_dados', JSON.stringify(dadosCNJ));
+}
+
+function extrairNumeroProcesso(numeroSequencial) {
+    if (!numeroSequencial || numeroSequencial === 'N/A') return 'N/A';
+    const match = numeroSequencial.match(/(\d{7}-\d{2}\.\d{4}\.\d{1}\.\d{2}\.\d{4})/);
+    return match ? match[1] : numeroSequencial;
+}
+
+function extrairOrgaoJulgador(orgaoJulgador) {
+    if (!orgaoJulgador) return 'TJSC';
+    if (typeof orgaoJulgador === 'object') {
+        return orgaoJulgador.nomeOrgao || orgaoJulgador.nome || 'TJSC';
+    }
+    return orgaoJulgador.toString() || 'TJSC';
+}
+
+function calcularMinutasPorMovimento(codigoMovimento, nomeMovimento) {
+    const pesosPorCodigo = {
+        '26': 30,      // Distribuição
+        '51': 75,      // Audiência de instrução e julgamento
+        '60': 135,     // Julgamento
+        '85': 30,      // Remessa
+        '123': 90,     // Decisão
+        '132': 45,     // Recebimento
+        '193': 45,     // Despacho
+        '238': 150,    // Acórdão
+        '245': 45,     // Provisório
+        '246': 120,    // Sentença
+        '322': 90,     // Recurso
+        '832': 75,     // Conclusão
+        '861': 120,    // Decisão monocrática
+        '875': 90,     // Voto
+        '11006': 60,   // Voto vencido
+        '11008': 75,   // Voto divergente
+        '11009': 60,   // Decisão colegiada
+        '14732': 45    // Conversão de autos
+    };
+    
+    if (pesosPorCodigo[codigoMovimento?.toString()]) {
+        return pesosPorCodigo[codigoMovimento.toString()];
+    }
+    
+    if (nomeMovimento) {
+        const nomeUpper = nomeMovimento.toUpperCase();
+        if (nomeUpper.includes('ACÓRDÃO') || nomeUpper.includes('ACORDAO')) return 150;
+        if (nomeUpper.includes('SENTENÇA') || nomeUpper.includes('SENTENCA')) return 120;
+        if (nomeUpper.includes('DECISÃO') || nomeUpper.includes('DECISAO')) return 75;
+        if (nomeUpper.includes('DESPACHO')) return 45;
+        if (nomeUpper.includes('VOTO')) return 90;
+        if (nomeUpper.includes('RECURSO')) return 90;
+        if (nomeUpper.includes('AUDIÊNCIA') || nomeUpper.includes('AUDIENCIA')) return 75;
+        if (nomeUpper.includes('JULGAMENTO')) return 135;
+        if (nomeUpper.includes('DISTRIBUIÇÃO') || nomeUpper.includes('DISTRIBUICAO')) return 30;
+    }
+    
+    return 45;
+}
+
+function determinarTipoMovimento(codigoMovimento) {
+    const acordaos = ['11009', '11006', '238'];
+    return acordaos.includes(codigoMovimento) ? 'acordao' : 'despacho';
+}
+
+function calcularQualidadeRegistro(doc) {
+    let pontuacao = 0;
+    const campos = ['numeroSequencial', 'dataHora', 'codigoMovimento', 'nomeMovimento'];
+    campos.forEach(campo => {
+        if (doc[campo] && doc[campo] !== 'N/A' && doc[campo] !== '') pontuacao += 25;
+    });
+    if (doc.dadosBasicos?.assunto) pontuacao += 10;
+    if (doc.dadosBasicos?.classeProcessual) pontuacao += 10;
+    if (doc.dadosBasicos?.orgaoJulgador) pontuacao += 10;
+    return Math.min(100, pontuacao);
+}
+
+function analisarQualidadeDadosCNJ(movimentacoes) {
+    const analise = {
+        totalRegistros: movimentacoes.length,
+        camposObrigatorios: { numeroSequencial: 0, tribunal: 0, dataHora: 0, codigoMovimento: 0, nomeMovimento: 0 },
+        qualidadeGeral: 0
+    };
+
+    movimentacoes.forEach(mov => {
+        if (mov.numeroSequencial && mov.numeroSequencial !== 'N/A') analise.camposObrigatorios.numeroSequencial++;
+        if (mov.tribunal && mov.tribunal !== 'N/A') analise.camposObrigatorios.tribunal++;
+        if (mov.dataHora) analise.camposObrigatorios.dataHora++;
+        if (mov.codigoMovimento && mov.codigoMovimento !== 'N/A') analise.camposObrigatorios.codigoMovimento++;
+        if (mov.nomeMovimento && mov.nomeMovimento !== 'Movimentação não especificada') analise.camposObrigatorios.nomeMovimento++;
+    });
+
+    const totalCampos = Object.keys(analise.camposObrigatorios).length;
+    let pontuacaoQualidade = 0;
+    Object.values(analise.camposObrigatorios).forEach(count => {
+        pontuacaoQualidade += (count / analise.totalRegistros) * 100;
+    });
+    analise.qualidadeGeral = Math.round(pontuacaoQualidade / totalCampos);
+    
+    return analise;
+}
+
+function exibirResultadosCNJ(dados) {
+    const container = document.getElementById('cnj-resultados');
+    const statsContainer = document.getElementById('cnj-stats');
+    const dadosContainer = document.getElementById('cnj-dados-container');
+
+    if (!container || !statsContainer || !dadosContainer) {
+        console.error('Containers CNJ não encontrados');
+        return;
+    }
+
+    const totalMinutas = dadosCNJ.movimentacoes.reduce((sum, mov) => sum + mov.minutas, 0);
+    const processosUnicos = new Set(dadosCNJ.movimentacoes.map(mov => mov.numeroProcesso)).size;
+    const orgaosUnicos = new Set(dadosCNJ.movimentacoes.map(mov => mov.orgaoJulgador.nome)).size;
+    const classesUnicas = new Set(dadosCNJ.movimentacoes.map(mov => mov.classe.nome)).size;
+    const grau1 = dadosCNJ.movimentacoes.filter(mov => mov.grau === 'G1').length;
+    const grau2 = dadosCNJ.movimentacoes.filter(mov => mov.grau === 'G2').length;
+    const je = dadosCNJ.movimentacoes.filter(mov => mov.grau === 'JE').length;
+
+    statsContainer.innerHTML = `
+        <div class="cnj-stat">
+            <span class="cnj-stat-valor">${dadosCNJ.totalRegistros}</span>
+            <span class="cnj-stat-label">Movimentações</span>
+        </div>
+        <div class="cnj-stat">
+            <span class="cnj-stat-valor">${processosUnicos}</span>
+            <span class="cnj-stat-label">Processos</span>
+        </div>
+        <div class="cnj-stat">
+            <span class="cnj-stat-valor">${totalMinutas.toLocaleString()}</span>
+            <span class="cnj-stat-label">Total Minutas</span>
+        </div>
+        <div class="cnj-stat">
+            <span class="cnj-stat-valor">${grau1}/${grau2}/${je}</span>
+            <span class="cnj-stat-label">G1/G2/JE</span>
+        </div>
+        <div class="cnj-stat">
+            <span class="cnj-stat-valor">${orgaosUnicos}</span>
+            <span class="cnj-stat-label">Órgãos</span>
+        </div>
+        <div class="cnj-stat">
+            <span class="cnj-stat-valor">${classesUnicas}</span>
+            <span class="cnj-stat-label">Classes</span>
+        </div>
+    `;
+
+    dadosContainer.innerHTML = `
+        <table class="cnj-dados-tabela">
+            <thead>
+                <tr>
+                    <th>Processo</th>
+                    <th>Grau</th>
+                    <th>Movimento</th>
+                    <th>Data Movimento</th>
+                    <th>Órgão Julgador</th>
+                    <th>Classe</th>
+                    <th>Minutas</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${dadosCNJ.movimentacoes.slice(0, 50).map(mov => `
+                    <tr>
+                        <td title="${mov.numeroProcesso}">${mov.numeroProcesso.substring(0, 15)}...</td>
+                        <td><span class="grau-badge grau-${mov.grau}">${mov.grau}</span></td>
+                        <td title="${mov.movimento.nome}">${mov.movimento.nome}</td>
+                        <td>${mov.movimento.dataHora ? new Date(mov.movimento.dataHora).toLocaleString('pt-BR') : '-'}</td>
+                        <td title="${mov.orgaoJulgador.nome}">${mov.orgaoJulgador.nome.substring(0, 20)}...</td>
+                        <td title="${mov.classe.nome}">${mov.classe.nome}</td>
+                        <td><strong>${mov.minutas}</strong></td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+        ${dadosCNJ.movimentacoes.length > 50 ? `<p style="text-align: center; color: var(--text-secondary); margin-top: 15px;">Mostrando 50 de ${dadosCNJ.movimentacoes.length} registros</p>` : ''}
+    `;
+
+    container.classList.add('show');
+}
+
+function adicionarEventListenersCNJ() {
+    const btnSalvar = document.getElementById('btn-salvar-cnj');
+    const btnConsultar = document.getElementById('btn-consultar-cnj');
+    const btnIntegrar = document.getElementById('btn-integrar-cnj');
+
+    if (btnSalvar && !btnSalvar.hasAttribute('data-listener')) {
+        btnSalvar.addEventListener('click', salvarConfigCNJ);
+        btnSalvar.setAttribute('data-listener', 'true');
+    }
+
+    if (btnConsultar && !btnConsultar.hasAttribute('data-listener')) {
+        btnConsultar.addEventListener('click', consultarDadosCNJ);
+        btnConsultar.setAttribute('data-listener', 'true');
+    }
+
+    if (btnIntegrar && !btnIntegrar.hasAttribute('data-listener')) {
+        btnIntegrar.addEventListener('click', integrarDadosExistentes);
+        btnIntegrar.setAttribute('data-listener', 'true');
+    }
+
+    adicionarTooltipsCORS();
+}
+
+function adicionarTooltipsCORS() {
+    const btnConsultar = document.getElementById('btn-consultar-cnj');
+    
+    if (btnConsultar) {
+        btnConsultar.title = 'Consulta dados da API CNJ. Para funcionar localmente, pode ser necessário usar proxy CORS.';
+    }
+}
+
+function mostrarSolucoesCORS() {
+    const mensagem = `
+**SOLUÇÕES PARA PROBLEMAS DE CORS:**
+
+**1. Proxy CORS Online (Mais Simples):**
+   - Use: https://cors-anywhere.herokuapp.com/
+   - Ou: https://corsproxy.io/
+   - Adicione antes da URL da API
+
+**2. Extensão do Navegador:**
+   - Chrome: "CORS Unblock" ou "Allow CORS"
+   - Firefox: "CORS Everywhere"
+
+**3. Servidor Local com HTTPS:**
+   - Use Live Server com SSL
+   - Ou configure Apache/Nginx
+
+**4. Para Produção:**
+   - Configure um backend proxy
+   - Use servidor com certificado SSL
+
+**NOTA:** CORS é uma proteção de segurança do navegador.
+`;
+    
+    mostrarMensagemCNJ(mensagem, 'error');
+}
+
+function integrarDadosExistentes() {
+    if (!dadosCNJ.movimentacoes.length) {
+        mostrarMensagemCNJ('Nenhum dado do CNJ encontrado. Execute uma consulta primeiro.', 'error');
+        return;
+    }
+
+    mostrarLoadingCNJ('Integrando dados com o sistema...');
+
+    const dadosIntegrados = {};
+    
+    dadosCNJ.movimentacoes.forEach(mov => {
+        const usuario = mov.orgaoJulgador;
+        const mes = new Date(mov.dataHora).toISOString().slice(0, 7);
+        const tipo = determinarTipoMovimento(mov.codigoMovimento);
+        
+        if (!dadosIntegrados[usuario]) {
+            dadosIntegrados[usuario] = {};
+        }
+        
+        if (!dadosIntegrados[usuario][mes]) {
+            dadosIntegrados[usuario][mes] = { acordao: 0, despacho: 0 };
+        }
+        
+        dadosIntegrados[usuario][mes][tipo] += mov.minutas;
+    });
+
+    Object.keys(dadosIntegrados).forEach(usuario => {
+        if (!dados[usuario]) {
+            dados[usuario] = {};
+        }
+        
+        Object.keys(dadosIntegrados[usuario]).forEach(mes => {
+            if (!dados[usuario][mes]) {
+                dados[usuario][mes] = { acordao: 0, despacho: 0 };
+            }
+            
+            dados[usuario][mes].acordao += dadosIntegrados[usuario][mes].acordao;
+            dados[usuario][mes].despacho += dadosIntegrados[usuario][mes].despacho;
+        });
+    });
+
+    setTimeout(() => {
+        ocultarLoadingCNJ();
+        mostrarMensagemCNJ('✅ Dados integrados com sucesso! Os dados do CNJ foram adicionados ao sistema.', 'success');
+        salvarDados();
+    }, 2000);
+}
+
+function mostrarMensagemCNJ(mensagem, tipo) {
+    const container = document.getElementById('cnj-mensagem');
+    if (!container) {
+        console.error('Container cnj-mensagem não encontrado');
+        return;
+    }
+    
+    container.className = tipo === 'error' ? 'cnj-error' : 'cnj-success';
+    container.textContent = mensagem;
+    container.style.display = 'block';
+    
+    setTimeout(() => {
+        container.style.display = 'none';
+    }, 5000);
+}
+
+function mostrarLoadingCNJ(texto) {
+    const container = document.getElementById('cnj-mensagem');
+    if (!container) {
+        console.error('Container cnj-mensagem não encontrado para loading');
+        return;
+    }
+    
+    container.className = '';
+    container.innerHTML = `
+        <div class="cnj-loading">
+            <div class="cnj-loading-spinner"></div>
+            <span class="cnj-loading-text">${texto}</span>
+        </div>
+    `;
+    container.style.display = 'block';
+}
+
+function ocultarLoadingCNJ() {
+    const container = document.getElementById('cnj-mensagem');
+    if (container) {
+        container.style.display = 'none';
+    }
+}
+
+function carregarEstatisticasCNJ() {
+    const storedData = localStorage.getItem('cnj_dados');
+    if (storedData) {
+        try {
+            dadosCNJ = JSON.parse(storedData);
+        } catch (error) {
+            console.error('Erro ao carregar dados CNJ:', error);
+            dadosCNJ = { movimentacoes: [], ultimaConsulta: null, totalRegistros: 0 };
+        }
+    }
+}
+
+function salvarDados() {
+    if (excelData && excelData.length > 0) {
+        localStorage.setItem('aprod-dados-excel', JSON.stringify(excelData));
+    }
+    if (dadosCNJ && dadosCNJ.movimentacoes.length > 0) {
+        localStorage.setItem('cnj_dados', JSON.stringify(dadosCNJ));
+    }
+}
+
+function carregarDadosSalvos() {
+    const dadosExcelSalvos = localStorage.getItem('aprod-dados-excel');
+    if (dadosExcelSalvos) {
+        try {
+            excelData = JSON.parse(dadosExcelSalvos);
+            processExcelData();
+        } catch (error) {
+            console.error('Erro ao carregar dados salvos:', error);
+        }
+    }
+    
+    const dadosCNJSalvos = localStorage.getItem('cnj_dados');
+    if (dadosCNJSalvos) {
+        try {
+            dadosCNJ = JSON.parse(dadosCNJSalvos);
+        } catch (error) {
+            console.error('Erro ao carregar dados CNJ salvos:', error);
+        }
+    }
+}
+
+const dados = {};
 
 function gerarDadosComparacao() {
     if (!excelData || excelData.length === 0) return;
