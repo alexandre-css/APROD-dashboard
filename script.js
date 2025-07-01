@@ -1,17 +1,17 @@
-let sortColumnAssuntos = 'minutas';
+let sortColumnAssuntos = "minutas";
 let sortAscendingAssuntos = false;
 let chartAssuntos = null;
 let assuntosJSON = null;
 let anosDisponiveis = [];
 let anoSelecionado = new Date().getFullYear();
 let tabelaMes = [];
-let sortColumnMes = 'usuario';
+let sortColumnMes = "usuario";
 let sortAscendingMes = true;
 let tiposPesos = [];
 let pesosAtuais = {};
 let pesosAtivos = true;
 let tabelaSemana = [];
-let sortColumn = 'usuario';
+let sortColumn = "usuario";
 let sortAscending = true;
 let usuariosComparacao = [];
 let dadosComparacao = [];
@@ -24,23 +24,23 @@ let processedData = {
     totalMinutas: 0,
     mediaUsuario: 0,
     usuariosAtivos: 0,
-    diaProdutivo: '--',
+    diaProdutivo: "--",
     topUsers: [],
     mesesAtivos: [],
-    mesesDisponiveis: []
+    mesesDisponiveis: [],
 };
 let configuracoes = {
-    nomeGabinete: '',
+    nomeGabinete: "",
     incluirLogo: true,
     incluirData: true,
-    formatoData: 'br',
-    temaInicial: 'dark',
+    formatoData: "br",
+    temaInicial: "dark",
     itensGrafico: 20,
     pesoPadrao: 1.0,
     autoAplicarPesos: false,
     iaHabilitada: false,
-    iaToken: '6f76bea40d73b6ff291fd29780ca51cc6e12d00c',
-    iaModelo: 'finetuned-gpt-neox-20b'
+    iaToken: "6f76bea40d73b6ff291fd29780ca51cc6e12d00c",
+    iaModelo: "finetuned-gpt-neox-20b",
 };
 let assuntosData = [];
 let assuntosProcessados = {
@@ -48,20 +48,20 @@ let assuntosProcessados = {
     processosPorAssunto: new Map(),
     codigosAssuntos: new Map(),
     totalMinutasAssuntos: 0,
-    totalProcessosAssuntos: 0
+    totalProcessosAssuntos: 0,
 };
-let CNJ_API_KEY = '';
+let CNJ_API_KEY = "";
 let dadosCNJ = {
     movimentacoes: [],
     assuntos: [],
     ultimaConsulta: null,
-    totalRegistros: 0
+    totalRegistros: 0,
 };
-const CNJ_API_BASE = 'https://api-publica.datajud.cnj.jus.br';
+const CNJ_API_BASE = "https://api-publica.datajud.cnj.jus.br";
 const CNJ_ENDPOINTS = {
-    TJSC: '/api_publica_tjsc/_search',
-    TRF4: '/api_publica_trf4/_search',
-    STATUS: '/status'
+    TJSC: "/api_publica_tjsc/_search",
+    TRF4: "/api_publica_trf4/_search",
+    STATUS: "/status",
 };
 
 function initializeApp() {
@@ -77,36 +77,36 @@ function initializeApp() {
 
 function showDashboard() {
     hideAllPages();
-    document.getElementById('dashboard-page').style.display = 'block';
+    document.getElementById("dashboard-page").style.display = "block";
     setActiveNavItem(0);
 }
 
 function showComparacaoPage() {
     hideAllPages();
-    document.getElementById('comparar-page').style.display = 'block';
+    document.getElementById("comparar-page").style.display = "block";
     setActiveNavItem(1);
     gerarDadosComparacao();
 }
 
 function showMesPage() {
     hideAllPages();
-    document.getElementById('mes-page').style.display = 'block';
+    document.getElementById("mes-page").style.display = "block";
     setActiveNavItem(2);
     gerarTabelaMes();
 }
 
 function showSemanaPage() {
     hideAllPages();
-    document.getElementById('semana-page').style.display = 'block';
+    document.getElementById("semana-page").style.display = "block";
     setActiveNavItem(3);
     gerarTabelaSemana();
 }
 
 async function showAssuntosPage() {
     hideAllPages();
-    document.getElementById('assuntos-page').style.display = 'block';
+    document.getElementById("assuntos-page").style.display = "block";
     setActiveNavItem(4);
-    
+
     try {
         await carregarAssuntosJSON();
         await gerarDadosAssuntos();
@@ -114,58 +114,57 @@ async function showAssuntosPage() {
         renderizarResumoAssuntos();
         criarGraficoVariacaoAssuntos();
     } catch (error) {
-        console.error('Erro ao carregar página de assuntos:', error);
-        
+        console.error("Erro ao carregar página de assuntos:", error);
+
         try {
             await gerarDadosAssuntos();
             gerarTabelaAssuntos();
             renderizarResumoAssuntos();
             criarGraficoVariacaoAssuntos();
         } catch (fallbackError) {
-            console.error('Erro no fallback:', fallbackError);
-            document.getElementById('tabela-assuntos').innerHTML = 
+            console.error("Erro no fallback:", fallbackError);
+            document.getElementById("tabela-assuntos").innerHTML =
                 '<tr><td colspan="5" style="text-align: center; padding: 40px; color: var(--text-secondary);">Erro ao carregar dados de assuntos. Verifique se há dados importados.</td></tr>';
         }
     }
 }
 
-
 function showPesosPage() {
     hideAllPages();
-    document.getElementById('pesos-page').style.display = 'block';
+    document.getElementById("pesos-page").style.display = "block";
     setActiveNavItem(5);
     carregarTiposPesos();
 }
 
 function showCNJPage() {
     hideAllPages();
-    
-    const content = document.getElementById('content');
-    const existingPage = document.getElementById('cnj-page-dynamic');
-    
+
+    const content = document.getElementById("content");
+    const existingPage = document.getElementById("cnj-page-dynamic");
+
     if (existingPage) {
-        existingPage.style.display = 'block';
+        existingPage.style.display = "block";
         setActiveNavItem(6);
         carregarChaveCNJ();
         return;
     }
-    
+
     if (!content) {
-        const mainContent = document.querySelector('.main-content');
+        const mainContent = document.querySelector(".main-content");
         if (!mainContent) {
-            console.error('Main content não encontrado');
+            console.error("Main content não encontrado");
             return;
         }
-        
-        const existingContent = mainContent.querySelector('.page-content');
+
+        const existingContent = mainContent.querySelector(".page-content");
         if (existingContent) {
-            existingContent.style.display = 'none';
+            existingContent.style.display = "none";
         }
-        
-        const cnjPageContent = document.createElement('div');
-        cnjPageContent.className = 'page-content';
-        cnjPageContent.id = 'cnj-page-dynamic';
-        
+
+        const cnjPageContent = document.createElement("div");
+        cnjPageContent.className = "page-content";
+        cnjPageContent.id = "cnj-page-dynamic";
+
         cnjPageContent.innerHTML = `
             <div class="dashboard">
                 <div class="page-title">
@@ -186,8 +185,14 @@ function showCNJPage() {
                     <div class="cnj-config-card">
                         <div class="cnj-header">
                             <h3>Configuração de Acesso</h3>
-                            <div class="cnj-status ${CNJ_API_KEY ? 'conectado' : 'desconectado'}">
-                                ${CNJ_API_KEY ? '🟢 Configurado' : '🔴 Não Configurado'}
+                            <div class="cnj-status ${
+                                CNJ_API_KEY ? "conectado" : "desconectado"
+                            }">
+                                ${
+                                    CNJ_API_KEY
+                                        ? "🟢 Configurado"
+                                        : "🔴 Não Configurado"
+                                }
                             </div>
                         </div>
 
@@ -241,7 +246,14 @@ function showCNJPage() {
                                        id="cnj-data-inicio" 
                                        name="data_inicio"
                                        autocomplete="off"
-                                       value="${new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}">
+                                       value="${
+                                           new Date(
+                                               Date.now() -
+                                                   7 * 24 * 60 * 60 * 1000
+                                           )
+                                               .toISOString()
+                                               .split("T")[0]
+                                       }">
                             </div>
                         
                             <div class="cnj-field">
@@ -250,7 +262,11 @@ function showCNJPage() {
                                        id="cnj-data-fim" 
                                        name="data_fim"
                                        autocomplete="off"
-                                       value="${new Date().toISOString().split('T')[0]}">
+                                       value="${
+                                           new Date()
+                                               .toISOString()
+                                               .split("T")[0]
+                                       }">
                             </div>
                         
                             <button type="submit" style="position: absolute; left: -9999px; width: 1px; height: auto; opacity: 0;" tabindex="-1" aria-hidden="true">Entrar</button>
@@ -279,10 +295,10 @@ function showCNJPage() {
                 </div>
             </div>
         `;
-        
+
         mainContent.appendChild(cnjPageContent);
-        cnjPageContent.style.display = 'block';
-        
+        cnjPageContent.style.display = "block";
+
         adicionarEventListenersCNJ();
         setTimeout(carregarChaveCNJ, 100);
     }
@@ -293,10 +309,10 @@ function showCNJPage() {
 
 function showIAPage() {
     hideAllPages();
-    document.getElementById('ia-page').style.display = 'block';
+    document.getElementById("ia-page").style.display = "block";
     setActiveNavItem(7);
-    
-    const modeloSelect = document.getElementById('ia-modelo-direto');
+
+    const modeloSelect = document.getElementById("ia-modelo-direto");
     if (modeloSelect) {
         for (let i = 0; i < modeloSelect.options.length; i++) {
             if (modeloSelect.options[i].value === configuracoes.iaModelo) {
@@ -309,52 +325,57 @@ function showIAPage() {
 
 function showConfiguracoesPage() {
     hideAllPages();
-    document.getElementById('configuracoes-page').style.display = 'block';
+    document.getElementById("configuracoes-page").style.display = "block";
     setActiveNavItem(8);
     carregarConfiguracoes();
 }
 
 function hideAllPages() {
-    document.querySelectorAll('.page-content').forEach(page => page.style.display = 'none');
-    
-    const dynamicCnjPage = document.getElementById('cnj-page-dynamic');
+    document
+        .querySelectorAll(".page-content")
+        .forEach((page) => (page.style.display = "none"));
+
+    const dynamicCnjPage = document.getElementById("cnj-page-dynamic");
     if (dynamicCnjPage) {
-        dynamicCnjPage.style.display = 'none';
+        dynamicCnjPage.style.display = "none";
     }
 }
 
 function setActiveNavItem(index) {
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => item.classList.remove('active'));
+    const navItems = document.querySelectorAll(".nav-item");
+    navItems.forEach((item) => item.classList.remove("active"));
     if (navItems[index]) {
-        navItems[index].classList.add('active');
+        navItems[index].classList.add("active");
     }
 }
 
 async function consultarDadosCNJ() {
-    const dataInicio = document.getElementById('cnj-data-inicio').value;
-    const dataFim = document.getElementById('cnj-data-fim').value;
-    const tribunal = document.getElementById('cnj-tribunal')?.value || 'TJSC';
+    const dataInicio = document.getElementById("cnj-data-inicio").value;
+    const dataFim = document.getElementById("cnj-data-fim").value;
+    const tribunal = document.getElementById("cnj-tribunal")?.value || "TJSC";
 
     if (!CNJ_API_KEY || !dataInicio || !dataFim) {
-        mostrarMensagemCNJ('Preencha todos os campos obrigatórios.', 'error');
+        mostrarMensagemCNJ("Preencha todos os campos obrigatórios.", "error");
         return;
     }
 
     const inicio = new Date(dataInicio);
     const fim = new Date(dataFim);
     const diffHoras = Math.ceil((fim - inicio) / (1000 * 60 * 60));
-    
+
     if (diffHoras > 72) {
-        mostrarMensagemCNJ(`⚠️ Período muito extenso (${diffHoras} horas). Recomendado: máximo 72 horas.`, 'error');
+        mostrarMensagemCNJ(
+            `⚠️ Período muito extenso (${diffHoras} horas). Recomendado: máximo 72 horas.`,
+            "error"
+        );
         return;
     }
 
-    mostrarLoadingCNJ('Consultando dados do CNJ...');
-    
+    mostrarLoadingCNJ("Consultando dados do CNJ...");
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
-    
+
     try {
         const query = {
             size: 50,
@@ -367,36 +388,36 @@ async function consultarDadosCNJ() {
                                 dataAjuizamento: {
                                     gte: `${dataInicio}T00:00:00.000Z`,
                                     lte: `${dataFim}T23:59:59.000Z`,
-                                    format: "date_time"
-                                }
-                            }
-                        }
+                                    format: "date_time",
+                                },
+                            },
+                        },
                     ],
                     filter: [
                         {
                             term: {
-                                tribunal: tribunal
-                            }
-                        }
-                    ]
-                }
+                                tribunal: tribunal,
+                            },
+                        },
+                    ],
+                },
             },
             sort: [
                 {
-                    "dataAjuizamento": {
-                        order: "desc"
-                    }
+                    dataAjuizamento: {
+                        order: "desc",
+                    },
                 },
                 {
                     "@timestamp": {
-                        order: "desc"
-                    }
-                }
+                        order: "desc",
+                    },
+                },
             ],
             _source: [
                 "id",
                 "tribunal",
-                "numeroProcesso", 
+                "numeroProcesso",
                 "dataAjuizamento",
                 "grau",
                 "nivelSigilo",
@@ -408,41 +429,50 @@ async function consultarDadosCNJ() {
                 "orgaoJulgador.nome",
                 "orgaoJulgador.codigoMunicipioIBGE",
                 "movimentos.codigo",
-                "movimentos.nome", 
+                "movimentos.nome",
                 "movimentos.dataHora",
                 "sistema.nome",
                 "formato.nome",
-                "dataHoraUltimaAtualizacao"
-            ]
+                "dataHoraUltimaAtualizacao",
+            ],
         };
 
-        console.log('Query CNJ DataJud:', JSON.stringify(query, null, 2));
+        console.log("Query CNJ DataJud:", JSON.stringify(query, null, 2));
 
-        const response = await fetch(`https://api-publica.datajud.cnj.jus.br/api_publica_${tribunal.toLowerCase()}/_search`, {
-            method: 'POST',
-            headers: {
-                'Authorization': CNJ_API_KEY,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(query),
-            signal: controller.signal
-        });
+        const response = await fetch(
+            `https://api-publica.datajud.cnj.jus.br/api_publica_${tribunal.toLowerCase()}/_search`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: CNJ_API_KEY,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(query),
+                signal: controller.signal,
+            }
+        );
 
         clearTimeout(timeoutId);
 
         if (response.status === 400) {
             const errorDetails = await response.text();
-            mostrarMensagemCNJ(`❌ Query inválida: ${errorDetails}`, 'error');
+            mostrarMensagemCNJ(`❌ Query inválida: ${errorDetails}`, "error");
             return;
         }
 
         if (response.status === 401) {
-            mostrarMensagemCNJ(`❌ Chave API rejeitada. Verifique o formato: "APIKey sua_chave_aqui"`, 'error');
+            mostrarMensagemCNJ(
+                `❌ Chave API rejeitada. Verifique o formato: "APIKey sua_chave_aqui"`,
+                "error"
+            );
             return;
         }
 
         if (response.status === 408 || response.status === 504) {
-            mostrarMensagemCNJ(`⏱️ Timeout na API CNJ. Tente com período menor (24-48 horas).`, 'error');
+            mostrarMensagemCNJ(
+                `⏱️ Timeout na API CNJ. Tente com período menor (24-48 horas).`,
+                "error"
+            );
             return;
         }
 
@@ -452,117 +482,147 @@ async function consultarDadosCNJ() {
         }
 
         const data = await response.json();
-        
+
         if (data.timed_out) {
-            mostrarMensagemCNJ(`⏱️ Consulta expirou na API CNJ. Use período de 24-48 horas no máximo.`, 'error');
+            mostrarMensagemCNJ(
+                `⏱️ Consulta expirou na API CNJ. Use período de 24-48 horas no máximo.`,
+                "error"
+            );
             return;
         }
-        
+
         processarDadosCNJ(data);
         exibirResultadosCNJ(data);
-        
+
         const total = data.hits?.hits?.length || 0;
         const disponivel = data.hits?.total?.value || 0;
-        
-        mostrarMensagemCNJ(`✅ Consulta realizada! ${total} registros encontrados de ${disponivel} disponíveis.`, 'success');
-        
+
+        mostrarMensagemCNJ(
+            `✅ Consulta realizada! ${total} registros encontrados de ${disponivel} disponíveis.`,
+            "success"
+        );
+
         ocultarLoadingCNJ();
-        
     } catch (error) {
         clearTimeout(timeoutId);
         ocultarLoadingCNJ();
-        
-        if (error.name === 'AbortError') {
-            mostrarMensagemCNJ(`⏱️ Timeout: Consulta cancelada após 15 segundos. Use período menor.`, 'error');
-        } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
-            mostrarMensagemCNJ(`❌ Erro de rede. Verifique CORS ou conexão com a internet.`, 'error');
+
+        if (error.name === "AbortError") {
+            mostrarMensagemCNJ(
+                `⏱️ Timeout: Consulta cancelada após 15 segundos. Use período menor.`,
+                "error"
+            );
+        } else if (
+            error.message.includes("NetworkError") ||
+            error.message.includes("Failed to fetch")
+        ) {
+            mostrarMensagemCNJ(
+                `❌ Erro de rede. Verifique CORS ou conexão com a internet.`,
+                "error"
+            );
         } else {
-            mostrarMensagemCNJ(`❌ Erro na consulta: ${error.message}`, 'error');
+            mostrarMensagemCNJ(
+                `❌ Erro na consulta: ${error.message}`,
+                "error"
+            );
         }
     }
 }
 
 function carregarChaveCNJ() {
-    const chaveSalva = localStorage.getItem('cnj_api_key');
+    const chaveSalva = localStorage.getItem("cnj_api_key");
     if (chaveSalva) {
         CNJ_API_KEY = chaveSalva;
-        console.log('Chave CNJ carregada do localStorage:', CNJ_API_KEY.substring(0, 20) + '...');
-        
-        const apiKeyElement = document.getElementById('cnj-api-key');
+        console.log(
+            "Chave CNJ carregada do localStorage:",
+            CNJ_API_KEY.substring(0, 20) + "..."
+        );
+
+        const apiKeyElement = document.getElementById("cnj-api-key");
         if (apiKeyElement) {
             apiKeyElement.value = chaveSalva;
         }
-        
-        const statusElement = document.querySelector('.cnj-status');
+
+        const statusElement = document.querySelector(".cnj-status");
         if (statusElement) {
-            statusElement.className = 'cnj-status conectado';
-            statusElement.textContent = '🟢 Configurado';
+            statusElement.className = "cnj-status conectado";
+            statusElement.textContent = "🟢 Configurado";
         }
-        
-        const form = document.getElementById('cnj-form');
+
+        const form = document.getElementById("cnj-form");
         if (form) {
-            form.setAttribute('data-cnj-configured', 'true');
+            form.setAttribute("data-cnj-configured", "true");
         }
     } else {
-        CNJ_API_KEY = 'APIKey cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw==';
-        console.log('Usando chave CNJ padrão');
-        
-        const apiKeyElement = document.getElementById('cnj-api-key');
+        CNJ_API_KEY =
+            "APIKey cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw==";
+        console.log("Usando chave CNJ padrão");
+
+        const apiKeyElement = document.getElementById("cnj-api-key");
         if (apiKeyElement) {
             apiKeyElement.value = CNJ_API_KEY;
         }
-        
-        const statusElement = document.querySelector('.cnj-status');
+
+        const statusElement = document.querySelector(".cnj-status");
         if (statusElement) {
-            statusElement.className = 'cnj-status conectado';
-            statusElement.textContent = '🟢 Configurado';
+            statusElement.className = "cnj-status conectado";
+            statusElement.textContent = "🟢 Configurado";
         }
     }
 }
 
 function salvarConfigCNJ() {
-    const form = document.getElementById('cnj-form');
-    const apiKeyElement = document.getElementById('cnj-api-key');
-    
+    const form = document.getElementById("cnj-form");
+    const apiKeyElement = document.getElementById("cnj-api-key");
+
     if (!form || !apiKeyElement) {
-        console.error('Elementos do formulário não encontrados');
+        console.error("Elementos do formulário não encontrados");
         return;
     }
 
     const apiKey = apiKeyElement.value.trim();
-    
+
     if (!apiKey) {
-        mostrarMensagemCNJ('Por favor, insira uma chave de API válida.', 'error');
+        mostrarMensagemCNJ(
+            "Por favor, insira uma chave de API válida.",
+            "error"
+        );
         return;
     }
 
-    if (!apiKey.startsWith('APIKey ')) {
-        mostrarMensagemCNJ('Formato inválido. A chave deve começar com "APIKey " (com espaço)', 'error');
+    if (!apiKey.startsWith("APIKey ")) {
+        mostrarMensagemCNJ(
+            'Formato inválido. A chave deve começar com "APIKey " (com espaço)',
+            "error"
+        );
         return;
     }
 
     CNJ_API_KEY = apiKey;
-    
+
     try {
-        localStorage.setItem('cnj_api_key', apiKey);
+        localStorage.setItem("cnj_api_key", apiKey);
     } catch (error) {
-        console.error('Erro ao salvar chave API:', error);
-        mostrarMensagemCNJ('Erro ao salvar configuração. Verifique o armazenamento local.', 'error');
+        console.error("Erro ao salvar chave API:", error);
+        mostrarMensagemCNJ(
+            "Erro ao salvar configuração. Verifique o armazenamento local.",
+            "error"
+        );
         return;
     }
-    
-    const statusElement = document.querySelector('.cnj-status');
+
+    const statusElement = document.querySelector(".cnj-status");
     if (statusElement) {
-        statusElement.className = 'cnj-status conectado';
-        statusElement.textContent = '🟢 Configurado';
+        statusElement.className = "cnj-status conectado";
+        statusElement.textContent = "🟢 Configurado";
     }
-    
-    apiKeyElement.setAttribute('data-saved', 'true');
-    form.setAttribute('data-cnj-configured', 'true');
-    
-    mostrarMensagemCNJ('Configuração salva com sucesso!', 'success');
-    
-    form.addEventListener('submit', function(e) {
+
+    apiKeyElement.setAttribute("data-saved", "true");
+    form.setAttribute("data-cnj-configured", "true");
+
+    mostrarMensagemCNJ("Configuração salva com sucesso!", "success");
+
+    form.addEventListener("submit", function (e) {
         e.preventDefault();
         return false;
     });
@@ -578,127 +638,140 @@ async function consultarComPaginacao(searchAfter = null) {
                         range: {
                             dataAjuizamento: {
                                 gte: `${dataInicio}T00:00:00.000Z`,
-                                lte: `${dataFim}T23:59:59.000Z`
-                            }
-                        }
-                    }
-                ]
-            }
+                                lte: `${dataFim}T23:59:59.000Z`,
+                            },
+                        },
+                    },
+                ],
+            },
         },
         sort: [
             {
                 "@timestamp": {
-                    order: "asc"
-                }
-            }
-        ]
+                    order: "asc",
+                },
+            },
+        ],
     };
-    
+
     if (searchAfter) {
         query.search_after = searchAfter;
     }
-    
+
     return query;
 }
 
 function processarDadosCNJ(dados) {
-    console.log('Dados recebidos da API CNJ:', dados);
-    
+    console.log("Dados recebidos da API CNJ:", dados);
+
     if (!dados || !dados.hits) {
-        mostrarMensagemCNJ('❌ Estrutura de resposta inválida da API CNJ', 'error');
+        mostrarMensagemCNJ(
+            "❌ Estrutura de resposta inválida da API CNJ",
+            "error"
+        );
         return;
     }
-    
+
     const hits = dados.hits.hits || [];
-    
+
     if (hits.length === 0) {
-        mostrarMensagemCNJ(`📊 Nenhum registro encontrado no período consultado.`, 'success');
-        dadosCNJ = { 
-            movimentacoes: [], 
-            ultimaConsulta: new Date(), 
+        mostrarMensagemCNJ(
+            `📊 Nenhum registro encontrado no período consultado.`,
+            "success"
+        );
+        dadosCNJ = {
+            movimentacoes: [],
+            ultimaConsulta: new Date(),
             totalRegistros: 0,
-            totalDisponivel: dados.hits?.total?.value || 0
+            totalDisponivel: dados.hits?.total?.value || 0,
         };
-        localStorage.setItem('cnj_dados', JSON.stringify(dadosCNJ));
+        localStorage.setItem("cnj_dados", JSON.stringify(dadosCNJ));
         return;
     }
 
     dadosCNJ.movimentacoes = [];
-    
-    hits.forEach(hit => {
+
+    hits.forEach((hit) => {
         const source = hit._source || {};
-        
+
         const movimentosProcessuais = source.movimentos || [];
-        
-        movimentosProcessuais.forEach(movimento => {
-            const minutas = calcularMinutasPorMovimento(movimento.codigo, movimento.nome);
-            
+
+        movimentosProcessuais.forEach((movimento) => {
+            const minutas = calcularMinutasPorMovimento(
+                movimento.codigo,
+                movimento.nome
+            );
+
             dadosCNJ.movimentacoes.push({
                 id: source.id || hit._id,
-                numeroProcesso: source.numeroProcesso || 'N/A',
-                tribunal: source.tribunal || 'TJSC',
-                dataAjuizamento: source.dataAjuizamento || new Date().toISOString(),
-                grau: source.grau || 'G1',
+                numeroProcesso: source.numeroProcesso || "N/A",
+                tribunal: source.tribunal || "TJSC",
+                dataAjuizamento:
+                    source.dataAjuizamento || new Date().toISOString(),
+                grau: source.grau || "G1",
                 nivelSigilo: source.nivelSigilo || 0,
                 classe: {
                     codigo: source.classe?.codigo || 0,
-                    nome: source.classe?.nome || 'N/A'
+                    nome: source.classe?.nome || "N/A",
                 },
-                assuntos: source.assuntos?.map(a => ({
-                    codigo: a.codigo,
-                    nome: a.nome
-                })) || [],
+                assuntos:
+                    source.assuntos?.map((a) => ({
+                        codigo: a.codigo,
+                        nome: a.nome,
+                    })) || [],
                 orgaoJulgador: {
                     codigo: source.orgaoJulgador?.codigo || 0,
-                    nome: source.orgaoJulgador?.nome || 'TJSC',
-                    municipioIBGE: source.orgaoJulgador?.codigoMunicipioIBGE
+                    nome: source.orgaoJulgador?.nome || "TJSC",
+                    municipioIBGE: source.orgaoJulgador?.codigoMunicipioIBGE,
                 },
                 movimento: {
                     codigo: movimento.codigo,
                     nome: movimento.nome,
                     dataHora: movimento.dataHora,
-                    orgaoJulgador: movimento.orgaoJulgador
+                    orgaoJulgador: movimento.orgaoJulgador,
                 },
-                sistema: source.sistema?.nome || 'PJe',
-                formato: source.formato?.nome || 'Eletrônico',
+                sistema: source.sistema?.nome || "PJe",
+                formato: source.formato?.nome || "Eletrônico",
                 minutas: minutas,
                 dataUltimaAtualizacao: source.dataHoraUltimaAtualizacao,
-                timestamp: source['@timestamp']
+                timestamp: source["@timestamp"],
             });
         });
-        
+
         if (movimentosProcessuais.length === 0) {
             dadosCNJ.movimentacoes.push({
                 id: source.id || hit._id,
-                numeroProcesso: source.numeroProcesso || 'N/A',
-                tribunal: source.tribunal || 'TJSC',
-                dataAjuizamento: source.dataAjuizamento || new Date().toISOString(),
-                grau: source.grau || 'G1',
+                numeroProcesso: source.numeroProcesso || "N/A",
+                tribunal: source.tribunal || "TJSC",
+                dataAjuizamento:
+                    source.dataAjuizamento || new Date().toISOString(),
+                grau: source.grau || "G1",
                 nivelSigilo: source.nivelSigilo || 0,
                 classe: {
                     codigo: source.classe?.codigo || 0,
-                    nome: source.classe?.nome || 'N/A'
+                    nome: source.classe?.nome || "N/A",
                 },
-                assuntos: source.assuntos?.map(a => ({
-                    codigo: a.codigo,
-                    nome: a.nome
-                })) || [],
+                assuntos:
+                    source.assuntos?.map((a) => ({
+                        codigo: a.codigo,
+                        nome: a.nome,
+                    })) || [],
                 orgaoJulgador: {
                     codigo: source.orgaoJulgador?.codigo || 0,
-                    nome: source.orgaoJulgador?.nome || 'TJSC',
-                    municipioIBGE: source.orgaoJulgador?.codigoMunicipioIBGE
+                    nome: source.orgaoJulgador?.nome || "TJSC",
+                    municipioIBGE: source.orgaoJulgador?.codigoMunicipioIBGE,
                 },
                 movimento: {
                     codigo: 0,
-                    nome: 'Processo sem movimentações',
+                    nome: "Processo sem movimentações",
                     dataHora: source.dataAjuizamento,
-                    orgaoJulgador: null
+                    orgaoJulgador: null,
                 },
-                sistema: source.sistema?.nome || 'PJe',
-                formato: source.formato?.nome || 'Eletrônico',
+                sistema: source.sistema?.nome || "PJe",
+                formato: source.formato?.nome || "Eletrônico",
                 minutas: 30,
                 dataUltimaAtualizacao: source.dataHoraUltimaAtualizacao,
-                timestamp: source['@timestamp']
+                timestamp: source["@timestamp"],
             });
         }
     });
@@ -706,78 +779,94 @@ function processarDadosCNJ(dados) {
     dadosCNJ.ultimaConsulta = new Date();
     dadosCNJ.totalRegistros = dadosCNJ.movimentacoes.length;
     dadosCNJ.totalDisponivel = dados.hits?.total?.value || 0;
-    
+
     console.log(`Movimentações processadas: ${dadosCNJ.movimentacoes.length}`);
-    
-    localStorage.setItem('cnj_dados', JSON.stringify(dadosCNJ));
+
+    localStorage.setItem("cnj_dados", JSON.stringify(dadosCNJ));
 }
 
 function extrairNumeroProcesso(numeroSequencial) {
-    if (!numeroSequencial || numeroSequencial === 'N/A') return 'N/A';
-    const match = numeroSequencial.match(/(\d{7}-\d{2}\.\d{4}\.\d{1}\.\d{2}\.\d{4})/);
+    if (!numeroSequencial || numeroSequencial === "N/A") return "N/A";
+    const match = numeroSequencial.match(
+        /(\d{7}-\d{2}\.\d{4}\.\d{1}\.\d{2}\.\d{4})/
+    );
     return match ? match[1] : numeroSequencial;
 }
 
 function extrairOrgaoJulgador(orgaoJulgador) {
-    if (!orgaoJulgador) return 'TJSC';
-    if (typeof orgaoJulgador === 'object') {
-        return orgaoJulgador.nomeOrgao || orgaoJulgador.nome || 'TJSC';
+    if (!orgaoJulgador) return "TJSC";
+    if (typeof orgaoJulgador === "object") {
+        return orgaoJulgador.nomeOrgao || orgaoJulgador.nome || "TJSC";
     }
-    return orgaoJulgador.toString() || 'TJSC';
+    return orgaoJulgador.toString() || "TJSC";
 }
 
 function calcularMinutasPorMovimento(codigoMovimento, nomeMovimento) {
     const pesosPorCodigo = {
-        '26': 30,      // Distribuição
-        '51': 75,      // Audiência de instrução e julgamento
-        '60': 135,     // Julgamento
-        '85': 30,      // Remessa
-        '123': 90,     // Decisão
-        '132': 45,     // Recebimento
-        '193': 45,     // Despacho
-        '238': 150,    // Acórdão
-        '245': 45,     // Provisório
-        '246': 120,    // Sentença
-        '322': 90,     // Recurso
-        '832': 75,     // Conclusão
-        '861': 120,    // Decisão monocrática
-        '875': 90,     // Voto
-        '11006': 60,   // Voto vencido
-        '11008': 75,   // Voto divergente
-        '11009': 60,   // Decisão colegiada
-        '14732': 45    // Conversão de autos
+        26: 30, // Distribuição
+        51: 75, // Audiência de instrução e julgamento
+        60: 135, // Julgamento
+        85: 30, // Remessa
+        123: 90, // Decisão
+        132: 45, // Recebimento
+        193: 45, // Despacho
+        238: 150, // Acórdão
+        245: 45, // Provisório
+        246: 120, // Sentença
+        322: 90, // Recurso
+        832: 75, // Conclusão
+        861: 120, // Decisão monocrática
+        875: 90, // Voto
+        11006: 60, // Voto vencido
+        11008: 75, // Voto divergente
+        11009: 60, // Decisão colegiada
+        14732: 45, // Conversão de autos
     };
-    
+
     if (pesosPorCodigo[codigoMovimento?.toString()]) {
         return pesosPorCodigo[codigoMovimento.toString()];
     }
-    
+
     if (nomeMovimento) {
         const nomeUpper = nomeMovimento.toUpperCase();
-        if (nomeUpper.includes('ACÓRDÃO') || nomeUpper.includes('ACORDAO')) return 150;
-        if (nomeUpper.includes('SENTENÇA') || nomeUpper.includes('SENTENCA')) return 120;
-        if (nomeUpper.includes('DECISÃO') || nomeUpper.includes('DECISAO')) return 75;
-        if (nomeUpper.includes('DESPACHO')) return 45;
-        if (nomeUpper.includes('VOTO')) return 90;
-        if (nomeUpper.includes('RECURSO')) return 90;
-        if (nomeUpper.includes('AUDIÊNCIA') || nomeUpper.includes('AUDIENCIA')) return 75;
-        if (nomeUpper.includes('JULGAMENTO')) return 135;
-        if (nomeUpper.includes('DISTRIBUIÇÃO') || nomeUpper.includes('DISTRIBUICAO')) return 30;
+        if (nomeUpper.includes("ACÓRDÃO") || nomeUpper.includes("ACORDAO"))
+            return 150;
+        if (nomeUpper.includes("SENTENÇA") || nomeUpper.includes("SENTENCA"))
+            return 120;
+        if (nomeUpper.includes("DECISÃO") || nomeUpper.includes("DECISAO"))
+            return 75;
+        if (nomeUpper.includes("DESPACHO")) return 45;
+        if (nomeUpper.includes("VOTO")) return 90;
+        if (nomeUpper.includes("RECURSO")) return 90;
+        if (nomeUpper.includes("AUDIÊNCIA") || nomeUpper.includes("AUDIENCIA"))
+            return 75;
+        if (nomeUpper.includes("JULGAMENTO")) return 135;
+        if (
+            nomeUpper.includes("DISTRIBUIÇÃO") ||
+            nomeUpper.includes("DISTRIBUICAO")
+        )
+            return 30;
     }
-    
+
     return 45;
 }
 
 function determinarTipoMovimento(codigoMovimento) {
-    const acordaos = ['11009', '11006', '238'];
-    return acordaos.includes(codigoMovimento) ? 'acordao' : 'despacho';
+    const acordaos = ["11009", "11006", "238"];
+    return acordaos.includes(codigoMovimento) ? "acordao" : "despacho";
 }
 
 function calcularQualidadeRegistro(doc) {
     let pontuacao = 0;
-    const campos = ['numeroSequencial', 'dataHora', 'codigoMovimento', 'nomeMovimento'];
-    campos.forEach(campo => {
-        if (doc[campo] && doc[campo] !== 'N/A' && doc[campo] !== '') pontuacao += 25;
+    const campos = [
+        "numeroSequencial",
+        "dataHora",
+        "codigoMovimento",
+        "nomeMovimento",
+    ];
+    campos.forEach((campo) => {
+        if (doc[campo] && doc[campo] !== "N/A" && doc[campo] !== "")
+            pontuacao += 25;
     });
     if (doc.dadosBasicos?.assunto) pontuacao += 10;
     if (doc.dadosBasicos?.classeProcessual) pontuacao += 10;
@@ -788,45 +877,71 @@ function calcularQualidadeRegistro(doc) {
 function analisarQualidadeDadosCNJ(movimentacoes) {
     const analise = {
         totalRegistros: movimentacoes.length,
-        camposObrigatorios: { numeroSequencial: 0, tribunal: 0, dataHora: 0, codigoMovimento: 0, nomeMovimento: 0 },
-        qualidadeGeral: 0
+        camposObrigatorios: {
+            numeroSequencial: 0,
+            tribunal: 0,
+            dataHora: 0,
+            codigoMovimento: 0,
+            nomeMovimento: 0,
+        },
+        qualidadeGeral: 0,
     };
 
-    movimentacoes.forEach(mov => {
-        if (mov.numeroSequencial && mov.numeroSequencial !== 'N/A') analise.camposObrigatorios.numeroSequencial++;
-        if (mov.tribunal && mov.tribunal !== 'N/A') analise.camposObrigatorios.tribunal++;
+    movimentacoes.forEach((mov) => {
+        if (mov.numeroSequencial && mov.numeroSequencial !== "N/A")
+            analise.camposObrigatorios.numeroSequencial++;
+        if (mov.tribunal && mov.tribunal !== "N/A")
+            analise.camposObrigatorios.tribunal++;
         if (mov.dataHora) analise.camposObrigatorios.dataHora++;
-        if (mov.codigoMovimento && mov.codigoMovimento !== 'N/A') analise.camposObrigatorios.codigoMovimento++;
-        if (mov.nomeMovimento && mov.nomeMovimento !== 'Movimentação não especificada') analise.camposObrigatorios.nomeMovimento++;
+        if (mov.codigoMovimento && mov.codigoMovimento !== "N/A")
+            analise.camposObrigatorios.codigoMovimento++;
+        if (
+            mov.nomeMovimento &&
+            mov.nomeMovimento !== "Movimentação não especificada"
+        )
+            analise.camposObrigatorios.nomeMovimento++;
     });
 
     const totalCampos = Object.keys(analise.camposObrigatorios).length;
     let pontuacaoQualidade = 0;
-    Object.values(analise.camposObrigatorios).forEach(count => {
+    Object.values(analise.camposObrigatorios).forEach((count) => {
         pontuacaoQualidade += (count / analise.totalRegistros) * 100;
     });
     analise.qualidadeGeral = Math.round(pontuacaoQualidade / totalCampos);
-    
+
     return analise;
 }
 
 function exibirResultadosCNJ(dados) {
-    const container = document.getElementById('cnj-resultados');
-    const statsContainer = document.getElementById('cnj-stats');
-    const dadosContainer = document.getElementById('cnj-dados-container');
+    const container = document.getElementById("cnj-resultados");
+    const statsContainer = document.getElementById("cnj-stats");
+    const dadosContainer = document.getElementById("cnj-dados-container");
 
     if (!container || !statsContainer || !dadosContainer) {
-        console.error('Containers CNJ não encontrados');
+        console.error("Containers CNJ não encontrados");
         return;
     }
 
-    const totalMinutas = dadosCNJ.movimentacoes.reduce((sum, mov) => sum + mov.minutas, 0);
-    const processosUnicos = new Set(dadosCNJ.movimentacoes.map(mov => mov.numeroProcesso)).size;
-    const orgaosUnicos = new Set(dadosCNJ.movimentacoes.map(mov => mov.orgaoJulgador.nome)).size;
-    const classesUnicas = new Set(dadosCNJ.movimentacoes.map(mov => mov.classe.nome)).size;
-    const grau1 = dadosCNJ.movimentacoes.filter(mov => mov.grau === 'G1').length;
-    const grau2 = dadosCNJ.movimentacoes.filter(mov => mov.grau === 'G2').length;
-    const je = dadosCNJ.movimentacoes.filter(mov => mov.grau === 'JE').length;
+    const totalMinutas = dadosCNJ.movimentacoes.reduce(
+        (sum, mov) => sum + mov.minutas,
+        0
+    );
+    const processosUnicos = new Set(
+        dadosCNJ.movimentacoes.map((mov) => mov.numeroProcesso)
+    ).size;
+    const orgaosUnicos = new Set(
+        dadosCNJ.movimentacoes.map((mov) => mov.orgaoJulgador.nome)
+    ).size;
+    const classesUnicas = new Set(
+        dadosCNJ.movimentacoes.map((mov) => mov.classe.nome)
+    ).size;
+    const grau1 = dadosCNJ.movimentacoes.filter(
+        (mov) => mov.grau === "G1"
+    ).length;
+    const grau2 = dadosCNJ.movimentacoes.filter(
+        (mov) => mov.grau === "G2"
+    ).length;
+    const je = dadosCNJ.movimentacoes.filter((mov) => mov.grau === "JE").length;
 
     statsContainer.innerHTML = `
         <div class="cnj-stat">
@@ -869,53 +984,77 @@ function exibirResultadosCNJ(dados) {
                 </tr>
             </thead>
             <tbody>
-                ${dadosCNJ.movimentacoes.slice(0, 50).map(mov => `
+                ${dadosCNJ.movimentacoes
+                    .slice(0, 50)
+                    .map(
+                        (mov) => `
                     <tr>
-                        <td title="${mov.numeroProcesso}">${mov.numeroProcesso.substring(0, 15)}...</td>
-                        <td><span class="grau-badge grau-${mov.grau}">${mov.grau}</span></td>
-                        <td title="${mov.movimento.nome}">${mov.movimento.nome}</td>
-                        <td>${mov.movimento.dataHora ? new Date(mov.movimento.dataHora).toLocaleString('pt-BR') : '-'}</td>
-                        <td title="${mov.orgaoJulgador.nome}">${mov.orgaoJulgador.nome.substring(0, 20)}...</td>
+                        <td title="${
+                            mov.numeroProcesso
+                        }">${mov.numeroProcesso.substring(0, 15)}...</td>
+                        <td><span class="grau-badge grau-${mov.grau}">${
+                            mov.grau
+                        }</span></td>
+                        <td title="${mov.movimento.nome}">${
+                            mov.movimento.nome
+                        }</td>
+                        <td>${
+                            mov.movimento.dataHora
+                                ? new Date(
+                                      mov.movimento.dataHora
+                                  ).toLocaleString("pt-BR")
+                                : "-"
+                        }</td>
+                        <td title="${
+                            mov.orgaoJulgador.nome
+                        }">${mov.orgaoJulgador.nome.substring(0, 20)}...</td>
                         <td title="${mov.classe.nome}">${mov.classe.nome}</td>
                         <td><strong>${mov.minutas}</strong></td>
                     </tr>
-                `).join('')}
+                `
+                    )
+                    .join("")}
             </tbody>
         </table>
-        ${dadosCNJ.movimentacoes.length > 50 ? `<p style="text-align: center; color: var(--text-secondary); margin-top: 15px;">Mostrando 50 de ${dadosCNJ.movimentacoes.length} registros</p>` : ''}
+        ${
+            dadosCNJ.movimentacoes.length > 50
+                ? `<p style="text-align: center; color: var(--text-secondary); margin-top: 15px;">Mostrando 50 de ${dadosCNJ.movimentacoes.length} registros</p>`
+                : ""
+        }
     `;
 
-    container.classList.add('show');
+    container.classList.add("show");
 }
 
 function adicionarEventListenersCNJ() {
-    const btnSalvar = document.getElementById('btn-salvar-cnj');
-    const btnConsultar = document.getElementById('btn-consultar-cnj');
-    const btnIntegrar = document.getElementById('btn-integrar-cnj');
+    const btnSalvar = document.getElementById("btn-salvar-cnj");
+    const btnConsultar = document.getElementById("btn-consultar-cnj");
+    const btnIntegrar = document.getElementById("btn-integrar-cnj");
 
-    if (btnSalvar && !btnSalvar.hasAttribute('data-listener')) {
-        btnSalvar.addEventListener('click', salvarConfigCNJ);
-        btnSalvar.setAttribute('data-listener', 'true');
+    if (btnSalvar && !btnSalvar.hasAttribute("data-listener")) {
+        btnSalvar.addEventListener("click", salvarConfigCNJ);
+        btnSalvar.setAttribute("data-listener", "true");
     }
 
-    if (btnConsultar && !btnConsultar.hasAttribute('data-listener')) {
-        btnConsultar.addEventListener('click', consultarDadosCNJ);
-        btnConsultar.setAttribute('data-listener', 'true');
+    if (btnConsultar && !btnConsultar.hasAttribute("data-listener")) {
+        btnConsultar.addEventListener("click", consultarDadosCNJ);
+        btnConsultar.setAttribute("data-listener", "true");
     }
 
-    if (btnIntegrar && !btnIntegrar.hasAttribute('data-listener')) {
-        btnIntegrar.addEventListener('click', integrarDadosExistentes);
-        btnIntegrar.setAttribute('data-listener', 'true');
+    if (btnIntegrar && !btnIntegrar.hasAttribute("data-listener")) {
+        btnIntegrar.addEventListener("click", integrarDadosExistentes);
+        btnIntegrar.setAttribute("data-listener", "true");
     }
 
     adicionarTooltipsCORS();
 }
 
 function adicionarTooltipsCORS() {
-    const btnConsultar = document.getElementById('btn-consultar-cnj');
-    
+    const btnConsultar = document.getElementById("btn-consultar-cnj");
+
     if (btnConsultar) {
-        btnConsultar.title = 'Consulta dados da API CNJ. Para funcionar localmente, pode ser necessário usar proxy CORS.';
+        btnConsultar.title =
+            "Consulta dados da API CNJ. Para funcionar localmente, pode ser necessário usar proxy CORS.";
     }
 }
 
@@ -942,136 +1081,148 @@ function mostrarSolucoesCORS() {
 
 **NOTA:** CORS é uma proteção de segurança do navegador.
 `;
-    
-    mostrarMensagemCNJ(mensagem, 'error');
+
+    mostrarMensagemCNJ(mensagem, "error");
 }
 
 function integrarDadosExistentes() {
     if (!dadosCNJ.movimentacoes.length) {
-        mostrarMensagemCNJ('Nenhum dado do CNJ encontrado. Execute uma consulta primeiro.', 'error');
+        mostrarMensagemCNJ(
+            "Nenhum dado do CNJ encontrado. Execute uma consulta primeiro.",
+            "error"
+        );
         return;
     }
 
-    mostrarLoadingCNJ('Integrando dados com o sistema...');
+    mostrarLoadingCNJ("Integrando dados com o sistema...");
 
     const dadosIntegrados = {};
-    
-    dadosCNJ.movimentacoes.forEach(mov => {
+
+    dadosCNJ.movimentacoes.forEach((mov) => {
         const usuario = mov.orgaoJulgador;
         const mes = new Date(mov.dataHora).toISOString().slice(0, 7);
         const tipo = determinarTipoMovimento(mov.codigoMovimento);
-        
+
         if (!dadosIntegrados[usuario]) {
             dadosIntegrados[usuario] = {};
         }
-        
+
         if (!dadosIntegrados[usuario][mes]) {
             dadosIntegrados[usuario][mes] = { acordao: 0, despacho: 0 };
         }
-        
+
         dadosIntegrados[usuario][mes][tipo] += mov.minutas;
     });
 
-    Object.keys(dadosIntegrados).forEach(usuario => {
+    Object.keys(dadosIntegrados).forEach((usuario) => {
         if (!dados[usuario]) {
             dados[usuario] = {};
         }
-        
-        Object.keys(dadosIntegrados[usuario]).forEach(mes => {
+
+        Object.keys(dadosIntegrados[usuario]).forEach((mes) => {
             if (!dados[usuario][mes]) {
                 dados[usuario][mes] = { acordao: 0, despacho: 0 };
             }
-            
-            dados[usuario][mes].acordao += dadosIntegrados[usuario][mes].acordao;
-            dados[usuario][mes].despacho += dadosIntegrados[usuario][mes].despacho;
+
+            dados[usuario][mes].acordao +=
+                dadosIntegrados[usuario][mes].acordao;
+            dados[usuario][mes].despacho +=
+                dadosIntegrados[usuario][mes].despacho;
         });
     });
 
     setTimeout(() => {
         ocultarLoadingCNJ();
-        mostrarMensagemCNJ('✅ Dados integrados com sucesso! Os dados do CNJ foram adicionados ao sistema.', 'success');
+        mostrarMensagemCNJ(
+            "✅ Dados integrados com sucesso! Os dados do CNJ foram adicionados ao sistema.",
+            "success"
+        );
         salvarDados();
     }, 2000);
 }
 
 function mostrarMensagemCNJ(mensagem, tipo) {
-    const container = document.getElementById('cnj-mensagem');
+    const container = document.getElementById("cnj-mensagem");
     if (!container) {
-        console.error('Container cnj-mensagem não encontrado');
+        console.error("Container cnj-mensagem não encontrado");
         return;
     }
-    
-    container.className = tipo === 'error' ? 'cnj-error' : 'cnj-success';
+
+    container.className = tipo === "error" ? "cnj-error" : "cnj-success";
     container.textContent = mensagem;
-    container.style.display = 'block';
-    
+    container.style.display = "block";
+
     setTimeout(() => {
-        container.style.display = 'none';
+        container.style.display = "none";
     }, 5000);
 }
 
 function mostrarLoadingCNJ(texto) {
-    const container = document.getElementById('cnj-mensagem');
+    const container = document.getElementById("cnj-mensagem");
     if (!container) {
-        console.error('Container cnj-mensagem não encontrado para loading');
+        console.error("Container cnj-mensagem não encontrado para loading");
         return;
     }
-    
-    container.className = '';
+
+    container.className = "";
     container.innerHTML = `
         <div class="cnj-loading">
             <div class="cnj-loading-spinner"></div>
             <span class="cnj-loading-text">${texto}</span>
         </div>
     `;
-    container.style.display = 'block';
+    container.style.display = "block";
 }
 
 function ocultarLoadingCNJ() {
-    const container = document.getElementById('cnj-mensagem');
+    const container = document.getElementById("cnj-mensagem");
     if (container) {
-        container.style.display = 'none';
+        container.style.display = "none";
     }
 }
 
 function carregarEstatisticasCNJ() {
-    const storedData = localStorage.getItem('cnj_dados');
+    const storedData = localStorage.getItem("cnj_dados");
     if (storedData) {
         try {
             dadosCNJ = JSON.parse(storedData);
         } catch (error) {
-            console.error('Erro ao carregar dados CNJ:', error);
-            dadosCNJ = { movimentacoes: [], ultimaConsulta: null, totalRegistros: 0 };
+            console.error("Erro ao carregar dados CNJ:", error);
+            dadosCNJ = {
+                movimentacoes: [],
+                ultimaConsulta: null,
+                totalRegistros: 0,
+            };
         }
     }
 }
 
 function salvarDados() {
     if (excelData && excelData.length > 0) {
-        localStorage.setItem('aprod-dados-excel', JSON.stringify(excelData));
+        localStorage.setItem("aprod-dados-excel", JSON.stringify(excelData));
     }
     if (dadosCNJ && dadosCNJ.movimentacoes.length > 0) {
-        localStorage.setItem('cnj_dados', JSON.stringify(dadosCNJ));
+        localStorage.setItem("cnj_dados", JSON.stringify(dadosCNJ));
     }
 }
 
 function carregarDadosSalvos() {
-    const dadosExcelSalvos = localStorage.getItem('aprod-dados-excel');
+    const dadosExcelSalvos = localStorage.getItem("aprod-dados-excel");
     if (dadosExcelSalvos) {
         try {
             excelData = JSON.parse(dadosExcelSalvos);
             processExcelData();
         } catch (error) {
-            console.error('Erro ao carregar dados salvos:', error);
+            console.error("Erro ao carregar dados salvos:", error);
         }
     }
-    
-    const dadosCNJSalvos = localStorage.getItem('cnj_dados');
+
+    const dadosCNJSalvos = localStorage.getItem("cnj_dados");
     if (dadosCNJSalvos) {
         try {
             dadosCNJ = JSON.parse(dadosCNJSalvos);
         } catch (error) {
-            console.error('Erro ao carregar dados CNJ salvos:', error);
+            console.error("Erro ao carregar dados CNJ salvos:", error);
         }
     }
 }
@@ -1084,20 +1235,37 @@ function gerarDadosComparacao() {
     const usuariosMap = new Map();
     let filteredData = excelData;
 
-    if (processedData.mesesAtivos.length > 0 && processedData.mesesAtivos.length < processedData.mesesDisponiveis.length) {
-        filteredData = excelData.filter(row => {
-            if (!row['Data criação']) return false;
-            
+    if (
+        processedData.mesesAtivos.length > 0 &&
+        processedData.mesesAtivos.length < processedData.mesesDisponiveis.length
+    ) {
+        filteredData = excelData.filter((row) => {
+            if (!row["Data criação"]) return false;
+
             try {
-                let date = row['Data criação'];
+                let date = row["Data criação"];
                 if (!(date instanceof Date)) {
                     date = new Date(date);
                 }
-                
+
                 if (!isNaN(date.getTime())) {
-                    const mesNomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 
-                                     'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-                    const mesAno = `${mesNomes[date.getMonth()]}/${date.getFullYear()}`;
+                    const mesNomes = [
+                        "jan",
+                        "fev",
+                        "mar",
+                        "abr",
+                        "mai",
+                        "jun",
+                        "jul",
+                        "ago",
+                        "set",
+                        "out",
+                        "nov",
+                        "dez",
+                    ];
+                    const mesAno = `${
+                        mesNomes[date.getMonth()]
+                    }/${date.getFullYear()}`;
                     return processedData.mesesAtivos.includes(mesAno);
                 }
                 return false;
@@ -1107,15 +1275,15 @@ function gerarDadosComparacao() {
         });
     }
 
-    filteredData.forEach(row => {
-        const nroProcesso = row['Nro. processo'];
-        if (!nroProcesso || nroProcesso.trim() === '') return;
-        
-        const usuario = row['Usuário'];
-        if (!usuario || usuario.toString().trim() === '') return;
-        
-        const peso = parseFloat(row['peso']) || 1.0;
-        
+    filteredData.forEach((row) => {
+        const nroProcesso = row["Nro. processo"];
+        if (!nroProcesso || nroProcesso.trim() === "") return;
+
+        const usuario = row["Usuário"];
+        if (!usuario || usuario.toString().trim() === "") return;
+
+        const peso = parseFloat(row["peso"]) || 1.0;
+
         if (!usuariosMap.has(usuario)) {
             usuariosMap.set(usuario, 0);
         }
@@ -1131,35 +1299,41 @@ function gerarDadosComparacao() {
 }
 
 function renderizarListaUsuarios() {
-    const container = document.getElementById('usuarios-list');
+    const container = document.getElementById("usuarios-list");
     if (!container) return;
-    
-    container.innerHTML = '';
 
-    const filtro = document.getElementById('filtro-usuarios').value.toLowerCase();
-    const usuariosFiltrados = usuariosComparacao.filter(usuario => 
+    container.innerHTML = "";
+
+    const filtro = document
+        .getElementById("filtro-usuarios")
+        .value.toLowerCase();
+    const usuariosFiltrados = usuariosComparacao.filter((usuario) =>
         usuario.nome.toLowerCase().includes(filtro)
     );
 
     usuariosFiltrados.forEach((usuario, index) => {
-        const usuarioDiv = document.createElement('div');
-        usuarioDiv.className = `usuario-item ${usuario.selecionado ? 'selected' : ''}`;
-        usuarioDiv.onclick = function() {
+        const usuarioDiv = document.createElement("div");
+        usuarioDiv.className = `usuario-item ${
+            usuario.selecionado ? "selected" : ""
+        }`;
+        usuarioDiv.onclick = function () {
             toggleUsuarioComparacao(usuario.nome);
         };
-        
+
         usuarioDiv.innerHTML = `
             <div class="usuario-checkbox">
                 <input type="checkbox" 
                        id="user-${index}" 
-                       ${usuario.selecionado ? 'checked' : ''}
+                       ${usuario.selecionado ? "checked" : ""}
                        onclick="event.stopPropagation();"
                        onchange="toggleUsuarioComparacao('${usuario.nome}')">
                 <label for="user-${index}" onclick="event.stopPropagation();"></label>
             </div>
             <div class="usuario-info">
                 <span class="usuario-nome">${usuario.nome}</span>
-                <span class="usuario-minutas">${Math.round(usuario.minutas)} minutas</span>
+                <span class="usuario-minutas">${Math.round(
+                    usuario.minutas
+                )} minutas</span>
             </div>
         `;
         container.appendChild(usuarioDiv);
@@ -1167,7 +1341,7 @@ function renderizarListaUsuarios() {
 }
 
 function toggleUsuarioComparacao(nomeUsuario) {
-    const usuario = usuariosComparacao.find(u => u.nome === nomeUsuario);
+    const usuario = usuariosComparacao.find((u) => u.nome === nomeUsuario);
     if (usuario) {
         usuario.selecionado = !usuario.selecionado;
         renderizarListaUsuarios();
@@ -1176,27 +1350,29 @@ function toggleUsuarioComparacao(nomeUsuario) {
 }
 
 function selecionarTodosUsuarios() {
-    usuariosComparacao.forEach(usuario => usuario.selecionado = true);
+    usuariosComparacao.forEach((usuario) => (usuario.selecionado = true));
     renderizarListaUsuarios();
     atualizarGraficoComparacao();
 }
 
 function limparSelecaoUsuarios() {
-    usuariosComparacao.forEach(usuario => usuario.selecionado = false);
+    usuariosComparacao.forEach((usuario) => (usuario.selecionado = false));
     renderizarListaUsuarios();
     atualizarGraficoComparacao();
 }
 
 function atualizarGraficoComparacao() {
-    const ctx = document.getElementById('comparacao-chart');
+    const ctx = document.getElementById("comparacao-chart");
     if (!ctx) return;
 
     if (chartComparacao) {
         chartComparacao.destroy();
     }
 
-    const usuariosSelecionados = usuariosComparacao.filter(u => u.selecionado);
-    
+    const usuariosSelecionados = usuariosComparacao.filter(
+        (u) => u.selecionado
+    );
+
     if (usuariosSelecionados.length === 0) {
         const chartContainer = ctx.parentElement;
         chartContainer.innerHTML = `
@@ -1208,77 +1384,108 @@ function atualizarGraficoComparacao() {
             </div>
             <canvas id="comparacao-chart"></canvas>
         `;
-        
-        const newCtx = document.getElementById('comparacao-chart');
+
+        const newCtx = document.getElementById("comparacao-chart");
         chartComparacao = new Chart(newCtx, {
-            type: 'bar',
+            type: "bar",
             data: {
-                labels: ['Nenhum usuário selecionado'],
-                datasets: [{
-                    label: 'Minutas',
-                    data: [0],
-                    backgroundColor: '#cccccc'
-                }]
+                labels: ["Nenhum usuário selecionado"],
+                datasets: [
+                    {
+                        label: "Minutas",
+                        data: [0],
+                        backgroundColor: "#cccccc",
+                    },
+                ],
             },
             options: {
-                indexAxis: 'y',
+                indexAxis: "y",
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
                     title: {
                         display: true,
-                        text: 'Selecione usuários para comparar',
-                        color: '#666666'
-                    }
-                }
-            }
+                        text: "Selecione usuários para comparar",
+                        color: "#666666",
+                    },
+                },
+            },
         });
         return;
     }
 
     const detalhesUsuarios = gerarDetalhesTooltipUsuarios(usuariosSelecionados);
-    
-    const chartData = usuariosSelecionados.map(usuario => {
+
+    const chartData = usuariosSelecionados.map((usuario) => {
         const detalhes = detalhesUsuarios[usuario.nome] || [];
-        
+
         let acordaoMinutas = 0;
         let despachoMinutas = 0;
-        
-        detalhes.forEach(tipo => {
-            if (tipo.nome === 'Acórdão') {
+
+        detalhes.forEach((tipo) => {
+            if (tipo.nome === "Acórdão") {
                 acordaoMinutas = tipo.minutas;
             } else {
                 despachoMinutas += tipo.minutas;
             }
         });
-        
+
         return {
             nome: usuario.nome,
             acordao: Math.round(acordaoMinutas * 10) / 10,
             despacho: Math.round(despachoMinutas * 10) / 10,
-            total: Math.round((acordaoMinutas + despachoMinutas) * 10) / 10
+            total: Math.round((acordaoMinutas + despachoMinutas) * 10) / 10,
         };
     });
 
-    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    const isDark =
+        document.documentElement.getAttribute("data-theme") !== "light";
 
     const cores = [
-        '#1565c0', '#43a047', '#e53935', '#8e24aa', '#fb8c00',
-        '#00acc1', '#7cb342', '#d81b60', '#5e35b1', '#ff7043',
-        '#26a69a', '#ab47bc', '#42a5f5', '#66bb6a', '#ef5350'
+        "#1565c0",
+        "#43a047",
+        "#e53935",
+        "#8e24aa",
+        "#fb8c00",
+        "#00acc1",
+        "#7cb342",
+        "#d81b60",
+        "#5e35b1",
+        "#ff7043",
+        "#26a69a",
+        "#ab47bc",
+        "#42a5f5",
+        "#66bb6a",
+        "#ef5350",
     ];
 
     const coresDespacho = [
-        '#42a5f5', '#66bb6a', '#ef5350', '#ba68c8', '#ffb74d',
-        '#4dd0e1', '#9ccc65', '#f06292', '#7986cb', '#ff8a65',
-        '#4db6ac', '#ce93d8', '#64b5f6', '#81c784', '#e57373'
+        "#42a5f5",
+        "#66bb6a",
+        "#ef5350",
+        "#ba68c8",
+        "#ffb74d",
+        "#4dd0e1",
+        "#9ccc65",
+        "#f06292",
+        "#7986cb",
+        "#ff8a65",
+        "#4db6ac",
+        "#ce93d8",
+        "#64b5f6",
+        "#81c784",
+        "#e57373",
     ];
 
     const acordaoData = chartData.map((usuario, index) => usuario.acordao);
     const despachoData = chartData.map((usuario, index) => usuario.despacho);
-    const backgroundColorsAcordao = chartData.map((_, index) => cores[index % cores.length]);
-    const backgroundColorsDespacho = chartData.map((_, index) => coresDespacho[index % coresDespacho.length]);
+    const backgroundColorsAcordao = chartData.map(
+        (_, index) => cores[index % cores.length]
+    );
+    const backgroundColorsDespacho = chartData.map(
+        (_, index) => coresDespacho[index % coresDespacho.length]
+    );
 
     const chartContainer = ctx.parentElement;
     chartContainer.innerHTML = `
@@ -1288,37 +1495,37 @@ function atualizarGraficoComparacao() {
         <canvas id="comparacao-chart"></canvas>
     `;
 
-    const newCtx = document.getElementById('comparacao-chart');
+    const newCtx = document.getElementById("comparacao-chart");
 
     chartComparacao = new Chart(newCtx, {
-        type: 'bar',
+        type: "bar",
         data: {
-            labels: chartData.map(u => u.nome),
+            labels: chartData.map((u) => u.nome),
             datasets: [
                 {
-                    label: 'Acórdão',
+                    label: "Acórdão",
                     data: acordaoData,
                     backgroundColor: backgroundColorsAcordao,
                     borderColor: backgroundColorsAcordao,
                     borderWidth: 1,
                     borderRadius: 4,
                     borderSkipped: false,
-                    stack: 'Stack 0'
+                    stack: "Stack 0",
                 },
                 {
-                    label: 'Despacho/Decisão',
+                    label: "Despacho/Decisão",
                     data: despachoData,
                     backgroundColor: backgroundColorsDespacho,
                     borderColor: backgroundColorsDespacho,
                     borderWidth: 1,
                     borderRadius: 4,
                     borderSkipped: false,
-                    stack: 'Stack 0'
-                }
-            ]
+                    stack: "Stack 0",
+                },
+            ],
         },
         options: {
-            indexAxis: 'y',
+            indexAxis: "y",
             responsive: true,
             maintainAspectRatio: false,
             layout: {
@@ -1326,53 +1533,58 @@ function atualizarGraficoComparacao() {
                     right: 40,
                     left: 10,
                     top: 10,
-                    bottom: 10
-                }
+                    bottom: 10,
+                },
             },
             scales: {
                 x: {
                     stacked: true,
                     beginAtZero: true,
                     grid: {
-                        color: isDark ? '#404040' : '#e0e0e0'
+                        color: isDark ? "#404040" : "#e0e0e0",
                     },
                     ticks: {
-                        color: isDark ? '#ffffff' : '#232946',
-                        callback: function(value) {
+                        color: isDark ? "#ffffff" : "#232946",
+                        callback: function (value) {
                             return value;
                         },
-                        maxTicksLimit: 10
-                    }
+                        maxTicksLimit: 10,
+                    },
                 },
                 y: {
                     stacked: true,
                     grid: {
-                        display: false
+                        display: false,
                     },
                     ticks: {
-                        color: isDark ? '#ffffff' : '#232946',
+                        color: isDark ? "#ffffff" : "#232946",
                         maxTicksLimit: Math.min(chartData.length, 15),
                         font: {
-                            size: Math.max(10, Math.min(12, 400 / chartData.length))
-                        }
-                    }
-                }
+                            size: Math.max(
+                                10,
+                                Math.min(12, 400 / chartData.length)
+                            ),
+                        },
+                    },
+                },
             },
             plugins: {
                 legend: {
-                    display: false
+                    display: false,
                 },
                 tooltip: {
                     enabled: false,
-                    external: function(context) {
+                    external: function (context) {
                         const chart = context.chart;
                         const tooltip = context.tooltip;
-                        
-                        let tooltipEl = chart.canvas.parentNode.querySelector('.chart-tooltip-custom');
-                        
+
+                        let tooltipEl = chart.canvas.parentNode.querySelector(
+                            ".chart-tooltip-custom"
+                        );
+
                         if (!tooltipEl) {
-                            tooltipEl = document.createElement('div');
-                            tooltipEl.className = 'chart-tooltip-custom';
+                            tooltipEl = document.createElement("div");
+                            tooltipEl.className = "chart-tooltip-custom";
                             tooltipEl.style.cssText = `
                                 position: absolute;
                                 pointer-events: none;
@@ -1389,19 +1601,27 @@ function atualizarGraficoComparacao() {
                             `;
                             chart.canvas.parentNode.appendChild(tooltipEl);
                         }
-                        
+
                         if (tooltip.opacity === 0) {
-                            tooltipEl.style.opacity = '0';
+                            tooltipEl.style.opacity = "0";
                             return;
                         }
-                        
-                        if (tooltip.body && tooltip.dataPoints && tooltip.dataPoints.length > 0) {
+
+                        if (
+                            tooltip.body &&
+                            tooltip.dataPoints &&
+                            tooltip.dataPoints.length > 0
+                        ) {
                             const activePoint = tooltip.dataPoints[0];
                             const dataIndex = activePoint.dataIndex;
                             const nomeUsuario = chartData[dataIndex].nome;
-                            const detalhesComparacao = gerarDetalhesTooltipComparacao(usuariosSelecionados);
-                            const dadosUsuario = detalhesComparacao[nomeUsuario];
-                            
+                            const detalhesComparacao =
+                                gerarDetalhesTooltipComparacao(
+                                    usuariosSelecionados
+                                );
+                            const dadosUsuario =
+                                detalhesComparacao[nomeUsuario];
+
                             if (dadosUsuario) {
                                 tooltipEl.innerHTML = `
                                     <div style="font-weight: bold; font-size: 14px; color: var(--text-primary); margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; text-align: center;">
@@ -1421,164 +1641,198 @@ function atualizarGraficoComparacao() {
                                 `;
                             }
                         }
-                        
+
                         const canvasRect = chart.canvas.getBoundingClientRect();
-                        const containerRect = chart.canvas.parentNode.getBoundingClientRect();
-                        
-                        let left = tooltip.caretX + canvasRect.left - containerRect.left;
-                        let top = tooltip.caretY + canvasRect.top - containerRect.top;
-                        
+                        const containerRect =
+                            chart.canvas.parentNode.getBoundingClientRect();
+
+                        let left =
+                            tooltip.caretX +
+                            canvasRect.left -
+                            containerRect.left;
+                        let top =
+                            tooltip.caretY + canvasRect.top - containerRect.top;
+
                         const tooltipWidth = tooltipEl.offsetWidth;
                         const tooltipHeight = tooltipEl.offsetHeight;
                         const containerWidth = containerRect.width;
                         const containerHeight = containerRect.height;
-                        
+
                         if (left + tooltipWidth > containerWidth - 20) {
                             left = containerWidth - tooltipWidth - 20;
                         }
                         if (left < 20) {
                             left = 20;
                         }
-                        
+
                         if (top + tooltipHeight > containerHeight - 20) {
                             top = top - tooltipHeight - 20;
                         }
                         if (top < 20) {
                             top = 20;
                         }
-                        
-                        tooltipEl.style.left = left + 'px';
-                        tooltipEl.style.top = top + 'px';
-                        tooltipEl.style.opacity = '1';
-                    }
-                }
+
+                        tooltipEl.style.left = left + "px";
+                        tooltipEl.style.top = top + "px";
+                        tooltipEl.style.opacity = "1";
+                    },
+                },
             },
             interaction: {
-                mode: 'index',
+                mode: "index",
                 intersect: false,
-                axis: 'y'
+                axis: "y",
             },
             animation: {
                 duration: 1000,
-                easing: 'easeOutQuart'
+                easing: "easeOutQuart",
             },
-            onHover: function(event, activeElements) {
-                event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
-            }
+            onHover: function (event, activeElements) {
+                event.native.target.style.cursor =
+                    activeElements.length > 0 ? "pointer" : "default";
+            },
         },
-        plugins: [{
-            id: 'datalabels',
-            afterDatasetsDraw: function(chart) {
-                const ctx = chart.ctx;
-                const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-                
-                chart.data.datasets.forEach((dataset, datasetIndex) => {
-                    const meta = chart.getDatasetMeta(datasetIndex);
-                    meta.data.forEach((bar, index) => {
-                        if (datasetIndex === 1) {
-                            const total = chartData[index].total;
-                            ctx.fillStyle = isDark ? '#ffffff' : '#232946';
-                            ctx.font = `bold ${Math.max(10, Math.min(12, 400 / chartData.length))}px Arial`;
-                            ctx.textAlign = 'left';
-                            ctx.textBaseline = 'middle';
-                            ctx.fillText(Math.round(total), bar.x + 5, bar.y);
-                        }
+        plugins: [
+            {
+                id: "datalabels",
+                afterDatasetsDraw: function (chart) {
+                    const ctx = chart.ctx;
+                    const isDark =
+                        document.documentElement.getAttribute("data-theme") !==
+                        "light";
+
+                    chart.data.datasets.forEach((dataset, datasetIndex) => {
+                        const meta = chart.getDatasetMeta(datasetIndex);
+                        meta.data.forEach((bar, index) => {
+                            if (datasetIndex === 1) {
+                                const total = chartData[index].total;
+                                ctx.fillStyle = isDark ? "#ffffff" : "#232946";
+                                ctx.font = `bold ${Math.max(
+                                    10,
+                                    Math.min(12, 400 / chartData.length)
+                                )}px Arial`;
+                                ctx.textAlign = "left";
+                                ctx.textBaseline = "middle";
+                                ctx.fillText(
+                                    Math.round(total),
+                                    bar.x + 5,
+                                    bar.y
+                                );
+                            }
+                        });
                     });
-                });
-            }
-        }]
+                },
+            },
+        ],
     });
 }
 
 function updateKPIs() {
-    console.log('Atualizando KPIs:', processedData);
-    
-    const totalElement = document.getElementById('total-minutas');
-    const diaElement = document.getElementById('dia-produtivo');
-    const mediaElement = document.getElementById('media-usuario');
-    const usuariosElement = document.getElementById('usuarios-ativos');
-    
+    console.log("Atualizando KPIs:", processedData);
+
+    const totalElement = document.getElementById("total-minutas");
+    const diaElement = document.getElementById("dia-produtivo");
+    const mediaElement = document.getElementById("media-usuario");
+    const usuariosElement = document.getElementById("usuarios-ativos");
+
     if (totalElement) {
         totalElement.textContent = processedData.totalMinutas;
     }
-    
+
     if (diaElement) {
         diaElement.textContent = processedData.diaProdutivo;
     }
-    
+
     if (mediaElement) {
-        mediaElement.textContent = processedData.mediaUsuario > 0 ? processedData.mediaUsuario.toFixed(1) : '--';
+        mediaElement.textContent =
+            processedData.mediaUsuario > 0
+                ? processedData.mediaUsuario.toFixed(1)
+                : "--";
     }
-    
+
     if (usuariosElement) {
         usuariosElement.textContent = processedData.usuariosAtivos;
     }
-    
-    const topUsersContainer = document.getElementById('top-users');
+
+    const topUsersContainer = document.getElementById("top-users");
     if (topUsersContainer) {
-        topUsersContainer.innerHTML = '';
-        
+        topUsersContainer.innerHTML = "";
+
         if (processedData.topUsers && processedData.topUsers.length > 0) {
             processedData.topUsers.forEach((user, index) => {
-                const userDiv = document.createElement('div');
-                userDiv.className = 'user-item';
-                userDiv.textContent = `${index + 1}º ${user.nome}: ${Math.round(user.minutas)}`;
-                userDiv.style.marginBottom = '4px';
-                userDiv.style.fontSize = '12px';
-                userDiv.style.lineHeight = '1.2';
+                const userDiv = document.createElement("div");
+                userDiv.className = "user-item";
+                userDiv.textContent = `${index + 1}º ${user.nome}: ${Math.round(
+                    user.minutas
+                )}`;
+                userDiv.style.marginBottom = "4px";
+                userDiv.style.fontSize = "12px";
+                userDiv.style.lineHeight = "1.2";
                 topUsersContainer.appendChild(userDiv);
             });
         } else {
-            const userDiv = document.createElement('div');
-            userDiv.className = 'user-item';
-            userDiv.textContent = 'Nenhum dado disponível';
+            const userDiv = document.createElement("div");
+            userDiv.className = "user-item";
+            userDiv.textContent = "Nenhum dado disponível";
             topUsersContainer.appendChild(userDiv);
         }
     }
 }
 
 function renderMonths() {
-    const monthsGrid = document.getElementById('months-grid');
-    monthsGrid.innerHTML = '';
-    
-    processedData.mesesDisponiveis.forEach(month => {
+    const monthsGrid = document.getElementById("months-grid");
+    monthsGrid.innerHTML = "";
+
+    processedData.mesesDisponiveis.forEach((month) => {
         const isActive = processedData.mesesAtivos.includes(month);
-        
-        const monthChip = document.createElement('div');
-        monthChip.className = `month-chip ${isActive ? 'active' : ''}`;
+
+        const monthChip = document.createElement("div");
+        monthChip.className = `month-chip ${isActive ? "active" : ""}`;
         monthChip.textContent = month;
         monthChip.onclick = () => toggleMonth(month);
-        
+
         monthsGrid.appendChild(monthChip);
     });
 }
 
 function toggleMonth(month) {
     const index = processedData.mesesAtivos.indexOf(month);
-    
+
     if (index > -1) {
         processedData.mesesAtivos.splice(index, 1);
     } else {
         processedData.mesesAtivos.push(month);
     }
-    
+
     renderMonths();
-    
+
     if (excelData && excelData.length > 0) {
         processExcelData();
-        
-        const detalhesUsuario = document.querySelector('.detalhes-usuario');
+
+        const detalhesUsuario = document.querySelector(".detalhes-usuario");
         if (detalhesUsuario) {
-            const titulo = detalhesUsuario.querySelector('h3');
+            const titulo = detalhesUsuario.querySelector("h3");
             if (titulo) {
-                const nomeUsuario = titulo.textContent.replace('Detalhamento - ', '');
-                const chartData = processedData.usuarios ? processedData.usuarios.slice(0, 20) : [];
-                const usuarioAtual = chartData.find(u => u.nome === nomeUsuario);
-                
+                const nomeUsuario = titulo.textContent.replace(
+                    "Detalhamento - ",
+                    ""
+                );
+                const chartData = processedData.usuarios
+                    ? processedData.usuarios.slice(0, 20)
+                    : [];
+                const usuarioAtual = chartData.find(
+                    (u) => u.nome === nomeUsuario
+                );
+
                 if (usuarioAtual) {
-                    const tiposDetalhados = gerarDetalhesTooltipUsuarios(chartData);
+                    const tiposDetalhados =
+                        gerarDetalhesTooltipUsuarios(chartData);
                     const detalhes = tiposDetalhados[nomeUsuario];
-                    mostrarDetalhesUsuario(nomeUsuario, detalhes, usuarioAtual.minutas);
+                    mostrarDetalhesUsuario(
+                        nomeUsuario,
+                        detalhes,
+                        usuarioAtual.minutas
+                    );
                 }
             }
         }
@@ -1586,81 +1840,88 @@ function toggleMonth(month) {
 }
 
 function createChart() {
-    const ctx = document.getElementById('produtividade-chart');
+    const ctx = document.getElementById("produtividade-chart");
     if (!ctx) return;
-    
-    const context = ctx.getContext('2d');
-    
+
+    const context = ctx.getContext("2d");
+
     if (chartInstance) {
         chartInstance.destroy();
     }
-    
-    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-    const chartData = processedData.usuarios ? processedData.usuarios.slice(0, 20) : [];
-    
+
+    const isDark =
+        document.documentElement.getAttribute("data-theme") !== "light";
+    const chartData = processedData.usuarios
+        ? processedData.usuarios.slice(0, 20)
+        : [];
+
     if (chartData.length === 0) {
         chartInstance = new Chart(context, {
-            type: 'bar',
+            type: "bar",
             data: {
-                labels: ['Sem dados'],
-                datasets: [{
-                    label: 'Minutas',
-                    data: [0],
-                    backgroundColor: isDark ? '#4a90e2' : '#3cb3e6'
-                }]
+                labels: ["Sem dados"],
+                datasets: [
+                    {
+                        label: "Minutas",
+                        data: [0],
+                        backgroundColor: isDark ? "#4a90e2" : "#3cb3e6",
+                    },
+                ],
             },
             options: {
-                indexAxis: 'y',
+                indexAxis: "y",
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
                     title: {
                         display: true,
-                        text: 'Total de Minutas',
-                        color: isDark ? '#ffffff' : '#232946'
-                    }
+                        text: "Total de Minutas",
+                        color: isDark ? "#ffffff" : "#232946",
+                    },
                 },
                 scales: {
                     x: {
                         beginAtZero: true,
                         grid: {
-                            color: isDark ? '#404040' : '#e0e0e0'
+                            color: isDark ? "#404040" : "#e0e0e0",
                         },
                         ticks: {
-                            color: isDark ? '#ffffff' : '#232946'
-                        }
+                            color: isDark ? "#ffffff" : "#232946",
+                        },
                     },
                     y: {
                         grid: {
-                            display: false
+                            display: false,
                         },
                         ticks: {
-                            color: isDark ? '#ffffff' : '#232946'
-                        }
-                    }
-                }
-            }
+                            color: isDark ? "#ffffff" : "#232946",
+                        },
+                    },
+                },
+            },
         });
         return;
     }
-    
+
     const tiposDetalhados = gerarDetalhesTooltipUsuarios(chartData);
-    
+
     chartInstance = new Chart(context, {
-        type: 'bar',
+        type: "bar",
         data: {
-            labels: chartData.map(u => u.nome),
-            datasets: [{
-                label: 'Minutas',
-                data: chartData.map(u => u.minutas),
-                backgroundColor: isDark ? '#4a90e2' : '#3cb3e6',
-                borderColor: isDark ? '#4a90e2' : '#3cb3e6',
-                borderWidth: 0
-            }]
+            labels: chartData.map((u) => u.nome),
+            datasets: [
+                {
+                    label: "Minutas",
+                    data: chartData.map((u) => u.minutas),
+                    backgroundColor: isDark ? "#4a90e2" : "#3cb3e6",
+                    borderColor: isDark ? "#4a90e2" : "#3cb3e6",
+                    borderWidth: 0,
+                },
+            ],
         },
         options: {
-            indexAxis: 'y',
+            indexAxis: "y",
             responsive: true,
             maintainAspectRatio: false,
             onClick: (event, activeElements) => {
@@ -1668,126 +1929,143 @@ function createChart() {
                     const index = activeElements[0].index;
                     const nomeUsuario = chartData[index].nome;
                     const detalhes = tiposDetalhados[nomeUsuario];
-                    mostrarDetalhesUsuario(nomeUsuario, detalhes, chartData[index].minutas);
+                    mostrarDetalhesUsuario(
+                        nomeUsuario,
+                        detalhes,
+                        chartData[index].minutas
+                    );
                 }
             },
             plugins: {
                 legend: {
-                    display: false
+                    display: false,
                 },
                 title: {
                     display: true,
-                    text: 'Minutas por Usuário',
-                    color: isDark ? '#ffffff' : '#232946',
+                    text: "Minutas por Usuário",
+                    color: isDark ? "#ffffff" : "#232946",
                     font: {
                         size: 16,
-                        weight: 'bold'
-                    }
+                        weight: "bold",
+                    },
                 },
                 tooltip: {
                     callbacks: {
-                        title: function(context) {
+                        title: function (context) {
                             return context[0].label;
                         },
-                        label: function(context) {
+                        label: function (context) {
                             const nomeUsuario = context.label;
                             const detalhes = tiposDetalhados[nomeUsuario];
-                            
+
                             if (!detalhes || detalhes.length === 0) {
-                                return [`Total: ${Math.round(context.raw)} minutas`, 'Clique para mais detalhes'];
+                                return [
+                                    `Total: ${Math.round(context.raw)} minutas`,
+                                    "Clique para mais detalhes",
+                                ];
                             }
-                            
-                            const acordao = detalhes.find(d => d.nome === 'Acórdão')?.minutas || 0;
-                            const outrosTotal = detalhes.filter(d => d.nome !== 'Acórdão')
-                                                      .reduce((sum, item) => sum + item.minutas, 0);
-                            
+
+                            const acordao =
+                                detalhes.find((d) => d.nome === "Acórdão")
+                                    ?.minutas || 0;
+                            const outrosTotal = detalhes
+                                .filter((d) => d.nome !== "Acórdão")
+                                .reduce((sum, item) => sum + item.minutas, 0);
+
                             return [
                                 `Total: ${Math.round(context.raw)} minutas`,
-                                '',
+                                "",
                                 `Acórdão: ${Math.round(acordao)} minutas`,
-                                `Despacho/Decisão: ${Math.round(outrosTotal)} minutas`,
-                                '',
-                                'Clique para mais detalhes'
+                                `Despacho/Decisão: ${Math.round(
+                                    outrosTotal
+                                )} minutas`,
+                                "",
+                                "Clique para mais detalhes",
                             ];
-                        }
+                        },
                     },
-                    backgroundColor: isDark ? '#2d2d2d' : '#ffffff',
-                    titleColor: isDark ? '#ffffff' : '#232946',
-                    bodyColor: isDark ? '#ffffff' : '#232946',
-                    borderColor: isDark ? '#4a90e2' : '#3cb3e6',
+                    backgroundColor: isDark ? "#2d2d2d" : "#ffffff",
+                    titleColor: isDark ? "#ffffff" : "#232946",
+                    bodyColor: isDark ? "#ffffff" : "#232946",
+                    borderColor: isDark ? "#4a90e2" : "#3cb3e6",
                     borderWidth: 2,
                     cornerRadius: 8,
                     displayColors: false,
                     padding: 12,
                     titleFont: {
                         size: 14,
-                        weight: 'bold'
+                        weight: "bold",
                     },
                     bodyFont: {
-                        size: 12
-                    }
-                }
+                        size: 12,
+                    },
+                },
             },
             scales: {
                 x: {
                     beginAtZero: true,
                     grid: {
-                        color: isDark ? '#404040' : '#e0e0e0'
+                        color: isDark ? "#404040" : "#e0e0e0",
                     },
                     ticks: {
-                        color: isDark ? '#ffffff' : '#232946',
+                        color: isDark ? "#ffffff" : "#232946",
                         font: {
-                            size: 12
-                        }
-                    }
+                            size: 12,
+                        },
+                    },
                 },
                 y: {
                     grid: {
-                        display: false
+                        display: false,
                     },
                     ticks: {
-                        color: isDark ? '#ffffff' : '#232946',
+                        color: isDark ? "#ffffff" : "#232946",
                         font: {
-                            size: 11
-                        }
-                    }
-                }
-            }
+                            size: 11,
+                        },
+                    },
+                },
+            },
         },
-        plugins: [{
-            id: 'datalabels',
-            afterDatasetsDraw: function(chart) {
-                const ctx = chart.ctx;
-                const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-                chart.data.datasets.forEach((dataset, i) => {
-                    const meta = chart.getDatasetMeta(i);
-                    meta.data.forEach((bar, index) => {
-                        const data = dataset.data[index];
-                        ctx.fillStyle = isDark ? '#ffffff' : '#232946';
-                        ctx.font = 'bold 11px Arial';
-                        ctx.textAlign = 'left';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(Math.round(data), bar.x + 5, bar.y);
+        plugins: [
+            {
+                id: "datalabels",
+                afterDatasetsDraw: function (chart) {
+                    const ctx = chart.ctx;
+                    const isDark =
+                        document.documentElement.getAttribute("data-theme") !==
+                        "light";
+                    chart.data.datasets.forEach((dataset, i) => {
+                        const meta = chart.getDatasetMeta(i);
+                        meta.data.forEach((bar, index) => {
+                            const data = dataset.data[index];
+                            ctx.fillStyle = isDark ? "#ffffff" : "#232946";
+                            ctx.font = "bold 11px Arial";
+                            ctx.textAlign = "left";
+                            ctx.textBaseline = "middle";
+                            ctx.fillText(Math.round(data), bar.x + 5, bar.y);
+                        });
                     });
-                });
-            }
-        }]
+                },
+            },
+        ],
     });
 }
 
 function mostrarDetalhesUsuario(nomeUsuario, detalhes, totalMinutas) {
-    const chartContainer = document.querySelector('.chart-container');
-    
-    chartContainer.style.transition = 'all 0.3s ease';
-    chartContainer.style.opacity = '0';
-    chartContainer.style.transform = 'scale(0.95)';
-    
+    const chartContainer = document.querySelector(".chart-container");
+
+    chartContainer.style.transition = "all 0.3s ease";
+    chartContainer.style.opacity = "0";
+    chartContainer.style.transform = "scale(0.95)";
+
     setTimeout(() => {
-        const acordaoMinutas = detalhes.find(d => d.nome === 'Acórdão')?.minutas || 0;
+        const acordaoMinutas =
+            detalhes.find((d) => d.nome === "Acórdão")?.minutas || 0;
         const despachoMinutas = totalMinutas - acordaoMinutas;
-        
-        const outrosTipos = detalhes.filter(d => d.nome !== 'Acórdão');
-        
+
+        const outrosTipos = detalhes.filter((d) => d.nome !== "Acórdão");
+
         chartContainer.innerHTML = `
             <div class="detalhes-usuario">
                 <div class="detalhes-header">
@@ -1800,7 +2078,9 @@ function mostrarDetalhesUsuario(nomeUsuario, detalhes, totalMinutas) {
                         </div>
                         <div class="detalhes-texto">
                             <h3>Detalhamento - ${nomeUsuario}</h3>
-                            <div class="detalhes-total">Total: ${Math.round(totalMinutas)} minutas</div>
+                            <div class="detalhes-total">Total: ${Math.round(
+                                totalMinutas
+                            )} minutas</div>
                         </div>
                     </div>
                     <button class="btn-voltar" onclick="voltarGrafico()">
@@ -1819,12 +2099,18 @@ function mostrarDetalhesUsuario(nomeUsuario, detalhes, totalMinutas) {
                             </div>
                             <div class="categoria-info">
                                 <h4>Acórdão</h4>
-                                <div class="categoria-valor">${Math.round(acordaoMinutas)} minutas</div>
-                                <div class="categoria-percentual">${Math.round((acordaoMinutas / totalMinutas) * 100)}% do total</div>
+                                <div class="categoria-valor">${Math.round(
+                                    acordaoMinutas
+                                )} minutas</div>
+                                <div class="categoria-percentual">${Math.round(
+                                    (acordaoMinutas / totalMinutas) * 100
+                                )}% do total</div>
                             </div>
                         </div>
                         <div class="categoria-barra">
-                            <div class="barra-preenchida acordao-barra" style="width: ${(acordaoMinutas / totalMinutas) * 100}%"></div>
+                            <div class="barra-preenchida acordao-barra" style="width: ${
+                                (acordaoMinutas / totalMinutas) * 100
+                            }%"></div>
                         </div>
                     </div>
                     
@@ -1835,15 +2121,23 @@ function mostrarDetalhesUsuario(nomeUsuario, detalhes, totalMinutas) {
                             </div>
                             <div class="categoria-info">
                                 <h4>Despacho/Decisão</h4>
-                                <div class="categoria-valor">${Math.round(despachoMinutas)} minutas</div>
-                                <div class="categoria-percentual">${Math.round((despachoMinutas / totalMinutas) * 100)}% do total</div>
+                                <div class="categoria-valor">${Math.round(
+                                    despachoMinutas
+                                )} minutas</div>
+                                <div class="categoria-percentual">${Math.round(
+                                    (despachoMinutas / totalMinutas) * 100
+                                )}% do total</div>
                             </div>
                         </div>
                         <div class="categoria-barra">
-                            <div class="barra-preenchida despacho-barra" style="width: ${(despachoMinutas / totalMinutas) * 100}%"></div>
+                            <div class="barra-preenchida despacho-barra" style="width: ${
+                                (despachoMinutas / totalMinutas) * 100
+                            }%"></div>
                         </div>
                         
-                        ${outrosTipos.length > 0 ? `
+                        ${
+                            outrosTipos.length > 0
+                                ? `
                             <div class="subcategorias">
                                 <div class="subcategorias-header">
                                     <svg viewBox="0 0 24 24" fill="none">
@@ -1852,19 +2146,33 @@ function mostrarDetalhesUsuario(nomeUsuario, detalhes, totalMinutas) {
                                     <h5>Subcategorias</h5>
                                 </div>
                                 <div class="subcategorias-lista">
-                                    ${outrosTipos.map(tipo => `
+                                    ${outrosTipos
+                                        .map(
+                                            (tipo) => `
                                         <div class="subcategoria-item">
                                             <div class="subcategoria-indicador"></div>
-                                            <span class="subcategoria-nome">${tipo.nome}</span>
-                                            <span class="subcategoria-valor">${Math.round(tipo.minutas)} minutas</span>
+                                            <span class="subcategoria-nome">${
+                                                tipo.nome
+                                            }</span>
+                                            <span class="subcategoria-valor">${Math.round(
+                                                tipo.minutas
+                                            )} minutas</span>
                                             <div class="subcategoria-barra-mini">
-                                                <div class="subcategoria-preenchida" style="width: ${(tipo.minutas / despachoMinutas) * 100}%"></div>
+                                                <div class="subcategoria-preenchida" style="width: ${
+                                                    (tipo.minutas /
+                                                        despachoMinutas) *
+                                                    100
+                                                }%"></div>
                                             </div>
                                         </div>
-                                    `).join('')}
+                                    `
+                                        )
+                                        .join("")}
                                 </div>
                             </div>
-                        ` : ''}
+                        `
+                                : ""
+                        }
                     </div>
                 </div>
                 
@@ -1872,136 +2180,168 @@ function mostrarDetalhesUsuario(nomeUsuario, detalhes, totalMinutas) {
                     <div class="resumo-estatisticas">
                         <div class="stat-item">
                             <span class="stat-label">Tipo Predominante</span>
-                            <span class="stat-valor">${acordaoMinutas > despachoMinutas ? 'Acórdão' : 'Despacho/Decisão'}</span>
+                            <span class="stat-valor">${
+                                acordaoMinutas > despachoMinutas
+                                    ? "Acórdão"
+                                    : "Despacho/Decisão"
+                            }</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-label">Variedade</span>
-                            <span class="stat-valor">${detalhes.length} tipo${detalhes.length > 1 ? 's' : ''}</span>
+                            <span class="stat-valor">${detalhes.length} tipo${
+            detalhes.length > 1 ? "s" : ""
+        }</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-label">Eficiência</span>
-                            <span class="stat-valor">${totalMinutas > 50 ? 'Alta' : totalMinutas > 20 ? 'Média' : 'Baixa'}</span>
+                            <span class="stat-valor">${
+                                totalMinutas > 50
+                                    ? "Alta"
+                                    : totalMinutas > 20
+                                    ? "Média"
+                                    : "Baixa"
+                            }</span>
                         </div>
                     </div>
                 </div>
             </div>
         `;
-        
-        chartContainer.style.opacity = '1';
-        chartContainer.style.transform = 'scale(1)';
-        
+
+        chartContainer.style.opacity = "1";
+        chartContainer.style.transform = "scale(1)";
+
         setTimeout(() => {
-            criarMiniGraficosPizza(acordaoMinutas, despachoMinutas, totalMinutas);
-            
+            criarMiniGraficosPizza(
+                acordaoMinutas,
+                despachoMinutas,
+                totalMinutas
+            );
+
             setTimeout(() => {
-                const acordaoIcone = document.querySelector('.acordao-categoria .categoria-icone');
-                const despachoIcone = document.querySelector('.despacho-categoria .categoria-icone');
-                
+                const acordaoIcone = document.querySelector(
+                    ".acordao-categoria .categoria-icone"
+                );
+                const despachoIcone = document.querySelector(
+                    ".despacho-categoria .categoria-icone"
+                );
+
                 if (acordaoIcone) {
-                    acordaoIcone.classList.add('pulse');
-                    setTimeout(() => acordaoIcone.classList.remove('pulse'), 4000);
+                    acordaoIcone.classList.add("pulse");
+                    setTimeout(
+                        () => acordaoIcone.classList.remove("pulse"),
+                        4000
+                    );
                 }
-                
+
                 if (despachoIcone) {
-                    despachoIcone.classList.add('pulse');
-                    setTimeout(() => despachoIcone.classList.remove('pulse'), 4000);
+                    despachoIcone.classList.add("pulse");
+                    setTimeout(
+                        () => despachoIcone.classList.remove("pulse"),
+                        4000
+                    );
                 }
             }, 800);
-            
-            const elementos = chartContainer.querySelectorAll('.categoria-detalhes, .subcategoria-item');
+
+            const elementos = chartContainer.querySelectorAll(
+                ".categoria-detalhes, .subcategoria-item"
+            );
             elementos.forEach((el, index) => {
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(20px)';
+                el.style.opacity = "0";
+                el.style.transform = "translateY(20px)";
                 setTimeout(() => {
-                    el.style.transition = 'all 0.3s ease';
-                    el.style.opacity = '1';
-                    el.style.transform = 'translateY(0)';
+                    el.style.transition = "all 0.3s ease";
+                    el.style.opacity = "1";
+                    el.style.transform = "translateY(0)";
                 }, index * 100);
             });
         }, 100);
-        
     }, 300);
 }
 
 function criarMiniGraficosPizza(acordaoMinutas, despachoMinutas, totalMinutas) {
-    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-    
+    const isDark =
+        document.documentElement.getAttribute("data-theme") !== "light";
+
     const acordaoCanvas = document.querySelector('[id^="chart-acordao-"]');
     const despachoCanvas = document.querySelector('[id^="chart-despacho-"]');
-    
+
     if (acordaoCanvas) {
-        const ctx = acordaoCanvas.getContext('2d');
+        const ctx = acordaoCanvas.getContext("2d");
         new Chart(ctx, {
-            type: 'doughnut',
+            type: "doughnut",
             data: {
-                datasets: [{
-                    data: [acordaoMinutas, despachoMinutas],
-                    backgroundColor: ['#FFFFFF', '#1565c0'],
-                    borderWidth: 2,
-                    borderColor: ['#1565c0', '#1565c0'],
-                    offset: [12, 0]
-                }]
+                datasets: [
+                    {
+                        data: [acordaoMinutas, despachoMinutas],
+                        backgroundColor: ["#FFFFFF", "#1565c0"],
+                        borderWidth: 2,
+                        borderColor: ["#1565c0", "#1565c0"],
+                        offset: [12, 0],
+                    },
+                ],
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                cutout: '65%',
+                cutout: "65%",
                 animation: {
                     animateRotate: true,
                     duration: 1500,
-                    easing: 'easeOutCubic'
+                    easing: "easeOutCubic",
                 },
                 plugins: {
                     legend: { display: false },
-                    tooltip: { enabled: false }
-                }
-            }
+                    tooltip: { enabled: false },
+                },
+            },
         });
     }
-    
+
     if (despachoCanvas) {
-        const ctx = despachoCanvas.getContext('2d');
+        const ctx = despachoCanvas.getContext("2d");
         new Chart(ctx, {
-            type: 'doughnut',
+            type: "doughnut",
             data: {
-                datasets: [{
-                    data: [acordaoMinutas, despachoMinutas],
-                    backgroundColor: ['#1565c0', '#FFFFFF'],
-                    borderWidth: 2,
-                    borderColor: ['#1565c0', '#4a90e2'],
-                    offset: [0, 12]
-                }]
+                datasets: [
+                    {
+                        data: [acordaoMinutas, despachoMinutas],
+                        backgroundColor: ["#1565c0", "#FFFFFF"],
+                        borderWidth: 2,
+                        borderColor: ["#1565c0", "#4a90e2"],
+                        offset: [0, 12],
+                    },
+                ],
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                cutout: '65%',
+                cutout: "65%",
                 animation: {
                     animateRotate: true,
                     duration: 1500,
-                    easing: 'easeOutCubic'
+                    easing: "easeOutCubic",
                 },
                 plugins: {
                     legend: { display: false },
-                    tooltip: { enabled: false }
-                }
-            }
+                    tooltip: { enabled: false },
+                },
+            },
         });
     }
 }
 
 function voltarGrafico() {
-    const chartContainer = document.querySelector('.chart-container');
-    
-    chartContainer.style.transition = 'all 0.3s ease';
-    chartContainer.style.opacity = '0';
-    chartContainer.style.transform = 'scale(0.95)';
-    
+    const chartContainer = document.querySelector(".chart-container");
+
+    chartContainer.style.transition = "all 0.3s ease";
+    chartContainer.style.opacity = "0";
+    chartContainer.style.transform = "scale(0.95)";
+
     setTimeout(() => {
         chartContainer.innerHTML = '<canvas id="produtividade-chart"></canvas>';
-        chartContainer.style.opacity = '1';
-        chartContainer.style.transform = 'scale(1)';
-        
+        chartContainer.style.opacity = "1";
+        chartContainer.style.transform = "scale(1)";
+
         setTimeout(() => {
             createChart();
         }, 100);
@@ -2010,30 +2350,48 @@ function voltarGrafico() {
 
 function gerarDetalhesTooltipUsuarios(usuarios) {
     if (!excelData || excelData.length === 0) return {};
-    
+
     const usuariosDetalhes = {};
-    
-    usuarios.forEach(usuario => {
+
+    usuarios.forEach((usuario) => {
         usuariosDetalhes[usuario.nome] = [];
     });
-    
+
     let filteredData = excelData;
-    
-    if (processedData.mesesAtivos && processedData.mesesAtivos.length > 0 && 
-        processedData.mesesDisponiveis && processedData.mesesAtivos.length < processedData.mesesDisponiveis.length) {
-        filteredData = excelData.filter(row => {
-            if (!row['Data criação']) return false;
-            
+
+    if (
+        processedData.mesesAtivos &&
+        processedData.mesesAtivos.length > 0 &&
+        processedData.mesesDisponiveis &&
+        processedData.mesesAtivos.length < processedData.mesesDisponiveis.length
+    ) {
+        filteredData = excelData.filter((row) => {
+            if (!row["Data criação"]) return false;
+
             try {
-                let date = row['Data criação'];
+                let date = row["Data criação"];
                 if (!(date instanceof Date)) {
                     date = new Date(date);
                 }
-                
+
                 if (!isNaN(date.getTime())) {
-                    const mesNomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 
-                                     'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-                    const mesAno = `${mesNomes[date.getMonth()]}/${date.getFullYear()}`;
+                    const mesNomes = [
+                        "jan",
+                        "fev",
+                        "mar",
+                        "abr",
+                        "mai",
+                        "jun",
+                        "jul",
+                        "ago",
+                        "set",
+                        "out",
+                        "nov",
+                        "dez",
+                    ];
+                    const mesAno = `${
+                        mesNomes[date.getMonth()]
+                    }/${date.getFullYear()}`;
                     return processedData.mesesAtivos.includes(mesAno);
                 }
                 return false;
@@ -2042,102 +2400,153 @@ function gerarDetalhesTooltipUsuarios(usuarios) {
             }
         });
     }
-    
-    filteredData.forEach(row => {
-        const nroProcesso = row['Nro. processo'];
-        if (!nroProcesso || nroProcesso.trim() === '') return;
-        
-        const usuario = row['Usuário'];
-        if (!usuario || usuario.toString().trim() === '') return;
-        
+
+    filteredData.forEach((row) => {
+        const nroProcesso = row["Nro. processo"];
+        if (!nroProcesso || nroProcesso.trim() === "") return;
+
+        const usuario = row["Usuário"];
+        if (!usuario || usuario.toString().trim() === "") return;
+
         if (!usuariosDetalhes[usuario]) return;
-        
-        const peso = parseFloat(row['peso']) || 1.0;
-        const tipoValue = row['Tipo'];
-        const agendamentoValue = row['Agendamento'];
-        
-        let tipoFinal = 'Outros';
-        
-        if (tipoValue && typeof tipoValue === 'string') {
+
+        const peso = parseFloat(row["peso"]) || 1.0;
+        const tipoValue = row["Tipo"];
+        const agendamentoValue = row["Agendamento"];
+
+        let tipoFinal = "Outros";
+
+        if (tipoValue && typeof tipoValue === "string") {
             const tipoLimpo = tipoValue.toString().trim().toUpperCase();
-            
-            if (tipoLimpo === 'ACÓRDÃO' || tipoLimpo === 'VOTO-VISTA' || tipoLimpo === 'VOTO DIVERGENTE') {
-                tipoFinal = 'Acórdão';
-            }
-            else if (tipoLimpo === 'DESPACHO/DECISÃO') {
-                if (agendamentoValue && typeof agendamentoValue === 'string') {
+
+            if (
+                tipoLimpo === "ACÓRDÃO" ||
+                tipoLimpo === "VOTO-VISTA" ||
+                tipoLimpo === "VOTO DIVERGENTE"
+            ) {
+                tipoFinal = "Acórdão";
+            } else if (tipoLimpo === "DESPACHO/DECISÃO") {
+                if (agendamentoValue && typeof agendamentoValue === "string") {
                     let agendamentoLimpo = agendamentoValue.toString().trim();
-                    
-                    if (agendamentoLimpo.includes('(') && agendamentoLimpo.includes(')')) {
-                        agendamentoLimpo = agendamentoLimpo.substring(0, agendamentoLimpo.indexOf('(')).trim();
+
+                    if (
+                        agendamentoLimpo.includes("(") &&
+                        agendamentoLimpo.includes(")")
+                    ) {
+                        agendamentoLimpo = agendamentoLimpo
+                            .substring(0, agendamentoLimpo.indexOf("("))
+                            .trim();
                     }
-                    
-                    if (agendamentoLimpo && agendamentoLimpo !== '') {
+
+                    if (agendamentoLimpo && agendamentoLimpo !== "") {
                         tipoFinal = agendamentoLimpo;
                     }
                 }
-            }
-            else if (tipoLimpo !== '' && tipoLimpo !== 'TIPO') {
+            } else if (tipoLimpo !== "" && tipoLimpo !== "TIPO") {
                 tipoFinal = tipoValue.toString().trim();
             }
         }
-        
-        const tipoExistente = usuariosDetalhes[usuario].find(t => t.nome === tipoFinal);
+
+        const tipoExistente = usuariosDetalhes[usuario].find(
+            (t) => t.nome === tipoFinal
+        );
         if (tipoExistente) {
             tipoExistente.minutas += peso;
         } else {
             usuariosDetalhes[usuario].push({
                 nome: tipoFinal,
-                minutas: peso
+                minutas: peso,
             });
         }
     });
-    
-    Object.keys(usuariosDetalhes).forEach(usuario => {
+
+    Object.keys(usuariosDetalhes).forEach((usuario) => {
         usuariosDetalhes[usuario].sort((a, b) => {
-            if (a.nome === 'Acórdão') return -1;
-            if (b.nome === 'Acórdão') return 1;
+            if (a.nome === "Acórdão") return -1;
+            if (b.nome === "Acórdão") return 1;
             return b.minutas - a.minutas;
         });
     });
-    
+
     return usuariosDetalhes;
 }
 
 function gerarDetalhesTooltipComparacao(usuarios) {
     const cores = [
-        '#1565c0', '#43a047', '#e53935', '#8e24aa', '#fb8c00',
-        '#00acc1', '#7cb342', '#d81b60', '#5e35b1', '#ff7043',
-        '#26a69a', '#ab47bc', '#42a5f5', '#66bb6a', '#ef5350'
+        "#1565c0",
+        "#43a047",
+        "#e53935",
+        "#8e24aa",
+        "#fb8c00",
+        "#00acc1",
+        "#7cb342",
+        "#d81b60",
+        "#5e35b1",
+        "#ff7043",
+        "#26a69a",
+        "#ab47bc",
+        "#42a5f5",
+        "#66bb6a",
+        "#ef5350",
     ];
 
     const coresDespacho = [
-        '#42a5f5', '#66bb6a', '#ef5350', '#ba68c8', '#ffb74d',
-        '#4dd0e1', '#9ccc65', '#f06292', '#7986cb', '#ff8a65',
-        '#4db6ac', '#ce93d8', '#64b5f6', '#81c784', '#e57373'
+        "#42a5f5",
+        "#66bb6a",
+        "#ef5350",
+        "#ba68c8",
+        "#ffb74d",
+        "#4dd0e1",
+        "#9ccc65",
+        "#f06292",
+        "#7986cb",
+        "#ff8a65",
+        "#4db6ac",
+        "#ce93d8",
+        "#64b5f6",
+        "#81c784",
+        "#e57373",
     ];
 
     const resultado = {};
-    
+
     if (!excelData || excelData.length === 0) return resultado;
-    
+
     let filteredData = excelData;
-    
-    if (processedData.mesesAtivos && processedData.mesesAtivos.length > 0 && 
-        processedData.mesesDisponiveis && processedData.mesesAtivos.length < processedData.mesesDisponiveis.length) {
-        filteredData = excelData.filter(row => {
-            if (!row['Data criação']) return false;
-            
+
+    if (
+        processedData.mesesAtivos &&
+        processedData.mesesAtivos.length > 0 &&
+        processedData.mesesDisponiveis &&
+        processedData.mesesAtivos.length < processedData.mesesDisponiveis.length
+    ) {
+        filteredData = excelData.filter((row) => {
+            if (!row["Data criação"]) return false;
+
             try {
-                let date = row['Data criação'];
+                let date = row["Data criação"];
                 if (!(date instanceof Date)) {
                     date = new Date(date);
                 }
-                
+
                 if (!isNaN(date.getTime())) {
-                    const mesNomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 
-                                     'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-                    const mesAno = `${mesNomes[date.getMonth()]}/${date.getFullYear()}`;
+                    const mesNomes = [
+                        "jan",
+                        "fev",
+                        "mar",
+                        "abr",
+                        "mai",
+                        "jun",
+                        "jul",
+                        "ago",
+                        "set",
+                        "out",
+                        "nov",
+                        "dez",
+                    ];
+                    const mesAno = `${
+                        mesNomes[date.getMonth()]
+                    }/${date.getFullYear()}`;
                     return processedData.mesesAtivos.includes(mesAno);
                 }
                 return false;
@@ -2146,30 +2555,34 @@ function gerarDetalhesTooltipComparacao(usuarios) {
             }
         });
     }
-    
+
     usuarios.forEach((usuario, index) => {
         let acordaoMinutas = 0;
         let despachoMinutas = 0;
-        
-        filteredData.forEach(row => {
-            const nroProcesso = row['Nro. processo'];
-            if (!nroProcesso || nroProcesso.trim() === '') return;
-            
-            const usuarioRow = row['Usuário'];
-            if (!usuarioRow || usuarioRow.toString().trim() === '') return;
-            
+
+        filteredData.forEach((row) => {
+            const nroProcesso = row["Nro. processo"];
+            if (!nroProcesso || nroProcesso.trim() === "") return;
+
+            const usuarioRow = row["Usuário"];
+            if (!usuarioRow || usuarioRow.toString().trim() === "") return;
+
             if (usuarioRow !== usuario.nome) return;
-            
-            const peso = parseFloat(row['peso']) || 1.0;
-            const tipoValue = row['Tipo'];
-            const agendamentoValue = row['Agendamento'];
-            
-            if (tipoValue && typeof tipoValue === 'string') {
+
+            const peso = parseFloat(row["peso"]) || 1.0;
+            const tipoValue = row["Tipo"];
+            const agendamentoValue = row["Agendamento"];
+
+            if (tipoValue && typeof tipoValue === "string") {
                 const tipoLimpo = tipoValue.toString().trim().toUpperCase();
-                
-                if (tipoLimpo === 'ACÓRDÃO' || tipoLimpo === 'VOTO-VISTA' || tipoLimpo === 'VOTO DIVERGENTE') {
+
+                if (
+                    tipoLimpo === "ACÓRDÃO" ||
+                    tipoLimpo === "VOTO-VISTA" ||
+                    tipoLimpo === "VOTO DIVERGENTE"
+                ) {
                     acordaoMinutas += peso;
-                } else if (tipoLimpo === 'DESPACHO/DECISÃO') {
+                } else if (tipoLimpo === "DESPACHO/DECISÃO") {
                     despachoMinutas += peso;
                 } else {
                     despachoMinutas += peso;
@@ -2178,20 +2591,20 @@ function gerarDetalhesTooltipComparacao(usuarios) {
                 despachoMinutas += peso;
             }
         });
-        
+
         resultado[usuario.nome] = {
             acordao: {
                 minutas: Math.round(acordaoMinutas * 10) / 10,
-                cor: cores[index % cores.length]
+                cor: cores[index % cores.length],
             },
             despacho: {
                 minutas: Math.round(despachoMinutas * 10) / 10,
-                cor: coresDespacho[index % coresDespacho.length]
+                cor: coresDespacho[index % coresDespacho.length],
             },
-            total: Math.round((acordaoMinutas + despachoMinutas) * 10) / 10
+            total: Math.round((acordaoMinutas + despachoMinutas) * 10) / 10,
         };
     });
-    
+
     return resultado;
 }
 
@@ -2205,102 +2618,162 @@ function reprocessarDados() {
 function updateChart() {
     if (chartInstance && processedData.usuarios.length > 0) {
         const chartData = processedData.usuarios.slice(0, 20);
-        
-        chartInstance.data.labels = chartData.map(u => u.nome);
-        chartInstance.data.datasets[0].data = chartData.map(u => u.minutas);
+
+        chartInstance.data.labels = chartData.map((u) => u.nome);
+        chartInstance.data.datasets[0].data = chartData.map((u) => u.minutas);
         chartInstance.update();
     }
 }
 
 function importData() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.xlsx,.xls';
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".xlsx,.xls";
     input.multiple = true;
-    
-    input.onchange = function(event) {
+
+    input.onchange = function (event) {
         const files = Array.from(event.target.files);
         if (files.length === 0) return;
-        
-        logger.info(`Iniciando importação de ${files.length} arquivo(s)`, { arquivos: files.map(f => f.name) });
-        
+
+        logger.info(`Iniciando importação de ${files.length} arquivo(s)`, {
+            arquivos: files.map((f) => f.name),
+        });
+
         let processedFiles = 0;
         let totalRows = 0;
         let fileNames = [];
         let allErrors = [];
         excelData = [];
-        
+
         files.forEach((file, index) => {
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 try {
                     logger.info(`Processando arquivo: ${file.name}`);
-                    
+
                     const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
+                    const workbook = XLSX.read(data, { type: "array" });
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
-                    
-                    const range = XLSX.utils.decode_range(worksheet['!ref']);
-                    
+
+                    const range = XLSX.utils.decode_range(worksheet["!ref"]);
+
                     const colunaMapping = detectarColunas(worksheet, range);
                     if (colunaMapping.errors.length > 0) {
-                        const errorMsg = `Colunas não encontradas: ${colunaMapping.errors.join(', ')}`;
-                        logger.error(`Arquivo ${file.name}: ${errorMsg}`, { erros: colunaMapping.errors });
+                        const errorMsg = `Colunas não encontradas: ${colunaMapping.errors.join(
+                            ", "
+                        )}`;
+                        logger.error(`Arquivo ${file.name}: ${errorMsg}`, {
+                            erros: colunaMapping.errors,
+                        });
                         allErrors.push(`${file.name}: ${errorMsg}`);
                         processedFiles++;
                         checkProcessingComplete();
                         return;
                     }
-                    
+
                     let currentFileRows = 0;
                     let invalidRows = 0;
                     let linhasExcluidas = [];
-                    
+
                     for (let R = 2; R <= range.e.r; ++R) {
                         const numeroLinha = R + 1;
                         const row = {};
-                        
-                        const tipoCell = worksheet[XLSX.utils.encode_cell({r: R, c: colunaMapping.tipo})];
-                        const codigoCell = worksheet[XLSX.utils.encode_cell({r: R, c: colunaMapping.codigo})];
-                        const nroProcessoCell = worksheet[XLSX.utils.encode_cell({r: R, c: colunaMapping.processo})];
-                        const usuarioCell = worksheet[XLSX.utils.encode_cell({r: R, c: colunaMapping.usuario})];
-                        const dataCell = worksheet[XLSX.utils.encode_cell({r: R, c: colunaMapping.data})];
-                        const statusCell = worksheet[XLSX.utils.encode_cell({r: R, c: colunaMapping.status})];
-                        const agendamentoCell = worksheet[XLSX.utils.encode_cell({r: R, c: colunaMapping.agendamento})];
-                        
+
+                        const tipoCell =
+                            worksheet[
+                                XLSX.utils.encode_cell({
+                                    r: R,
+                                    c: colunaMapping.tipo,
+                                })
+                            ];
+                        const codigoCell =
+                            worksheet[
+                                XLSX.utils.encode_cell({
+                                    r: R,
+                                    c: colunaMapping.codigo,
+                                })
+                            ];
+                        const nroProcessoCell =
+                            worksheet[
+                                XLSX.utils.encode_cell({
+                                    r: R,
+                                    c: colunaMapping.processo,
+                                })
+                            ];
+                        const usuarioCell =
+                            worksheet[
+                                XLSX.utils.encode_cell({
+                                    r: R,
+                                    c: colunaMapping.usuario,
+                                })
+                            ];
+                        const dataCell =
+                            worksheet[
+                                XLSX.utils.encode_cell({
+                                    r: R,
+                                    c: colunaMapping.data,
+                                })
+                            ];
+                        const statusCell =
+                            worksheet[
+                                XLSX.utils.encode_cell({
+                                    r: R,
+                                    c: colunaMapping.status,
+                                })
+                            ];
+                        const agendamentoCell =
+                            worksheet[
+                                XLSX.utils.encode_cell({
+                                    r: R,
+                                    c: colunaMapping.agendamento,
+                                })
+                            ];
+
                         if (!usuarioCell || !usuarioCell.v) {
                             invalidRows++;
                             linhasExcluidas.push({
                                 linha: numeroLinha,
-                                motivo: "Usuário vazio ou inexistente"
+                                motivo: "Usuário vazio ou inexistente",
                             });
                             continue;
                         }
-                        
+
                         let usuario = usuarioCell.v.toString().trim();
-                        if (!usuario || usuario === '' || 
-                            usuario.toUpperCase() === "ANGELOBRASIL" || 
+                        if (
+                            !usuario ||
+                            usuario === "" ||
+                            usuario.toUpperCase() === "ANGELOBRASIL" ||
                             usuario.toUpperCase() === "SECAUTOLOC" ||
                             usuario.toUpperCase() === "USUÁRIO" ||
-                            usuario.toUpperCase() === "USUARIO") {
+                            usuario.toUpperCase() === "USUARIO"
+                        ) {
                             invalidRows++;
                             linhasExcluidas.push({
                                 linha: numeroLinha,
-                                motivo: `Usuário inválido: "${usuario}"`
+                                motivo: `Usuário inválido: "${usuario}"`,
                             });
                             continue;
                         }
-                        
-                        const tipo = tipoCell && tipoCell.v ? tipoCell.v.toString().trim() : '';
-                        const status = statusCell && statusCell.v ? statusCell.v.toString().trim() : '';
-                        const nroProcesso = nroProcessoCell && nroProcessoCell.v ? nroProcessoCell.v.toString().trim() : '';
-                        
+
+                        const tipo =
+                            tipoCell && tipoCell.v
+                                ? tipoCell.v.toString().trim()
+                                : "";
+                        const status =
+                            statusCell && statusCell.v
+                                ? statusCell.v.toString().trim()
+                                : "";
+                        const nroProcesso =
+                            nroProcessoCell && nroProcessoCell.v
+                                ? nroProcessoCell.v.toString().trim()
+                                : "";
+
                         if (!isValidStatus(status)) {
                             invalidRows++;
                             linhasExcluidas.push({
                                 linha: numeroLinha,
-                                motivo: `Status inválido: "${status}"`
+                                motivo: `Status inválido: "${status}"`,
                             });
                             continue;
                         }
@@ -2308,90 +2781,111 @@ function importData() {
                             invalidRows++;
                             linhasExcluidas.push({
                                 linha: numeroLinha,
-                                motivo: `Tipo inválido: "${tipo}"`
+                                motivo: `Tipo inválido: "${tipo}"`,
                             });
                             continue;
                         }
-                        if (!nroProcesso || nroProcesso === '') {
+                        if (!nroProcesso || nroProcesso === "") {
                             invalidRows++;
                             linhasExcluidas.push({
                                 linha: numeroLinha,
-                                motivo: "Número do processo vazio"
+                                motivo: "Número do processo vazio",
                             });
                             continue;
                         }
-                        
-                        row['Tipo'] = tipo;
-                        row['Cod. assunto'] = codigoCell && codigoCell.v ? codigoCell.v.toString().trim() : '';
-                        row['Nro. processo'] = nroProcesso;
-                        row['Usuário'] = usuario;
-                        row['Status'] = status;
-                        row['Agendamento'] = agendamentoCell && agendamentoCell.v ? agendamentoCell.v.toString().trim() : '';
-                        
+
+                        row["Tipo"] = tipo;
+                        row["Cod. assunto"] =
+                            codigoCell && codigoCell.v
+                                ? codigoCell.v.toString().trim()
+                                : "";
+                        row["Nro. processo"] = nroProcesso;
+                        row["Usuário"] = usuario;
+                        row["Status"] = status;
+                        row["Agendamento"] =
+                            agendamentoCell && agendamentoCell.v
+                                ? agendamentoCell.v.toString().trim()
+                                : "";
+
                         if (dataCell && dataCell.v) {
-                            if (dataCell.t === 'n') {
-                                row['Data criação'] = new Date((dataCell.v - 25569) * 86400 * 1000);
+                            if (dataCell.t === "n") {
+                                row["Data criação"] = new Date(
+                                    (dataCell.v - 25569) * 86400 * 1000
+                                );
                             } else {
                                 const dateStr = dataCell.v.toString();
-                                if (dateStr.includes('/')) {
-                                    const [datePart, timePart] = dateStr.split(' ');
-                                    const [day, month, year] = datePart.split('/');
-                                    row['Data criação'] = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                                if (dateStr.includes("/")) {
+                                    const [datePart, timePart] =
+                                        dateStr.split(" ");
+                                    const [day, month, year] =
+                                        datePart.split("/");
+                                    row["Data criação"] = new Date(
+                                        parseInt(year),
+                                        parseInt(month) - 1,
+                                        parseInt(day)
+                                    );
                                 } else {
-                                    row['Data criação'] = new Date(dataCell.v);
+                                    row["Data criação"] = new Date(dataCell.v);
                                 }
                             }
                         }
-                        
-                        row['peso'] = 1.0;
+
+                        row["peso"] = 1.0;
                         excelData.push(row);
                         currentFileRows++;
                     }
-                    
+
                     if (linhasExcluidas.length > 0) {
                         const exemploPorMotivo = {};
                         const contagemPorMotivo = {};
-                        
-                        linhasExcluidas.forEach(item => {
-                            const categoria = item.motivo.split(':')[0];
-                            
+
+                        linhasExcluidas.forEach((item) => {
+                            const categoria = item.motivo.split(":")[0];
+
                             if (!contagemPorMotivo[categoria]) {
                                 contagemPorMotivo[categoria] = 0;
                                 exemploPorMotivo[categoria] = [];
                             }
-                            
+
                             contagemPorMotivo[categoria]++;
-                            
+
                             if (exemploPorMotivo[categoria].length < 10) {
                                 exemploPorMotivo[categoria].push(item);
                             }
                         });
-                        
-                        logger.warn(`Linhas excluídas no arquivo ${file.name}`, {
-                            totalExcluidas: linhasExcluidas.length,
-                            resumoDetalhado: Object.keys(contagemPorMotivo).map(categoria => ({
-                                categoria: categoria,
-                                total: contagemPorMotivo[categoria],
-                                exemplos: exemploPorMotivo[categoria]
-                            })),
-                            resumoMotivos: contagemPorMotivo
-                        });
+
+                        logger.warn(
+                            `Linhas excluídas no arquivo ${file.name}`,
+                            {
+                                totalExcluidas: linhasExcluidas.length,
+                                resumoDetalhado: Object.keys(
+                                    contagemPorMotivo
+                                ).map((categoria) => ({
+                                    categoria: categoria,
+                                    total: contagemPorMotivo[categoria],
+                                    exemplos: exemploPorMotivo[categoria],
+                                })),
+                                resumoMotivos: contagemPorMotivo,
+                            }
+                        );
                     }
-                    
-                    logger.info(`Arquivo ${file.name} processado`, { 
-                        registrosValidos: currentFileRows, 
+
+                    logger.info(`Arquivo ${file.name} processado`, {
+                        registrosValidos: currentFileRows,
                         registrosInvalidos: invalidRows,
-                        totalLinhas: range.e.r - 1
+                        totalLinhas: range.e.r - 1,
                     });
-                    
+
                     totalRows += currentFileRows;
                     fileNames.push(file.name);
                     processedFiles++;
-                    
+
                     checkProcessingComplete();
-                    
                 } catch (error) {
-                    logger.error(`Erro ao processar arquivo ${file.name}`, error);
+                    logger.error(
+                        `Erro ao processar arquivo ${file.name}`,
+                        error
+                    );
                     allErrors.push(`${file.name}: Erro na leitura do arquivo`);
                     processedFiles++;
                     checkProcessingComplete();
@@ -2399,22 +2893,36 @@ function importData() {
             };
             reader.readAsArrayBuffer(file);
         });
-        
+
         function checkProcessingComplete() {
             if (processedFiles === files.length) {
-                logger.info(`Importação finalizada`, { 
+                logger.info(`Importação finalizada`, {
                     totalArquivos: files.length,
                     arquivosProcessados: fileNames.length,
                     totalRegistros: totalRows,
-                    erros: allErrors.length
+                    erros: allErrors.length,
                 });
-                
+
                 if (allErrors.length > 0) {
-                    alert(`Alguns arquivos não puderam ser processados:\n\n${allErrors.join('\n')}\n\nArquivos processados com sucesso:\n${fileNames.map(name => `• ${name}`).join('\n')}\n\nTotal de registros válidos: ${totalRows}`);
+                    alert(
+                        `Alguns arquivos não puderam ser processados:\n\n${allErrors.join(
+                            "\n"
+                        )}\n\nArquivos processados com sucesso:\n${fileNames
+                            .map((name) => `• ${name}`)
+                            .join(
+                                "\n"
+                            )}\n\nTotal de registros válidos: ${totalRows}`
+                    );
                 } else {
-                    alert(`Dados carregados com sucesso!\n\nArquivos processados:\n${fileNames.map(name => `• ${name}`).join('\n')}\n\nTotal de registros válidos: ${totalRows}`);
+                    alert(
+                        `Dados carregados com sucesso!\n\nArquivos processados:\n${fileNames
+                            .map((name) => `• ${name}`)
+                            .join(
+                                "\n"
+                            )}\n\nTotal de registros válidos: ${totalRows}`
+                    );
                 }
-                
+
                 if (excelData.length > 0) {
                     extractMonthsFromData();
                     processExcelData();
@@ -2422,17 +2930,28 @@ function importData() {
             }
         }
     };
-    
+
     input.click();
 }
-
 
 function extrairMesAno(data) {
     const date = new Date(data);
     if (isNaN(date.getTime())) return null;
-    
-    const mesNomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 
-                     'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+    const mesNomes = [
+        "jan",
+        "fev",
+        "mar",
+        "abr",
+        "mai",
+        "jun",
+        "jul",
+        "ago",
+        "set",
+        "out",
+        "nov",
+        "dez",
+    ];
     return `${mesNomes[date.getMonth()]}/${date.getFullYear()}`;
 }
 
@@ -2443,56 +2962,85 @@ function extractMonthsFromData() {
         renderMonths();
         return;
     }
-    
+
     const meses = new Set();
-    
-    excelData.forEach(row => {
-        if (row['Data criação']) {
+
+    excelData.forEach((row) => {
+        if (row["Data criação"]) {
             try {
-                let date = row['Data criação'];
+                let date = row["Data criação"];
                 if (!(date instanceof Date)) {
                     date = new Date(date);
                 }
-                
+
                 if (!isNaN(date.getTime())) {
-                    const mesNomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 
-                                     'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-                    const mesAno = `${mesNomes[date.getMonth()]}/${date.getFullYear()}`;
+                    const mesNomes = [
+                        "jan",
+                        "fev",
+                        "mar",
+                        "abr",
+                        "mai",
+                        "jun",
+                        "jul",
+                        "ago",
+                        "set",
+                        "out",
+                        "nov",
+                        "dez",
+                    ];
+                    const mesAno = `${
+                        mesNomes[date.getMonth()]
+                    }/${date.getFullYear()}`;
                     meses.add(mesAno);
                 }
             } catch (e) {
-                console.log('Erro ao processar data:', row['Data criação']);
+                console.log("Erro ao processar data:", row["Data criação"]);
             }
         }
     });
-    
+
     const mesesArray = Array.from(meses).sort((a, b) => {
-        const [mesA, anoA] = a.split('/');
-        const [mesB, anoB] = b.split('/');
-        const mesesOrdem = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-        
+        const [mesA, anoA] = a.split("/");
+        const [mesB, anoB] = b.split("/");
+        const mesesOrdem = [
+            "jan",
+            "fev",
+            "mar",
+            "abr",
+            "mai",
+            "jun",
+            "jul",
+            "ago",
+            "set",
+            "out",
+            "nov",
+            "dez",
+        ];
+
         if (anoA !== anoB) return parseInt(anoA) - parseInt(anoB);
         return mesesOrdem.indexOf(mesA) - mesesOrdem.indexOf(mesB);
     });
-    
+
     processedData.mesesDisponiveis = mesesArray;
     processedData.mesesAtivos = [...mesesArray];
-    
+
     renderMonths();
 }
 
 function mostrarPopupExportacao() {
-    document.getElementById('popup-exportacao').style.display = 'flex';
+    document.getElementById("popup-exportacao").style.display = "flex";
 }
 
 function fecharPopupExportacao() {
-    document.getElementById('popup-exportacao').style.display = 'none';
+    document.getElementById("popup-exportacao").style.display = "none";
 }
 
-window.onclick = function(event) {
-    const popup = document.getElementById('popup-exportacao');
-    const popupDashboard = document.getElementById('popup-exportacao-dashboard');
-    const popupMes = document.getElementById('popup-exportacao-mes');
+window.onclick = function (event) {
+    const popup = document.getElementById("popup-exportacao");
+    const popupDashboard = document.getElementById(
+        "popup-exportacao-dashboard"
+    );
+    const popupMes = document.getElementById("popup-exportacao-mes");
     if (event.target === popup) {
         fecharPopupExportacao();
     }
@@ -2502,45 +3050,65 @@ window.onclick = function(event) {
     if (event.target === popupMes) {
         fecharPopupExportacaoMes();
     }
-}
+};
 
 function processExcelData() {
-    console.log('Iniciando processamento dos dados...');
-    console.log('Dados brutos:', excelData ? excelData.length : 0);
-    
+    console.log("Iniciando processamento dos dados...");
+    console.log("Dados brutos:", excelData ? excelData.length : 0);
+
     if (!excelData || excelData.length === 0) {
         processedData = {
             usuarios: [],
             totalMinutas: 0,
             mediaUsuario: 0,
             usuariosAtivos: 0,
-            diaProdutivo: '--',
+            diaProdutivo: "--",
             topUsers: [],
             mesesAtivos: processedData ? processedData.mesesAtivos : [],
-            mesesDisponiveis: processedData ? processedData.mesesDisponiveis : []
+            mesesDisponiveis: processedData
+                ? processedData.mesesDisponiveis
+                : [],
         };
         updateKPIs();
         createChart();
         return;
     }
-    
+
     let filteredData = excelData;
-    
-    if (processedData.mesesAtivos && processedData.mesesAtivos.length > 0 && 
-        processedData.mesesDisponiveis && processedData.mesesAtivos.length < processedData.mesesDisponiveis.length) {
-        filteredData = excelData.filter(row => {
-            if (!row['Data criação']) return false;
-            
+
+    if (
+        processedData.mesesAtivos &&
+        processedData.mesesAtivos.length > 0 &&
+        processedData.mesesDisponiveis &&
+        processedData.mesesAtivos.length < processedData.mesesDisponiveis.length
+    ) {
+        filteredData = excelData.filter((row) => {
+            if (!row["Data criação"]) return false;
+
             try {
-                let date = row['Data criação'];
+                let date = row["Data criação"];
                 if (!(date instanceof Date)) {
                     date = new Date(date);
                 }
-                
+
                 if (!isNaN(date.getTime())) {
-                    const mesNomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 
-                                     'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-                    const mesAno = `${mesNomes[date.getMonth()]}/${date.getFullYear()}`;
+                    const mesNomes = [
+                        "jan",
+                        "fev",
+                        "mar",
+                        "abr",
+                        "mai",
+                        "jun",
+                        "jul",
+                        "ago",
+                        "set",
+                        "out",
+                        "nov",
+                        "dez",
+                    ];
+                    const mesAno = `${
+                        mesNomes[date.getMonth()]
+                    }/${date.getFullYear()}`;
                     return processedData.mesesAtivos.includes(mesAno);
                 }
                 return false;
@@ -2549,68 +3117,83 @@ function processExcelData() {
             }
         });
     }
-    
+
     console.log(`Dados filtrados: ${filteredData.length} registros`);
-    
+
     const usuariosMap = new Map();
     const diasSemana = new Map();
-    
-    filteredData.forEach(row => {
-        const nroProcesso = row['Nro. processo'];
-        if (!nroProcesso || nroProcesso.trim() === '') return;
-        
-        const usuario = row['Usuário'];
-        if (!usuario || usuario.toString().trim() === '') return;
-        
-        const peso = parseFloat(row['peso']) || 1.0;
-        
+
+    filteredData.forEach((row) => {
+        const nroProcesso = row["Nro. processo"];
+        if (!nroProcesso || nroProcesso.trim() === "") return;
+
+        const usuario = row["Usuário"];
+        if (!usuario || usuario.toString().trim() === "") return;
+
+        const peso = parseFloat(row["peso"]) || 1.0;
+
         if (!usuariosMap.has(usuario)) {
             usuariosMap.set(usuario, 0);
         }
         usuariosMap.set(usuario, usuariosMap.get(usuario) + peso);
-        
-        if (row['Data criação']) {
+
+        if (row["Data criação"]) {
             try {
-                let date = row['Data criação'];
+                let date = row["Data criação"];
                 if (!(date instanceof Date)) {
                     date = new Date(date);
                 }
-                
+
                 if (!isNaN(date.getTime())) {
-                    const diasNomes = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+                    const diasNomes = [
+                        "Domingo",
+                        "Segunda",
+                        "Terça",
+                        "Quarta",
+                        "Quinta",
+                        "Sexta",
+                        "Sábado",
+                    ];
                     const diaSemana = diasNomes[date.getDay()];
-                    
+
                     if (!diasSemana.has(diaSemana)) {
                         diasSemana.set(diaSemana, 0);
                     }
                     diasSemana.set(diaSemana, diasSemana.get(diaSemana) + peso);
                 }
             } catch (e) {
-                console.log('Erro ao processar data para dia da semana:', row['Data criação']);
+                console.log(
+                    "Erro ao processar data para dia da semana:",
+                    row["Data criação"]
+                );
             }
         }
     });
-    
+
     const usuarios = Array.from(usuariosMap.entries())
         .map(([nome, minutas]) => ({ nome, minutas }))
         .sort((a, b) => b.minutas - a.minutas);
-    
+
     console.log(`Usuários processados: ${usuarios.length}`);
-    console.log('Top 5 usuários:', usuarios.slice(0, 5));
-    
+    console.log("Top 5 usuários:", usuarios.slice(0, 5));
+
     const totalMinutas = Math.round(filteredData.length);
     const usuariosAtivos = usuarios.length;
-    const mediaUsuario = usuarios.length > 0 ? usuarios.reduce((sum, u) => sum + u.minutas, 0) / usuarios.length : 0;
-    
-    let diaProdutivo = '--';
+    const mediaUsuario =
+        usuarios.length > 0
+            ? usuarios.reduce((sum, u) => sum + u.minutas, 0) / usuarios.length
+            : 0;
+
+    let diaProdutivo = "--";
     if (diasSemana.size > 0) {
-        const diaTop = Array.from(diasSemana.entries())
-            .sort((a, b) => b[1] - a[1])[0];
+        const diaTop = Array.from(diasSemana.entries()).sort(
+            (a, b) => b[1] - a[1]
+        )[0];
         diaProdutivo = `${diaTop[0]} (${Math.round(diaTop[1])})`;
     }
-    
+
     const topUsers = usuarios.slice(0, 3);
-    
+
     processedData = {
         usuarios,
         totalMinutas,
@@ -2619,11 +3202,11 @@ function processExcelData() {
         diaProdutivo,
         topUsers,
         mesesAtivos: processedData.mesesAtivos || [],
-        mesesDisponiveis: processedData.mesesDisponiveis || []
+        mesesDisponiveis: processedData.mesesDisponiveis || [],
     };
-    
-    console.log('Dados processados finais:', processedData);
-    
+
+    console.log("Dados processados finais:", processedData);
+
     updateKPIs();
     createChart();
 }
@@ -2632,106 +3215,119 @@ function detectarColunas(worksheet, range) {
     const headers = {};
     const errors = [];
     const colunaMapping = {};
-    
+
     for (let C = range.s.c; C <= range.e.c; ++C) {
-        const headerCell = worksheet[XLSX.utils.encode_cell({r: 1, c: C})];
+        const headerCell = worksheet[XLSX.utils.encode_cell({ r: 1, c: C })];
         if (headerCell && headerCell.v) {
             const headerValue = headerCell.v.toString().trim();
             headers[C] = headerValue;
         }
     }
-    
+
     const colunasNecessarias = {
-        'Tipo': ['Tipo'],
-        'Cod. assunto': ['Código', 'Cod. assunto'],
-        'Nro. processo': ['Nro. processo'],
-        'Usuário': ['Usuário'],
-        'Data criação': ['Data criação'],
-        'Status': ['Status'],
-        'Agendamento': ['Agendamento']
+        Tipo: ["Tipo"],
+        "Cod. assunto": ["Código", "Cod. assunto"],
+        "Nro. processo": ["Nro. processo"],
+        Usuário: ["Usuário"],
+        "Data criação": ["Data criação"],
+        Status: ["Status"],
+        Agendamento: ["Agendamento"],
     };
-    
-    Object.keys(colunasNecessarias).forEach(coluna => {
+
+    Object.keys(colunasNecessarias).forEach((coluna) => {
         let encontrada = false;
-        Object.keys(headers).forEach(indice => {
+        Object.keys(headers).forEach((indice) => {
             const headerValue = headers[indice];
             if (colunasNecessarias[coluna].includes(headerValue)) {
-                switch(coluna) {
-                    case 'Tipo':
+                switch (coluna) {
+                    case "Tipo":
                         colunaMapping.tipo = parseInt(indice);
                         break;
-                    case 'Cod. assunto':
+                    case "Cod. assunto":
                         colunaMapping.codigo = parseInt(indice);
                         break;
-                    case 'Nro. processo':
+                    case "Nro. processo":
                         colunaMapping.processo = parseInt(indice);
                         break;
-                    case 'Usuário':
+                    case "Usuário":
                         colunaMapping.usuario = parseInt(indice);
                         break;
-                    case 'Data criação':
+                    case "Data criação":
                         colunaMapping.data = parseInt(indice);
                         break;
-                    case 'Status':
+                    case "Status":
                         colunaMapping.status = parseInt(indice);
                         break;
-                    case 'Agendamento':
+                    case "Agendamento":
                         colunaMapping.agendamento = parseInt(indice);
                         break;
                 }
                 encontrada = true;
             }
         });
-        
+
         if (!encontrada) {
             errors.push(`Coluna "${coluna}" não encontrada`);
         }
     });
-    
+
     return {
         ...colunaMapping,
-        errors: errors
+        errors: errors,
     };
 }
 
 let cacheProcessamento = {
     dadosOriginais: null,
     hashDados: null,
-    resultadoProcessado: null
+    resultadoProcessado: null,
 };
 
 function gerarHashDados(dados) {
-    return dados.length + '_' + dados.map(r => r['Nro. processo']).join('').slice(0, 50);
+    return (
+        dados.length +
+        "_" +
+        dados
+            .map((r) => r["Nro. processo"])
+            .join("")
+            .slice(0, 50)
+    );
 }
 
 function validarDadosCompletos(row) {
-    const camposObrigatorios = ['Nro. processo', 'Usuário', 'Tipo', 'Status', 'Data criação'];
+    const camposObrigatorios = [
+        "Nro. processo",
+        "Usuário",
+        "Tipo",
+        "Status",
+        "Data criação",
+    ];
     const erros = [];
-    
-    camposObrigatorios.forEach(campo => {
-        if (!row[campo] || row[campo].toString().trim() === '') {
+
+    camposObrigatorios.forEach((campo) => {
+        if (!row[campo] || row[campo].toString().trim() === "") {
             erros.push(`Campo "${campo}" vazio`);
         }
     });
-    
-    if (row['Data criação'] && isNaN(new Date(row['Data criação']).getTime())) {
-        erros.push('Data inválida');
+
+    if (row["Data criação"] && isNaN(new Date(row["Data criação"]).getTime())) {
+        erros.push("Data inválida");
     }
-    
+
     return {
         valido: erros.length === 0,
-        erros: erros
+        erros: erros,
     };
 }
 
 function processarComValidacao(row, numeroLinha) {
     const validacao = validarDadosCompletos(row);
-    
+
     if (!validacao.valido) {
-        console.warn(`Linha ${numeroLinha}: ${validacao.erros.join(', ')}`);
+        console.warn(`Linha ${numeroLinha}: ${validacao.erros.join(", ")}`);
         return false;
     }
-    
+
     return true;
 }
 
@@ -2742,19 +3338,25 @@ function processExcelDataComCache() {
             totalMinutas: 0,
             mediaUsuario: 0,
             usuariosAtivos: 0,
-            diaProdutivo: '--',
+            diaProdutivo: "--",
             topUsers: [],
             mesesAtivos: processedData ? processedData.mesesAtivos : [],
-            mesesDisponiveis: processedData ? processedData.mesesDisponiveis : []
+            mesesDisponiveis: processedData
+                ? processedData.mesesDisponiveis
+                : [],
         };
         updateKPIs();
         createChart();
         return;
     }
 
-    const hashAtual = gerarHashDados(excelData) + '_' + processedData.mesesAtivos.join(',');
-    
-    if (cacheProcessamento.hashDados === hashAtual && cacheProcessamento.resultadoProcessado) {
+    const hashAtual =
+        gerarHashDados(excelData) + "_" + processedData.mesesAtivos.join(",");
+
+    if (
+        cacheProcessamento.hashDados === hashAtual &&
+        cacheProcessamento.resultadoProcessado
+    ) {
         processedData = { ...cacheProcessamento.resultadoProcessado };
         updateKPIs();
         createChart();
@@ -2762,53 +3364,54 @@ function processExcelDataComCache() {
     }
 
     processExcelData();
-    
+
     cacheProcessamento.hashDados = hashAtual;
     cacheProcessamento.resultadoProcessado = { ...processedData };
 }
 
 function isValidStatus(status) {
-    if (!status || status === '') return false;
-    
+    if (!status || status === "") return false;
+
     const statusValidos = [
-        'Anexada ao processo',
-        'Assinada',
-        'Conferida',
-        'Enviada para jurisprudência',
-        'Enviada para o diário eletrônico',
-        'Para assinar',
-        'Para conferir'
+        "Anexada ao processo",
+        "Assinada",
+        "Conferida",
+        "Enviada para jurisprudência",
+        "Enviada para o diário eletrônico",
+        "Para assinar",
+        "Disponibilizada no diário eletrônico",
+        "Para conferir",
     ];
-    
+
     return statusValidos.includes(status);
 }
 
 function isValidTipo(tipo) {
-    if (!tipo || tipo === '') return false;
-    
+    if (!tipo || tipo === "") return false;
+
     const tiposValidos = [
-        'ACÓRDÃO',
-        'DESPACHO/DECISÃO',
-        'VOTO DIVERGENTE',
-        'VOTO-VISTA'
+        "ACÓRDÃO",
+        "DESPACHO/DECISÃO",
+        "VOTO DIVERGENTE",
+        "VOTO-VISTA",
     ];
-    
+
     return tiposValidos.includes(tipo);
 }
 
 async function processarDadosEmLotes(dados, tamanhoLote = 1000) {
     const resultados = [];
-    
+
     for (let i = 0; i < dados.length; i += tamanhoLote) {
         const lote = dados.slice(i, i + tamanhoLote);
         const resultadoLote = await processarLote(lote);
         resultados.push(...resultadoLote);
-        
+
         if (i % (tamanhoLote * 5) === 0) {
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await new Promise((resolve) => setTimeout(resolve, 10));
         }
     }
-    
+
     return resultados;
 }
 
@@ -2821,96 +3424,107 @@ function gerarRelatorioQualidade(dados) {
         tiposEncontrados: new Set(),
         statusEncontrados: new Set(),
         periodoCoberto: { inicio: null, fim: null },
-        usuariosUnicos: new Set()
+        usuariosUnicos: new Set(),
     };
-    
-    dados.forEach(row => {
+
+    dados.forEach((row) => {
         let registroValido = true;
-        
-        Object.keys(row).forEach(campo => {
-            if (!row[campo] || row[campo].toString().trim() === '') {
-                relatorio.camposVazios[campo] = (relatorio.camposVazios[campo] || 0) + 1;
+
+        Object.keys(row).forEach((campo) => {
+            if (!row[campo] || row[campo].toString().trim() === "") {
+                relatorio.camposVazios[campo] =
+                    (relatorio.camposVazios[campo] || 0) + 1;
                 registroValido = false;
             }
         });
-        
-        if (row['Tipo']) relatorio.tiposEncontrados.add(row['Tipo']);
-        if (row['Status']) relatorio.statusEncontrados.add(row['Status']);
-        if (row['Usuário']) relatorio.usuariosUnicos.add(row['Usuário']);
-        
-        if (row['Data criação']) {
-            const data = new Date(row['Data criação']);
+
+        if (row["Tipo"]) relatorio.tiposEncontrados.add(row["Tipo"]);
+        if (row["Status"]) relatorio.statusEncontrados.add(row["Status"]);
+        if (row["Usuário"]) relatorio.usuariosUnicos.add(row["Usuário"]);
+
+        if (row["Data criação"]) {
+            const data = new Date(row["Data criação"]);
             if (!isNaN(data.getTime())) {
-                if (!relatorio.periodoCoberto.inicio || data < relatorio.periodoCoberto.inicio) {
+                if (
+                    !relatorio.periodoCoberto.inicio ||
+                    data < relatorio.periodoCoberto.inicio
+                ) {
                     relatorio.periodoCoberto.inicio = data;
                 }
-                if (!relatorio.periodoCoberto.fim || data > relatorio.periodoCoberto.fim) {
+                if (
+                    !relatorio.periodoCoberto.fim ||
+                    data > relatorio.periodoCoberto.fim
+                ) {
                     relatorio.periodoCoberto.fim = data;
                 }
             }
         }
-        
+
         if (registroValido) {
             relatorio.registrosValidos++;
         } else {
             relatorio.registrosInvalidos++;
         }
     });
-    
-    console.log('Relatório de Qualidade dos Dados:', relatorio);
+
+    console.log("Relatório de Qualidade dos Dados:", relatorio);
     return relatorio;
 }
 
 const logger = {
     logs: [],
-    
+
     info(mensagem, dados = null) {
         const log = {
-            nivel: 'INFO',
+            nivel: "INFO",
             timestamp: new Date().toISOString(),
             mensagem,
-            dados
+            dados,
         };
         this.logs.push(log);
         console.log(`[INFO] ${mensagem}`, dados);
     },
-    
+
     warn(mensagem, dados = null) {
         const log = {
-            nivel: 'WARN',
+            nivel: "WARN",
             timestamp: new Date().toISOString(),
             mensagem,
-            dados
+            dados,
         };
         this.logs.push(log);
         console.warn(`[WARN] ${mensagem}`, dados);
     },
-    
+
     error(mensagem, erro = null) {
         const log = {
-            nivel: 'ERROR',
+            nivel: "ERROR",
             timestamp: new Date().toISOString(),
             mensagem,
-            erro: erro ? erro.message : null
+            erro: erro ? erro.message : null,
         };
         this.logs.push(log);
         console.error(`[ERROR] ${mensagem}`, erro);
     },
-    
+
     exportarLogs() {
-        const blob = new Blob([JSON.stringify(this.logs, null, 2)], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify(this.logs, null, 2)], {
+            type: "application/json",
+        });
         const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = url;
-        link.download = `aprod_logs_${new Date().toISOString().slice(0, 10)}.json`;
+        link.download = `aprod_logs_${new Date()
+            .toISOString()
+            .slice(0, 10)}.json`;
         link.click();
         URL.revokeObjectURL(url);
-    }
+    },
 };
 
 function mostrarLogsProcessamento() {
-    const logsContainer = document.createElement('div');
-    logsContainer.className = 'logs-container';
+    const logsContainer = document.createElement("div");
+    logsContainer.className = "logs-container";
     logsContainer.innerHTML = `
         <div class="logs-overlay">
             <div class="logs-modal">
@@ -2922,65 +3536,100 @@ function mostrarLogsProcessamento() {
                     <div class="logs-stats">
                         <div class="stat-item">
                             <span class="stat-label">Total de Logs:</span>
-                            <span class="stat-valor">${logger.logs.length}</span>
+                            <span class="stat-valor">${
+                                logger.logs.length
+                            }</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-label">Erros:</span>
-                            <span class="stat-valor">${logger.logs.filter(l => l.nivel === 'ERROR').length}</span>
+                            <span class="stat-valor">${
+                                logger.logs.filter((l) => l.nivel === "ERROR")
+                                    .length
+                            }</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-label">Avisos:</span>
-                            <span class="stat-valor">${logger.logs.filter(l => l.nivel === 'WARN').length}</span>
+                            <span class="stat-valor">${
+                                logger.logs.filter((l) => l.nivel === "WARN")
+                                    .length
+                            }</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-label">Dados Importados:</span>
-                            <span class="stat-valor">${excelData ? excelData.length : 0} registros</span>
+                            <span class="stat-valor">${
+                                excelData ? excelData.length : 0
+                            } registros</span>
                         </div>
                     </div>
                     <div class="logs-list">
-                        ${logger.logs.length === 0 ? 
-                            '<div class="log-item info"><div class="log-mensagem">Nenhum log de processamento disponível ainda. Os logs são gerados durante a importação de dados.</div></div>' :
-                            logger.logs.map(log => `
+                        ${
+                            logger.logs.length === 0
+                                ? '<div class="log-item info"><div class="log-mensagem">Nenhum log de processamento disponível ainda. Os logs são gerados durante a importação de dados.</div></div>'
+                                : logger.logs
+                                      .map(
+                                          (log) => `
                                 <div class="log-item ${log.nivel.toLowerCase()}">
                                     <div class="log-header">
-                                        <span class="log-nivel">${log.nivel}</span>
-                                        <span class="log-timestamp">${new Date(log.timestamp).toLocaleString('pt-BR')}</span>
+                                        <span class="log-nivel">${
+                                            log.nivel
+                                        }</span>
+                                        <span class="log-timestamp">${new Date(
+                                            log.timestamp
+                                        ).toLocaleString("pt-BR")}</span>
                                     </div>
-                                    <div class="log-mensagem">${log.mensagem}</div>
-                                    ${log.dados ? `<div class="log-dados">${JSON.stringify(log.dados)}</div>` : ''}
-                                    ${log.erro ? `<div class="log-dados">Erro: ${log.erro}</div>` : ''}
+                                    <div class="log-mensagem">${
+                                        log.mensagem
+                                    }</div>
+                                    ${
+                                        log.dados
+                                            ? `<div class="log-dados">${JSON.stringify(
+                                                  log.dados
+                                              )}</div>`
+                                            : ""
+                                    }
+                                    ${
+                                        log.erro
+                                            ? `<div class="log-dados">Erro: ${log.erro}</div>`
+                                            : ""
+                                    }
                                 </div>
-                            `).join('')
+                            `
+                                      )
+                                      .join("")
                         }
                     </div>
                 </div>
                 <div class="logs-footer">
-                    <button onclick="logger.exportarLogs()" class="btn-exportar" ${logger.logs.length === 0 ? 'disabled' : ''}>
+                    <button onclick="logger.exportarLogs()" class="btn-exportar" ${
+                        logger.logs.length === 0 ? "disabled" : ""
+                    }>
                         Exportar Logs
                     </button>
-                    <button onclick="limparLogs()" class="btn-limpar" ${logger.logs.length === 0 ? 'disabled' : ''}>
+                    <button onclick="limparLogs()" class="btn-limpar" ${
+                        logger.logs.length === 0 ? "disabled" : ""
+                    }>
                         Limpar Logs
                     </button>
                 </div>
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(logsContainer);
 }
 
 function fecharLogsProcessamento() {
-    const container = document.querySelector('.logs-container');
+    const container = document.querySelector(".logs-container");
     if (container) {
         container.remove();
     }
 }
 
 function limparLogs() {
-    if (confirm('Tem certeza que deseja limpar todos os logs?')) {
+    if (confirm("Tem certeza que deseja limpar todos os logs?")) {
         logger.logs = [];
         fecharLogsProcessamento();
-        alert('Logs limpos com sucesso!');
+        alert("Logs limpos com sucesso!");
     }
 }
 
@@ -2988,85 +3637,99 @@ function processarComFallback(dados) {
     try {
         return processExcelData();
     } catch (erro) {
-        logger.error('Erro no processamento principal, tentando fallback', erro);
-        
+        logger.error(
+            "Erro no processamento principal, tentando fallback",
+            erro
+        );
+
         try {
             return processarModoPadrao(dados);
         } catch (erroFallback) {
-            logger.error('Erro também no fallback', erroFallback);
+            logger.error("Erro também no fallback", erroFallback);
             return processarModoSeguro(dados);
         }
     }
 }
 
 function processarModoSeguro(dados) {
-    const dadosBasicos = dados.filter(row => 
-        row['Nro. processo'] && 
-        row['Usuário'] && 
-        row['Tipo'] && 
-        row['Status']
+    const dadosBasicos = dados.filter(
+        (row) =>
+            row["Nro. processo"] &&
+            row["Usuário"] &&
+            row["Tipo"] &&
+            row["Status"]
     );
-    
-    logger.info(`Modo seguro: processando ${dadosBasicos.length} de ${dados.length} registros`);
-    
+
+    logger.info(
+        `Modo seguro: processando ${dadosBasicos.length} de ${dados.length} registros`
+    );
+
     return {
         usuarios: [],
         totalMinutas: dadosBasicos.length,
         mediaUsuario: 0,
-        usuariosAtivos: new Set(dadosBasicos.map(r => r['Usuário'])).size,
-        diaProdutivo: '--',
+        usuariosAtivos: new Set(dadosBasicos.map((r) => r["Usuário"])).size,
+        diaProdutivo: "--",
         topUsers: [],
         mesesAtivos: [],
-        mesesDisponiveis: []
+        mesesDisponiveis: [],
     };
 }
 
 function processarLote(lote) {
-    return new Promise(resolve => {
-        const processados = lote.filter(row => {
-            const nroProcesso = row['Nro. processo'];
-            if (!nroProcesso || nroProcesso.trim() === '') return false;
-            
-            const usuario = row['Usuário'];
-            if (!usuario || usuario.toString().trim() === '') return false;
-            
-            const tipo = row['Tipo'] ? row['Tipo'].toString().trim() : '';
-            const status = row['Status'] ? row['Status'].toString().trim() : '';
-            
+    return new Promise((resolve) => {
+        const processados = lote.filter((row) => {
+            const nroProcesso = row["Nro. processo"];
+            if (!nroProcesso || nroProcesso.trim() === "") return false;
+
+            const usuario = row["Usuário"];
+            if (!usuario || usuario.toString().trim() === "") return false;
+
+            const tipo = row["Tipo"] ? row["Tipo"].toString().trim() : "";
+            const status = row["Status"] ? row["Status"].toString().trim() : "";
+
             return isValidStatus(status) && isValidTipo(tipo);
         });
-        
+
         resolve(processados);
     });
 }
 
 function calcularERenderizarRankingDias() {
     if (!excelData || excelData.length === 0) {
-        const container = document.getElementById('ranking-dias');
+        const container = document.getElementById("ranking-dias");
         if (container) {
-            container.innerHTML = '<div class="ranking-item">Nenhum dado disponível</div>';
+            container.innerHTML =
+                '<div class="ranking-item">Nenhum dado disponível</div>';
         }
         return;
     }
 
     const diasTotais = {};
-    
-    excelData.forEach(row => {
-        const nroProcesso = row['Nro. processo'];
-        if (!nroProcesso || nroProcesso.trim() === '') return;
-        
-        const usuario = row['Usuário'];
-        if (!usuario || usuario.toString().trim() === '') return;
-        
-        const peso = parseFloat(row['peso']) || 1.0;
-        
-        if (row['Data criação']) {
-            const dataCompleta = new Date(row['Data criação']);
+
+    excelData.forEach((row) => {
+        const nroProcesso = row["Nro. processo"];
+        if (!nroProcesso || nroProcesso.trim() === "") return;
+
+        const usuario = row["Usuário"];
+        if (!usuario || usuario.toString().trim() === "") return;
+
+        const peso = parseFloat(row["peso"]) || 1.0;
+
+        if (row["Data criação"]) {
+            const dataCompleta = new Date(row["Data criação"]);
             if (!isNaN(dataCompleta.getTime())) {
-                const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 
-                                  'Quinta-feira', 'Sexta-feira', 'Sábado'];
+                const diasSemana = [
+                    "Domingo",
+                    "Segunda-feira",
+                    "Terça-feira",
+                    "Quarta-feira",
+                    "Quinta-feira",
+                    "Sexta-feira",
+                    "Sábado",
+                ];
                 const diaSemana = diasSemana[dataCompleta.getDay()];
-                
+
                 if (!diasTotais[diaSemana]) {
                     diasTotais[diaSemana] = 0;
                 }
@@ -3078,7 +3741,7 @@ function calcularERenderizarRankingDias() {
     const rankingOrdenado = Object.entries(diasTotais)
         .map(([diaSemana, total]) => ({
             dia: diaSemana,
-            total: Math.round(total * 10) / 10
+            total: Math.round(total * 10) / 10,
         }))
         .sort((a, b) => b.total - a.total);
 
@@ -3086,47 +3749,61 @@ function calcularERenderizarRankingDias() {
 }
 
 function renderizarRankingDias(rankingData) {
-    const container = document.getElementById('ranking-dias');
+    const container = document.getElementById("ranking-dias");
     if (!container) return;
 
-    container.innerHTML = '';
+    container.innerHTML = "";
 
     if (rankingData.length === 0) {
-        container.innerHTML = '<div class="ranking-item">Nenhum dado disponível</div>';
+        container.innerHTML =
+            '<div class="ranking-item">Nenhum dado disponível</div>';
         return;
     }
 
     const coresRanking = [
-        '#FFD700', '#C0C0C0', '#CD7F32', '#4a90e2', '#4a90e2', '#4a90e2', '#4a90e2'
+        "#FFD700",
+        "#C0C0C0",
+        "#CD7F32",
+        "#4a90e2",
+        "#4a90e2",
+        "#4a90e2",
+        "#4a90e2",
     ];
 
-    const iconesRanking = ['🏆', '🥈', '🥉', '4', '5', '6', '7'];
+    const iconesRanking = ["🏆", "🥈", "🥉", "4", "5", "6", "7"];
 
     rankingData.slice(0, 7).forEach((item, index) => {
-        const rankingDiv = document.createElement('div');
-        rankingDiv.className = 'ranking-item';
+        const rankingDiv = document.createElement("div");
+        rankingDiv.className = "ranking-item";
         rankingDiv.style.borderLeftColor = coresRanking[Math.min(index, 6)];
-        
-        const porcentagem = rankingData[0].total > 0 ? 
-            Math.round((item.total / rankingData[0].total) * 100) : 0;
 
-        const icone = index < iconesRanking.length ? 
-            iconesRanking[index] : 
-            `#${index + 1}`;
+        const porcentagem =
+            rankingData[0].total > 0
+                ? Math.round((item.total / rankingData[0].total) * 100)
+                : 0;
+
+        const icone =
+            index < iconesRanking.length
+                ? iconesRanking[index]
+                : `#${index + 1}`;
 
         rankingDiv.innerHTML = `
             <div class="ranking-posicao">
-                <div class="ranking-medal ${index < 3 ? 'medal-' + (index + 1) : ''}">${icone}</div>
+                <div class="ranking-medal ${
+                    index < 3 ? "medal-" + (index + 1) : ""
+                }">${icone}</div>
                 <span class="ranking-numero">#${index + 1}</span>
             </div>
             <div class="ranking-dia">${item.dia}</div>
             <div class="ranking-total">${item.total} minutas</div>
             <div class="ranking-porcentagem">${porcentagem}%</div>
             <div class="ranking-barra">
-                <div class="ranking-barra-preenchida" style="width: ${porcentagem}%; background-color: ${coresRanking[Math.min(index, 6)]};"></div>
+                <div class="ranking-barra-preenchida" style="width: ${porcentagem}%; background-color: ${
+            coresRanking[Math.min(index, 6)]
+        };"></div>
             </div>
         `;
-        
+
         container.appendChild(rankingDiv);
     });
 }
@@ -3135,21 +3812,38 @@ function gerarTabelaSemana() {
     if (!excelData || excelData.length === 0) return;
 
     let filteredData = excelData;
-    
-    if (processedData.mesesAtivos.length > 0 && processedData.mesesAtivos.length < processedData.mesesDisponiveis.length) {
-        filteredData = excelData.filter(row => {
-            if (!row['Data criação']) return false;
-            
+
+    if (
+        processedData.mesesAtivos.length > 0 &&
+        processedData.mesesAtivos.length < processedData.mesesDisponiveis.length
+    ) {
+        filteredData = excelData.filter((row) => {
+            if (!row["Data criação"]) return false;
+
             try {
-                let date = row['Data criação'];
+                let date = row["Data criação"];
                 if (!(date instanceof Date)) {
                     date = new Date(date);
                 }
-                
+
                 if (!isNaN(date.getTime())) {
-                    const mesNomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 
-                                     'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-                    const mesAno = `${mesNomes[date.getMonth()]}/${date.getFullYear()}`;
+                    const mesNomes = [
+                        "jan",
+                        "fev",
+                        "mar",
+                        "abr",
+                        "mai",
+                        "jun",
+                        "jul",
+                        "ago",
+                        "set",
+                        "out",
+                        "nov",
+                        "dez",
+                    ];
+                    const mesAno = `${
+                        mesNomes[date.getMonth()]
+                    }/${date.getFullYear()}`;
                     return processedData.mesesAtivos.includes(mesAno);
                 }
                 return false;
@@ -3160,17 +3854,25 @@ function gerarTabelaSemana() {
     }
 
     const usuariosMap = new Map();
-    const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-    
-    filteredData.forEach(row => {
-        const nroProcesso = row['Nro. processo'];
-        if (!nroProcesso || nroProcesso.trim() === '') return;
-        
-        const usuario = row['Usuário'];
-        if (!usuario || usuario.toString().trim() === '') return;
-        
-        const peso = parseFloat(row['peso']) || 1.0;
-        
+    const diasSemana = [
+        "domingo",
+        "segunda",
+        "terca",
+        "quarta",
+        "quinta",
+        "sexta",
+        "sabado",
+    ];
+
+    filteredData.forEach((row) => {
+        const nroProcesso = row["Nro. processo"];
+        if (!nroProcesso || nroProcesso.trim() === "") return;
+
+        const usuario = row["Usuário"];
+        if (!usuario || usuario.toString().trim() === "") return;
+
+        const peso = parseFloat(row["peso"]) || 1.0;
+
         if (!usuariosMap.has(usuario)) {
             usuariosMap.set(usuario, {
                 usuario: usuario,
@@ -3180,23 +3882,23 @@ function gerarTabelaSemana() {
                 quarta: 0,
                 quinta: 0,
                 sexta: 0,
-                sabado: 0
+                sabado: 0,
             });
         }
-        
-        if (row['Data criação']) {
+
+        if (row["Data criação"]) {
             try {
-                let date = row['Data criação'];
+                let date = row["Data criação"];
                 if (!(date instanceof Date)) {
                     date = new Date(date);
                 }
-                
+
                 if (!isNaN(date.getTime())) {
                     const diaSemana = diasSemana[date.getDay()];
                     usuariosMap.get(usuario)[diaSemana] += peso;
                 }
             } catch (e) {
-                console.log('Erro ao processar data:', row['Data criação']);
+                console.log("Erro ao processar data:", row["Data criação"]);
             }
         }
     });
@@ -3206,22 +3908,28 @@ function gerarTabelaSemana() {
 }
 
 function renderizarTabelaSemana() {
-    const container = document.getElementById('tabela-semana');
+    const container = document.getElementById("tabela-semana");
     if (!container) return;
-    
-    container.innerHTML = '';
-    
-    const filtro = document.getElementById('filtro-semana').value.toLowerCase();
-    const usuariosFiltrados = tabelaSemana.filter(usuario => 
+
+    container.innerHTML = "";
+
+    const filtro = document.getElementById("filtro-semana").value.toLowerCase();
+    const usuariosFiltrados = tabelaSemana.filter((usuario) =>
         usuario.usuario.toLowerCase().includes(filtro)
     );
 
-    usuariosFiltrados.forEach(usuario => {
-        const row = document.createElement('tr');
-        
-        const total = usuario.domingo + usuario.segunda + usuario.terca + 
-                     usuario.quarta + usuario.quinta + usuario.sexta + usuario.sabado;
-        
+    usuariosFiltrados.forEach((usuario) => {
+        const row = document.createElement("tr");
+
+        const total =
+            usuario.domingo +
+            usuario.segunda +
+            usuario.terca +
+            usuario.quarta +
+            usuario.quinta +
+            usuario.sexta +
+            usuario.sabado;
+
         row.innerHTML = `
             <td class="usuario-cell">${usuario.usuario}</td>
             <td class="dia-cell">${Math.round(usuario.segunda)}</td>
@@ -3233,7 +3941,7 @@ function renderizarTabelaSemana() {
             <td class="dia-cell">${Math.round(usuario.domingo)}</td>
             <td class="total-cell">${Math.round(total)}</td>
         `;
-        
+
         container.appendChild(row);
     });
 
@@ -3242,50 +3950,56 @@ function renderizarTabelaSemana() {
 
 function exportarTabelaSemana(formato) {
     if (!tabelaSemana || tabelaSemana.length === 0) {
-        alert('Não há dados para exportar!');
+        alert("Não há dados para exportar!");
         return;
     }
-    
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-    
-    if (formato === 'pdf') {
+
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
+
+    if (formato === "pdf") {
         exportarPDF(timestamp);
-    } else if (formato === 'xlsx') {
+    } else if (formato === "xlsx") {
         exportarExcel(timestamp);
     }
 }
 
 function exportarPDF(timestamp) {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('landscape');
-    
+    const doc = new jsPDF("landscape");
+
     doc.setFillColor(74, 144, 226);
-    doc.rect(0, 0, doc.internal.pageSize.width, 25, 'F');
-    
+    doc.rect(0, 0, doc.internal.pageSize.width, 25, "F");
+
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    
-    let titulo = 'APROD - Produtividade por Dia da Semana';
+    doc.setFont("helvetica", "bold");
+
+    let titulo = "APROD - Produtividade por Dia da Semana";
     if (configuracoes.nomeGabinete) {
         titulo = `${configuracoes.nomeGabinete} - APROD - Produtividade por Dia da Semana`;
     }
     doc.text(titulo, 15, 16);
-    
+
     doc.setTextColor(74, 144, 226);
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 15, 35);
-    
-    let mesesTexto = `Meses: ${processedData.mesesAtivos.join(', ')}`;
+    doc.setFont("helvetica", "normal");
+    doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, 15, 35);
+
+    let mesesTexto = `Meses: ${processedData.mesesAtivos.join(", ")}`;
     if (processedData.mesesAtivos.length === 0) {
-        mesesTexto = 'Nenhum mês selecionado';
+        mesesTexto = "Nenhum mês selecionado";
     }
     doc.text(mesesTexto, 15, 42);
-    
-    const tableData = tabelaSemana.map(usuario => {
-        const total = usuario.domingo + usuario.segunda + usuario.terca + 
-                     usuario.quarta + usuario.quinta + usuario.sexta + usuario.sabado;
+
+    const tableData = tabelaSemana.map((usuario) => {
+        const total =
+            usuario.domingo +
+            usuario.segunda +
+            usuario.terca +
+            usuario.quarta +
+            usuario.quinta +
+            usuario.sexta +
+            usuario.sabado;
         return [
             usuario.usuario,
             Math.round(usuario.segunda),
@@ -3295,12 +4009,24 @@ function exportarPDF(timestamp) {
             Math.round(usuario.sexta),
             Math.round(usuario.sabado),
             Math.round(usuario.domingo),
-            Math.round(total)
+            Math.round(total),
         ];
     });
-    
+
     doc.autoTable({
-        head: [['Usuário', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo', 'Total']],
+        head: [
+            [
+                "Usuário",
+                "Segunda",
+                "Terça",
+                "Quarta",
+                "Quinta",
+                "Sexta",
+                "Sábado",
+                "Domingo",
+                "Total",
+            ],
+        ],
         body: tableData,
         startY: 52,
         styles: {
@@ -3308,115 +4034,149 @@ function exportarPDF(timestamp) {
             cellPadding: 3,
             textColor: [35, 41, 70],
             lineColor: [74, 144, 226],
-            lineWidth: 0.5
+            lineWidth: 0.5,
         },
         headStyles: {
             fillColor: [74, 144, 226],
             textColor: [255, 255, 255],
-            fontStyle: 'bold',
-            fontSize: 9
+            fontStyle: "bold",
+            fontSize: 9,
         },
         alternateRowStyles: {
-            fillColor: [248, 249, 250]
+            fillColor: [248, 249, 250],
         },
         columnStyles: {
-            0: { cellWidth: 40, fontStyle: 'bold' },
-            8: { fillColor: [227, 242, 253], fontStyle: 'bold' }
+            0: { cellWidth: 40, fontStyle: "bold" },
+            8: { fillColor: [227, 242, 253], fontStyle: "bold" },
         },
-        margin: { left: 15, right: 15 }
+        margin: { left: 15, right: 15 },
     });
-    
+
     const totalGeral = tabelaSemana.reduce((acc, usuario) => {
-        return acc + usuario.domingo + usuario.segunda + usuario.terca + 
-               usuario.quarta + usuario.quinta + usuario.sexta + usuario.sabado;
+        return (
+            acc +
+            usuario.domingo +
+            usuario.segunda +
+            usuario.terca +
+            usuario.quarta +
+            usuario.quinta +
+            usuario.sexta +
+            usuario.sabado
+        );
     }, 0);
-    
+
     const finalY = doc.previousAutoTable.finalY + 10;
     doc.setFillColor(227, 242, 253);
-    doc.rect(15, finalY, doc.internal.pageSize.width - 30, 15, 'F');
-    
+    doc.rect(15, finalY, doc.internal.pageSize.width - 30, 15, "F");
+
     doc.setTextColor(74, 144, 226);
     doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont("helvetica", "bold");
     doc.text(`Total Geral: ${Math.round(totalGeral)} minutas`, 20, finalY + 10);
-    
+
     doc.save(`tabela_semana_${timestamp}.pdf`);
 }
 
 function exportarExcel(timestamp) {
-    let mesesTexto = `Meses: ${processedData.mesesAtivos.join(', ')}`;
+    let mesesTexto = `Meses: ${processedData.mesesAtivos.join(", ")}`;
     if (processedData.mesesAtivos.length === 0) {
-        mesesTexto = 'Nenhum mês selecionado';
+        mesesTexto = "Nenhum mês selecionado";
     }
-    
+
     const wb = XLSX.utils.book_new();
     const ws = {};
-    
-    let titulo = 'APROD - Produtividade por Dia da Semana';
+
+    let titulo = "APROD - Produtividade por Dia da Semana";
     if (configuracoes.nomeGabinete) {
         titulo = `${configuracoes.nomeGabinete} - APROD - Produtividade por Dia da Semana`;
     }
-    
-    ws['A1'] = { 
-        v: titulo, 
-        t: 's',
+
+    ws["A1"] = {
+        v: titulo,
+        t: "s",
         s: {
-            font: { name: "Calibri", sz: 18, bold: true, color: { rgb: "FFFFFF" } },
+            font: {
+                name: "Calibri",
+                sz: 18,
+                bold: true,
+                color: { rgb: "FFFFFF" },
+            },
             fill: { fgColor: { rgb: "4A90E2" } },
             alignment: { horizontal: "center", vertical: "center" },
             border: {
                 top: { style: "thick", color: { rgb: "4A90E2" } },
                 bottom: { style: "thick", color: { rgb: "4A90E2" } },
                 left: { style: "thick", color: { rgb: "4A90E2" } },
-                right: { style: "thick", color: { rgb: "4A90E2" } }
-            }
-        }
+                right: { style: "thick", color: { rgb: "4A90E2" } },
+            },
+        },
     };
-    
-    ws['A3'] = { 
-        v: `Gerado em: ${new Date().toLocaleString('pt-BR')}`, 
-        t: 's',
+
+    ws["A3"] = {
+        v: `Gerado em: ${new Date().toLocaleString("pt-BR")}`,
+        t: "s",
         s: {
             font: { name: "Calibri", sz: 11, color: { rgb: "4A90E2" } },
-            alignment: { horizontal: "left", vertical: "center" }
-        }
+            alignment: { horizontal: "left", vertical: "center" },
+        },
     };
-    
-    ws['A4'] = { 
-        v: mesesTexto, 
-        t: 's',
+
+    ws["A4"] = {
+        v: mesesTexto,
+        t: "s",
         s: {
             font: { name: "Calibri", sz: 11, color: { rgb: "4A90E2" } },
-            alignment: { horizontal: "left", vertical: "center" }
-        }
+            alignment: { horizontal: "left", vertical: "center" },
+        },
     };
-    
-    const headers = ['Usuário', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo', 'Total'];
-    const headerCells = ['A6', 'B6', 'C6', 'D6', 'E6', 'F6', 'G6', 'H6', 'I6'];
-    
+
+    const headers = [
+        "Usuário",
+        "Segunda",
+        "Terça",
+        "Quarta",
+        "Quinta",
+        "Sexta",
+        "Sábado",
+        "Domingo",
+        "Total",
+    ];
+    const headerCells = ["A6", "B6", "C6", "D6", "E6", "F6", "G6", "H6", "I6"];
+
     headers.forEach((header, index) => {
         ws[headerCells[index]] = {
             v: header,
-            t: 's',
+            t: "s",
             s: {
-                font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "FFFFFF" } },
+                font: {
+                    name: "Calibri",
+                    sz: 12,
+                    bold: true,
+                    color: { rgb: "FFFFFF" },
+                },
                 fill: { fgColor: { rgb: "4A90E2" } },
                 alignment: { horizontal: "center", vertical: "center" },
                 border: {
                     top: { style: "medium", color: { rgb: "4A90E2" } },
                     bottom: { style: "medium", color: { rgb: "4A90E2" } },
                     left: { style: "medium", color: { rgb: "4A90E2" } },
-                    right: { style: "medium", color: { rgb: "4A90E2" } }
-                }
-            }
+                    right: { style: "medium", color: { rgb: "4A90E2" } },
+                },
+            },
         };
     });
-    
+
     let row = 7;
     tabelaSemana.forEach((usuario, index) => {
-        const total = usuario.domingo + usuario.segunda + usuario.terca + 
-                     usuario.quarta + usuario.quinta + usuario.sexta + usuario.sabado;
-        
+        const total =
+            usuario.domingo +
+            usuario.segunda +
+            usuario.terca +
+            usuario.quarta +
+            usuario.quinta +
+            usuario.sexta +
+            usuario.sabado;
+
         const isEvenRow = index % 2 === 0;
         const rowData = [
             usuario.usuario,
@@ -3427,156 +4187,226 @@ function exportarExcel(timestamp) {
             Math.round(usuario.sexta),
             Math.round(usuario.sabado),
             Math.round(usuario.domingo),
-            Math.round(total)
+            Math.round(total),
         ];
-        
-        const columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
-        
+
+        const columns = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
+
         rowData.forEach((value, colIndex) => {
             const cellAddress = `${columns[colIndex]}${row}`;
-            
+
             if (colIndex === 0) {
                 ws[cellAddress] = {
                     v: value,
-                    t: 's',
+                    t: "s",
                     s: {
-                        font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "232946" } },
-                        fill: { fgColor: { rgb: isEvenRow ? "FFFFFF" : "F8F9FA" } },
+                        font: {
+                            name: "Calibri",
+                            sz: 11,
+                            bold: true,
+                            color: { rgb: "232946" },
+                        },
+                        fill: {
+                            fgColor: { rgb: isEvenRow ? "FFFFFF" : "F8F9FA" },
+                        },
                         alignment: { horizontal: "left", vertical: "center" },
                         border: {
                             top: { style: "thin", color: { rgb: "D0D0D0" } },
                             bottom: { style: "thin", color: { rgb: "D0D0D0" } },
                             left: { style: "thin", color: { rgb: "D0D0D0" } },
-                            right: { style: "thin", color: { rgb: "D0D0D0" } }
-                        }
-                    }
+                            right: { style: "thin", color: { rgb: "D0D0D0" } },
+                        },
+                    },
                 };
             } else if (colIndex === 8) {
                 ws[cellAddress] = {
                     v: value,
-                    t: 'n',
+                    t: "n",
                     s: {
-                        font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "4A90E2" } },
+                        font: {
+                            name: "Calibri",
+                            sz: 11,
+                            bold: true,
+                            color: { rgb: "4A90E2" },
+                        },
                         fill: { fgColor: { rgb: "E3F2FD" } },
                         alignment: { horizontal: "center", vertical: "center" },
                         border: {
                             top: { style: "thin", color: { rgb: "4A90E2" } },
                             bottom: { style: "thin", color: { rgb: "4A90E2" } },
                             left: { style: "thin", color: { rgb: "4A90E2" } },
-                            right: { style: "thin", color: { rgb: "4A90E2" } }
-                        }
-                    }
+                            right: { style: "thin", color: { rgb: "4A90E2" } },
+                        },
+                    },
                 };
             } else {
                 ws[cellAddress] = {
                     v: value,
-                    t: 'n',
+                    t: "n",
                     s: {
-                        font: { name: "Calibri", sz: 11, color: { rgb: "232946" } },
-                        fill: { fgColor: { rgb: isEvenRow ? "FFFFFF" : "F8F9FA" } },
+                        font: {
+                            name: "Calibri",
+                            sz: 11,
+                            color: { rgb: "232946" },
+                        },
+                        fill: {
+                            fgColor: { rgb: isEvenRow ? "FFFFFF" : "F8F9FA" },
+                        },
                         alignment: { horizontal: "center", vertical: "center" },
                         border: {
                             top: { style: "thin", color: { rgb: "D0D0D0" } },
                             bottom: { style: "thin", color: { rgb: "D0D0D0" } },
                             left: { style: "thin", color: { rgb: "D0D0D0" } },
-                            right: { style: "thin", color: { rgb: "D0D0D0" } }
-                        }
-                    }
+                            right: { style: "thin", color: { rgb: "D0D0D0" } },
+                        },
+                    },
                 };
             }
         });
-        
+
         row++;
     });
-    
+
     const totalGeral = tabelaSemana.reduce((acc, usuario) => {
-        return acc + usuario.domingo + usuario.segunda + usuario.terca + 
-               usuario.quarta + usuario.quinta + usuario.sexta + usuario.sabado;
+        return (
+            acc +
+            usuario.domingo +
+            usuario.segunda +
+            usuario.terca +
+            usuario.quarta +
+            usuario.quinta +
+            usuario.sexta +
+            usuario.sabado
+        );
     }, 0);
-    
+
     row += 1;
-    const totalColumns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
-    const totalValues = ['Total Geral:', '', '', '', '', '', '', '', Math.round(totalGeral)];
-    
+    const totalColumns = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
+    const totalValues = [
+        "Total Geral:",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        Math.round(totalGeral),
+    ];
+
     totalValues.forEach((value, colIndex) => {
         const cellAddress = `${totalColumns[colIndex]}${row}`;
         ws[cellAddress] = {
             v: value,
-            t: colIndex === 0 || colIndex === 8 ? (typeof value === 'string' ? 's' : 'n') : 's',
+            t:
+                colIndex === 0 || colIndex === 8
+                    ? typeof value === "string"
+                        ? "s"
+                        : "n"
+                    : "s",
             s: {
-                font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "FFFFFF" } },
+                font: {
+                    name: "Calibri",
+                    sz: 12,
+                    bold: true,
+                    color: { rgb: "FFFFFF" },
+                },
                 fill: { fgColor: { rgb: "4A90E2" } },
-                alignment: { horizontal: colIndex === 0 ? "left" : "center", vertical: "center" },
+                alignment: {
+                    horizontal: colIndex === 0 ? "left" : "center",
+                    vertical: "center",
+                },
                 border: {
                     top: { style: "thick", color: { rgb: "4A90E2" } },
                     bottom: { style: "thick", color: { rgb: "4A90E2" } },
                     left: { style: "thick", color: { rgb: "4A90E2" } },
-                    right: { style: "thick", color: { rgb: "4A90E2" } }
-                }
-            }
+                    right: { style: "thick", color: { rgb: "4A90E2" } },
+                },
+            },
         };
     });
-    
+
     const lastRow = row;
-    ws['!ref'] = `A1:I${lastRow}`;
-    
-    ws['!cols'] = [
-        { wch: 25 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
-        { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 15 }
+    ws["!ref"] = `A1:I${lastRow}`;
+
+    ws["!cols"] = [
+        { wch: 25 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 15 },
     ];
-    
-    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }];
-    
-    ws['!rows'] = [
+
+    ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }];
+
+    ws["!rows"] = [
         { hpt: 30 },
         { hpt: 15 },
         { hpt: 18 },
         { hpt: 18 },
         { hpt: 15 },
-        { hpt: 25 }
+        { hpt: 25 },
     ];
-    
+
     for (let i = 6; i < lastRow; i++) {
-        if (!ws['!rows'][i]) ws['!rows'][i] = {};
-        ws['!rows'][i].hpt = i === lastRow - 1 ? 25 : 20;
+        if (!ws["!rows"][i]) ws["!rows"][i] = {};
+        ws["!rows"][i].hpt = i === lastRow - 1 ? 25 : 20;
     }
-    
+
     XLSX.utils.book_append_sheet(wb, ws, "Produtividade Semanal");
     XLSX.writeFile(wb, `tabela_semana_${timestamp}.xlsx`);
 }
 
 function ordenarTabelaSemana(coluna) {
     if (!tabelaSemana) return;
-    
+
     const isAscending = sortColumn === coluna ? !sortAscending : true;
     sortColumn = coluna;
     sortAscending = isAscending;
-    
+
     tabelaSemana.sort((a, b) => {
         let valueA, valueB;
-        
-        if (coluna === 'usuario') {
+
+        if (coluna === "usuario") {
             valueA = a.usuario.toLowerCase();
             valueB = b.usuario.toLowerCase();
-        } else if (coluna === 'total') {
-            valueA = a.domingo + a.segunda + a.terca + a.quarta + a.quinta + a.sexta + a.sabado;
-            valueB = b.domingo + b.segunda + b.terca + b.quarta + b.quinta + b.sexta + b.sabado;
+        } else if (coluna === "total") {
+            valueA =
+                a.domingo +
+                a.segunda +
+                a.terca +
+                a.quarta +
+                a.quinta +
+                a.sexta +
+                a.sabado;
+            valueB =
+                b.domingo +
+                b.segunda +
+                b.terca +
+                b.quarta +
+                b.quinta +
+                b.sexta +
+                b.sabado;
         } else {
             valueA = a[coluna];
             valueB = b[coluna];
         }
-        
+
         if (valueA < valueB) return isAscending ? -1 : 1;
         if (valueA > valueB) return isAscending ? 1 : -1;
         return 0;
     });
-    
+
     renderizarTabelaSemana();
 }
 
 function calcularRankingDias() {
     if (!tabelaSemana) return [];
-    
+
     const diasTotais = {
         segunda: 0,
         terca: 0,
@@ -3584,10 +4414,10 @@ function calcularRankingDias() {
         quinta: 0,
         sexta: 0,
         sabado: 0,
-        domingo: 0
+        domingo: 0,
     };
-    
-    tabelaSemana.forEach(usuario => {
+
+    tabelaSemana.forEach((usuario) => {
         diasTotais.segunda += usuario.segunda;
         diasTotais.terca += usuario.terca;
         diasTotais.quarta += usuario.quarta;
@@ -3596,21 +4426,21 @@ function calcularRankingDias() {
         diasTotais.sabado += usuario.sabado;
         diasTotais.domingo += usuario.domingo;
     });
-    
+
     const diasNomes = {
-        segunda: 'Segunda-feira',
-        terca: 'Terça-feira',
-        quarta: 'Quarta-feira',
-        quinta: 'Quinta-feira',
-        sexta: 'Sexta-feira',
-        sabado: 'Sábado',
-        domingo: 'Domingo'
+        segunda: "Segunda-feira",
+        terca: "Terça-feira",
+        quarta: "Quarta-feira",
+        quinta: "Quinta-feira",
+        sexta: "Sexta-feira",
+        sabado: "Sábado",
+        domingo: "Domingo",
     };
-    
+
     return Object.entries(diasTotais)
         .map(([dia, total]) => ({
             dia: diasNomes[dia],
-            total: Math.round(total)
+            total: Math.round(total),
         }))
         .sort((a, b) => b.total - a.total);
 }
@@ -3625,75 +4455,86 @@ function toggleTheme() {
 }
 
 function updateTheme() {
-    const theme = isDarkTheme ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', theme);
-    
-    const themeButton = document.getElementById('theme-toggle');
+    const theme = isDarkTheme ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", theme);
+
+    const themeButton = document.getElementById("theme-toggle");
     if (themeButton) {
         if (isDarkTheme) {
-            themeButton.classList.add('dark');
+            themeButton.classList.add("dark");
         } else {
-            themeButton.classList.remove('dark');
+            themeButton.classList.remove("dark");
         }
     }
-    
-    localStorage.setItem('theme', theme);
+
+    localStorage.setItem("theme", theme);
 }
 
 function carregarTiposPesos() {
     if (!excelData || excelData.length === 0) {
-        const container = document.getElementById('tabela-pesos');
-        container.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">Nenhum dado disponível. Importe arquivos Excel primeiro.</td></tr>';
+        const container = document.getElementById("tabela-pesos");
+        container.innerHTML =
+            '<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">Nenhum dado disponível. Importe arquivos Excel primeiro.</td></tr>';
         return;
     }
 
     const tipos = new Set();
-    
-    console.log('Total de registros para análise:', excelData.length);
-    
+
+    console.log("Total de registros para análise:", excelData.length);
+
     excelData.forEach((row, index) => {
-        const tipoValue = row['Tipo'];
-        const agendamentoValue = row['Agendamento'];
-        
-        if (tipoValue && typeof tipoValue === 'string') {
+        const tipoValue = row["Tipo"];
+        const agendamentoValue = row["Agendamento"];
+
+        if (tipoValue && typeof tipoValue === "string") {
             const tipoLimpo = tipoValue.toString().trim().toUpperCase();
-            
-            if (tipoLimpo === 'ACÓRDÃO' || tipoLimpo === 'VOTO-VISTA' || tipoLimpo === 'VOTO DIVERGENTE') {
-                tipos.add('Acórdão');
+
+            if (
+                tipoLimpo === "ACÓRDÃO" ||
+                tipoLimpo === "VOTO-VISTA" ||
+                tipoLimpo === "VOTO DIVERGENTE"
+            ) {
+                tipos.add("Acórdão");
                 console.log(`Tipo "${tipoValue}" convertido para "Acórdão"`);
-            }
-            else if (tipoLimpo === 'DESPACHO/DECISÃO') {
-                if (agendamentoValue && typeof agendamentoValue === 'string') {
+            } else if (tipoLimpo === "DESPACHO/DECISÃO") {
+                if (agendamentoValue && typeof agendamentoValue === "string") {
                     let agendamentoLimpo = agendamentoValue.toString().trim();
-                    
-                    if (agendamentoLimpo.includes('(') && agendamentoLimpo.includes(')')) {
-                        agendamentoLimpo = agendamentoLimpo.substring(0, agendamentoLimpo.indexOf('(')).trim();
+
+                    if (
+                        agendamentoLimpo.includes("(") &&
+                        agendamentoLimpo.includes(")")
+                    ) {
+                        agendamentoLimpo = agendamentoLimpo
+                            .substring(0, agendamentoLimpo.indexOf("("))
+                            .trim();
                     }
-                    
-                    if (agendamentoLimpo && agendamentoLimpo !== '') {
+
+                    if (agendamentoLimpo && agendamentoLimpo !== "") {
                         tipos.add(agendamentoLimpo);
-                        console.log(`DESPACHO/DECISÃO com agendamento: "${agendamentoLimpo}"`);
+                        console.log(
+                            `DESPACHO/DECISÃO com agendamento: "${agendamentoLimpo}"`
+                        );
                     }
                 }
-            }
-            else if (tipoLimpo !== '' && tipoLimpo !== 'TIPO') {
+            } else if (tipoLimpo !== "" && tipoLimpo !== "TIPO") {
                 tipos.add(tipoValue.toString().trim());
                 console.log(`Tipo padrão encontrado: "${tipoValue}"`);
             }
         }
     });
 
-    console.log('Tipos únicos encontrados:', Array.from(tipos));
+    console.log("Tipos únicos encontrados:", Array.from(tipos));
 
     if (tipos.size === 0) {
-        const container = document.getElementById('tabela-pesos');
-        container.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">Nenhum tipo válido encontrado. Verifique se as colunas "Tipo" e "Agendamento" existem.</td></tr>';
+        const container = document.getElementById("tabela-pesos");
+        container.innerHTML =
+            '<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">Nenhum tipo válido encontrado. Verifique se as colunas "Tipo" e "Agendamento" existem.</td></tr>';
         return;
     }
 
     tiposPesos = Array.from(tipos).sort();
-    
-    tiposPesos.forEach(tipo => {
+
+    tiposPesos.forEach((tipo) => {
         if (!(tipo in pesosAtuais)) {
             pesosAtuais[tipo] = 1.0;
         }
@@ -3703,22 +4544,23 @@ function carregarTiposPesos() {
 }
 
 function renderizarTabelaPesos() {
-    const container = document.getElementById('tabela-pesos');
-    container.innerHTML = '';
+    const container = document.getElementById("tabela-pesos");
+    container.innerHTML = "";
 
     if (tiposPesos.length === 0) {
-        container.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">Nenhum tipo de agendamento encontrado.</td></tr>';
+        container.innerHTML =
+            '<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">Nenhum tipo de agendamento encontrado.</td></tr>';
         return;
     }
 
-    tiposPesos.forEach(tipo => {
-        const row = document.createElement('tr');
-        
+    tiposPesos.forEach((tipo) => {
+        const row = document.createElement("tr");
+
         let tipoLimpo = tipo;
-        if (tipo.includes('(') && tipo.includes(')')) {
-            tipoLimpo = tipo.substring(0, tipo.indexOf('(')).trim();
+        if (tipo.includes("(") && tipo.includes(")")) {
+            tipoLimpo = tipo.substring(0, tipo.indexOf("(")).trim();
         }
-        
+
         row.innerHTML = `
             <td class="tipo-cell">${tipoLimpo}</td>
             <td>
@@ -3737,7 +4579,7 @@ function renderizarTabelaPesos() {
                 </div>
             </td>
         `;
-        
+
         container.appendChild(row);
     });
 }
@@ -3769,81 +4611,93 @@ function incrementarPeso(tipo) {
 function salvarPesos() {
     try {
         const pesosJson = JSON.stringify(pesosAtuais, null, 2);
-        const blob = new Blob([pesosJson], { type: 'application/json' });
+        const blob = new Blob([pesosJson], { type: "application/json" });
         const url = URL.createObjectURL(blob);
-        
-        const link = document.createElement('a');
+
+        const link = document.createElement("a");
         link.href = url;
         link.download = `pesos_${new Date().toISOString().slice(0, 10)}.json`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
+
         URL.revokeObjectURL(url);
-        
-        alert('Pesos salvos com sucesso!');
+
+        alert("Pesos salvos com sucesso!");
     } catch (error) {
-        console.error('Erro ao salvar pesos:', error);
-        alert('Erro ao salvar pesos.');
+        console.error("Erro ao salvar pesos:", error);
+        alert("Erro ao salvar pesos.");
     }
 }
 
 function aplicarPesos() {
     if (!excelData || excelData.length === 0) {
-        alert('Nenhum dado disponível para aplicar pesos!');
+        alert("Nenhum dado disponível para aplicar pesos!");
         return;
     }
 
-    console.log('Aplicando pesos aos dados...');
-    console.log('Pesos atuais:', pesosAtuais);
-    
+    console.log("Aplicando pesos aos dados...");
+    console.log("Pesos atuais:", pesosAtuais);
+
     let pesosAplicados = 0;
-    
-    excelData.forEach(row => {
+
+    excelData.forEach((row) => {
         let pesoAplicado = 1.0;
-        
-        const tipoValue = row['Tipo'];
-        const agendamentoValue = row['Agendamento'];
-        
-        if (tipoValue && typeof tipoValue === 'string') {
+
+        const tipoValue = row["Tipo"];
+        const agendamentoValue = row["Agendamento"];
+
+        if (tipoValue && typeof tipoValue === "string") {
             const tipoLimpo = tipoValue.toString().trim().toUpperCase();
-            
-            if (tipoLimpo === 'ACÓRDÃO' || tipoLimpo === 'VOTO-VISTA' || tipoLimpo === 'VOTO DIVERGENTE') {
-                pesoAplicado = pesosAtuais['Acórdão'] || 1.0;
-            }
-            else if (tipoLimpo === 'DESPACHO/DECISÃO') {
-                if (agendamentoValue && typeof agendamentoValue === 'string') {
+
+            if (
+                tipoLimpo === "ACÓRDÃO" ||
+                tipoLimpo === "VOTO-VISTA" ||
+                tipoLimpo === "VOTO DIVERGENTE"
+            ) {
+                pesoAplicado = pesosAtuais["Acórdão"] || 1.0;
+            } else if (tipoLimpo === "DESPACHO/DECISÃO") {
+                if (agendamentoValue && typeof agendamentoValue === "string") {
                     let agendamentoLimpo = agendamentoValue.toString().trim();
-                    
-                    if (agendamentoLimpo.includes('(') && agendamentoLimpo.includes(')')) {
-                        agendamentoLimpo = agendamentoLimpo.substring(0, agendamentoLimpo.indexOf('(')).trim();
+
+                    if (
+                        agendamentoLimpo.includes("(") &&
+                        agendamentoLimpo.includes(")")
+                    ) {
+                        agendamentoLimpo = agendamentoLimpo
+                            .substring(0, agendamentoLimpo.indexOf("("))
+                            .trim();
                     }
-                    
-                    pesoAplicado = pesosAtuais[agendamentoLimpo] || pesosAtuais[agendamentoValue.toString().trim()] || 1.0;
+
+                    pesoAplicado =
+                        pesosAtuais[agendamentoLimpo] ||
+                        pesosAtuais[agendamentoValue.toString().trim()] ||
+                        1.0;
                 }
-            }
-            else {
+            } else {
                 pesoAplicado = pesosAtuais[tipoValue.toString().trim()] || 1.0;
             }
         }
-        
-        row['peso'] = pesoAplicado;
+
+        row["peso"] = pesoAplicado;
         pesosAplicados++;
     });
 
     console.log(`Total de pesos aplicados: ${pesosAplicados}`);
-    
+
     processExcelData();
-    
-    if (document.getElementById('semana-page').style.display === 'block') {
+
+    if (document.getElementById("semana-page").style.display === "block") {
         gerarTabelaSemana();
     }
-    
-    if (document.getElementById('comparar-page').style.display === 'block') {
+
+    if (document.getElementById("comparar-page").style.display === "block") {
         gerarDadosComparacao();
     }
 
-    alert(`Pesos aplicados com sucesso! ${pesosAplicados} registros foram atualizados. Os gráficos e tabelas foram recalculados.`);
+    alert(
+        `Pesos aplicados com sucesso! ${pesosAplicados} registros foram atualizados. Os gráficos e tabelas foram recalculados.`
+    );
 }
 
 function togglePesos() {
@@ -3853,16 +4707,16 @@ function togglePesos() {
 }
 
 function updatePesosButton() {
-    const button = document.getElementById('pesos-toggle');
+    const button = document.getElementById("pesos-toggle");
     if (button) {
         if (pesosAtivos) {
-            button.textContent = '⚖️';
-            button.title = 'Desativar Pesos';
-            button.classList.remove('inactive');
+            button.textContent = "⚖️";
+            button.title = "Desativar Pesos";
+            button.classList.remove("inactive");
         } else {
-            button.textContent = '⚖️';
-            button.title = 'Ativar Pesos';
-            button.classList.add('inactive');
+            button.textContent = "⚖️";
+            button.title = "Ativar Pesos";
+            button.classList.add("inactive");
         }
     }
 }
@@ -3870,48 +4724,64 @@ function updatePesosButton() {
 function aplicarOuRemoverPesos() {
     if (!excelData || excelData.length === 0) return;
 
-    excelData.forEach(row => {
+    excelData.forEach((row) => {
         if (pesosAtivos) {
             let pesoAplicado = 1.0;
-            
-            const tipoValue = row['Tipo'];
-            const agendamentoValue = row['Agendamento'];
-            
-            if (tipoValue && typeof tipoValue === 'string') {
+
+            const tipoValue = row["Tipo"];
+            const agendamentoValue = row["Agendamento"];
+
+            if (tipoValue && typeof tipoValue === "string") {
                 const tipoLimpo = tipoValue.toString().trim().toUpperCase();
-                
-                if (tipoLimpo === 'ACÓRDÃO' || tipoLimpo === 'VOTO-VISTA' || tipoLimpo === 'VOTO DIVERGENTE') {
-                    pesoAplicado = pesosAtuais['Acórdão'] || 1.0;
-                }
-                else if (tipoLimpo === 'DESPACHO/DECISÃO') {
-                    if (agendamentoValue && typeof agendamentoValue === 'string') {
-                        let agendamentoLimpo = agendamentoValue.toString().trim();
-                        
-                        if (agendamentoLimpo.includes('(') && agendamentoLimpo.includes(')')) {
-                            agendamentoLimpo = agendamentoLimpo.substring(0, agendamentoLimpo.indexOf('(')).trim();
+
+                if (
+                    tipoLimpo === "ACÓRDÃO" ||
+                    tipoLimpo === "VOTO-VISTA" ||
+                    tipoLimpo === "VOTO DIVERGENTE"
+                ) {
+                    pesoAplicado = pesosAtuais["Acórdão"] || 1.0;
+                } else if (tipoLimpo === "DESPACHO/DECISÃO") {
+                    if (
+                        agendamentoValue &&
+                        typeof agendamentoValue === "string"
+                    ) {
+                        let agendamentoLimpo = agendamentoValue
+                            .toString()
+                            .trim();
+
+                        if (
+                            agendamentoLimpo.includes("(") &&
+                            agendamentoLimpo.includes(")")
+                        ) {
+                            agendamentoLimpo = agendamentoLimpo
+                                .substring(0, agendamentoLimpo.indexOf("("))
+                                .trim();
                         }
-                        
-                        pesoAplicado = pesosAtuais[agendamentoLimpo] || pesosAtuais[agendamentoValue.toString().trim()] || 1.0;
+
+                        pesoAplicado =
+                            pesosAtuais[agendamentoLimpo] ||
+                            pesosAtuais[agendamentoValue.toString().trim()] ||
+                            1.0;
                     }
-                }
-                else {
-                    pesoAplicado = pesosAtuais[tipoValue.toString().trim()] || 1.0;
+                } else {
+                    pesoAplicado =
+                        pesosAtuais[tipoValue.toString().trim()] || 1.0;
                 }
             }
-            
-            row['peso'] = pesoAplicado;
+
+            row["peso"] = pesoAplicado;
         } else {
-            row['peso'] = 1.0;
+            row["peso"] = 1.0;
         }
     });
 
     processExcelData();
-    
-    if (document.getElementById('semana-page').style.display === 'block') {
+
+    if (document.getElementById("semana-page").style.display === "block") {
         gerarTabelaSemana();
     }
-    
-    if (document.getElementById('comparar-page').style.display === 'block') {
+
+    if (document.getElementById("comparar-page").style.display === "block") {
         gerarDadosComparacao();
     }
 }
@@ -3919,276 +4789,319 @@ function aplicarOuRemoverPesos() {
 function importarPesos(event) {
     const file = event.target.files[0];
     if (!file) return;
-    
+
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         try {
             const pesosImportados = JSON.parse(e.target.result);
-            
-            if (typeof pesosImportados !== 'object' || pesosImportados === null) {
-                throw new Error('Formato de arquivo inválido');
+
+            if (
+                typeof pesosImportados !== "object" ||
+                pesosImportados === null
+            ) {
+                throw new Error("Formato de arquivo inválido");
             }
-            
+
             let pesosAplicados = 0;
-            Object.keys(pesosImportados).forEach(tipo => {
+            Object.keys(pesosImportados).forEach((tipo) => {
                 const peso = parseFloat(pesosImportados[tipo]);
                 if (!isNaN(peso) && peso >= 0 && peso <= 10) {
                     pesosAtuais[tipo] = peso;
                     pesosAplicados++;
                 }
             });
-            
+
             if (pesosAplicados === 0) {
-                alert('Nenhum peso válido foi encontrado no arquivo!');
+                alert("Nenhum peso válido foi encontrado no arquivo!");
                 return;
             }
-            
-            localStorage.setItem('aprod-pesos', JSON.stringify(pesosAtuais));
+
+            localStorage.setItem("aprod-pesos", JSON.stringify(pesosAtuais));
             renderizarTabelaPesos();
-            
-            alert(`Pesos importados com sucesso! ${pesosAplicados} tipos de agendamento foram atualizados.`);
-            
+
+            alert(
+                `Pesos importados com sucesso! ${pesosAplicados} tipos de agendamento foram atualizados.`
+            );
         } catch (error) {
-            alert('Erro ao importar arquivo: ' + error.message);
+            alert("Erro ao importar arquivo: " + error.message);
         }
     };
     reader.readAsText(file);
-    
-    event.target.value = '';
+
+    event.target.value = "";
 }
 
 function restaurarPesosPadrao() {
-    if (confirm('Tem certeza que deseja restaurar todos os pesos para 1.0?')) {
-        tiposPesos.forEach(tipo => {
+    if (confirm("Tem certeza que deseja restaurar todos os pesos para 1.0?")) {
+        tiposPesos.forEach((tipo) => {
             pesosAtuais[tipo] = 1.0;
         });
-        
+
         renderizarTabelaPesos();
         aplicarPesos();
-        alert('Pesos restaurados para o valor padrão (1.0) e aplicados automaticamente.');
+        alert(
+            "Pesos restaurados para o valor padrão (1.0) e aplicados automaticamente."
+        );
     }
 }
 
 function mostrarPopupExportacaoDashboard() {
-    document.getElementById('popup-exportacao-dashboard').style.display = 'flex';
+    document.getElementById("popup-exportacao-dashboard").style.display =
+        "flex";
 }
 
 function fecharPopupExportacaoDashboard() {
-    document.getElementById('popup-exportacao-dashboard').style.display = 'none';
+    document.getElementById("popup-exportacao-dashboard").style.display =
+        "none";
 }
 
 function exportarDashboard(formato) {
     if (!processedData.usuarios || processedData.usuarios.length === 0) {
-        alert('Não há dados para exportar!');
+        alert("Não há dados para exportar!");
         return;
     }
-    
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-    
-    if (formato === 'pdf') {
+
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
+
+    if (formato === "pdf") {
         exportarDashboardPDF(timestamp);
-    } else if (formato === 'xlsx') {
+    } else if (formato === "xlsx") {
         exportarDashboardExcel(timestamp);
     }
-    
+
     fecharPopupExportacaoDashboard();
 }
 
 function exportarDashboardPDF(timestamp) {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('landscape');
-    
+    const doc = new jsPDF("landscape");
+
     doc.setFillColor(74, 144, 226);
-    doc.rect(0, 0, doc.internal.pageSize.width, 25, 'F');
-    
+    doc.rect(0, 0, doc.internal.pageSize.width, 25, "F");
+
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    
-    let titulo = 'APROD - Dashboard de Produtividade';
+    doc.setFont("helvetica", "bold");
+
+    let titulo = "APROD - Dashboard de Produtividade";
     if (configuracoes.nomeGabinete) {
         titulo = `${configuracoes.nomeGabinete} - APROD - Dashboard de Produtividade`;
     }
     doc.text(titulo, 15, 16);
-    
+
     doc.setTextColor(74, 144, 226);
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 15, 35);
-    
-    let mesesTexto = `Meses: ${processedData.mesesAtivos.join(', ')}`;
+    doc.setFont("helvetica", "normal");
+    doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, 15, 35);
+
+    let mesesTexto = `Meses: ${processedData.mesesAtivos.join(", ")}`;
     if (processedData.mesesAtivos.length === 0) {
-        mesesTexto = 'Todos os meses';
+        mesesTexto = "Todos os meses";
     }
     doc.text(mesesTexto, 15, 42);
-    
+
     const kpisData = [
-        ['Total de Minutas', processedData.totalMinutas.toString()],
-        ['Média por Usuário', processedData.mediaUsuario > 0 ? processedData.mediaUsuario.toFixed(1) : '--'],
-        ['Usuários Ativos', processedData.usuariosAtivos.toString()],
-        ['Dia Mais Produtivo', processedData.diaProdutivo]
+        ["Total de Minutas", processedData.totalMinutas.toString()],
+        [
+            "Média por Usuário",
+            processedData.mediaUsuario > 0
+                ? processedData.mediaUsuario.toFixed(1)
+                : "--",
+        ],
+        ["Usuários Ativos", processedData.usuariosAtivos.toString()],
+        ["Dia Mais Produtivo", processedData.diaProdutivo],
     ];
-    
+
     doc.autoTable({
-        head: [['Indicador', 'Valor']],
+        head: [["Indicador", "Valor"]],
         body: kpisData,
         startY: 52,
         margin: { left: 15, right: 140 },
         tableWidth: 140,
         styles: {
             fontSize: 10,
-            cellPadding: 5
+            cellPadding: 5,
         },
         headStyles: {
             fillColor: [74, 144, 226],
             textColor: [255, 255, 255],
-            fontStyle: 'bold'
-        }
+            fontStyle: "bold",
+        },
     });
-    
+
     const chartData = processedData.usuarios.slice(0, 20);
     const tableData = chartData.map((usuario, index) => [
         index + 1,
         usuario.nome,
-        Math.round(usuario.minutas)
+        Math.round(usuario.minutas),
     ]);
-    
+
     doc.autoTable({
-        head: [['#', 'Usuário', 'Minutas']],
+        head: [["#", "Usuário", "Minutas"]],
         body: tableData,
         startY: 52,
         margin: { left: 170, right: 15 },
         styles: {
             fontSize: 9,
-            cellPadding: 4
+            cellPadding: 4,
         },
         headStyles: {
             fillColor: [74, 144, 226],
             textColor: [255, 255, 255],
-            fontStyle: 'bold'
+            fontStyle: "bold",
         },
         columnStyles: {
-            0: { cellWidth: 20, halign: 'center' },
+            0: { cellWidth: 20, halign: "center" },
             1: { cellWidth: 60 },
-            2: { cellWidth: 30, halign: 'center', fontStyle: 'bold' }
-        }
+            2: { cellWidth: 30, halign: "center", fontStyle: "bold" },
+        },
     });
-    
+
     doc.save(`dashboard_${timestamp}.pdf`);
 }
 
 function exportarDashboardExcel(timestamp) {
-    let mesesTexto = `Meses: ${processedData.mesesAtivos.join(', ')}`;
+    let mesesTexto = `Meses: ${processedData.mesesAtivos.join(", ")}`;
     if (processedData.mesesAtivos.length === 0) {
-        mesesTexto = 'Todos os meses';
+        mesesTexto = "Todos os meses";
     }
-    
+
     const wb = XLSX.utils.book_new();
     const ws = {};
-    
-    let titulo = 'APROD - Dashboard de Produtividade';
+
+    let titulo = "APROD - Dashboard de Produtividade";
     if (configuracoes.nomeGabinete) {
         titulo = `${configuracoes.nomeGabinete} - APROD - Dashboard de Produtividade`;
     }
-    
-    ws['A1'] = { 
-        v: titulo, 
-        t: 's',
+
+    ws["A1"] = {
+        v: titulo,
+        t: "s",
         s: {
-            font: { name: "Calibri", sz: 18, bold: true, color: { rgb: "FFFFFF" } },
+            font: {
+                name: "Calibri",
+                sz: 18,
+                bold: true,
+                color: { rgb: "FFFFFF" },
+            },
             fill: { fgColor: { rgb: "4A90E2" } },
-            alignment: { horizontal: "center", vertical: "center" }
-        }
+            alignment: { horizontal: "center", vertical: "center" },
+        },
     };
-    
-    ws['A3'] = { v: `Gerado em: ${new Date().toLocaleString('pt-BR')}`, t: 's' };
-    ws['A4'] = { v: mesesTexto, t: 's' };
-    
-    const kpisHeaders = ['Indicador', 'Valor'];
+
+    ws["A3"] = {
+        v: `Gerado em: ${new Date().toLocaleString("pt-BR")}`,
+        t: "s",
+    };
+    ws["A4"] = { v: mesesTexto, t: "s" };
+
+    const kpisHeaders = ["Indicador", "Valor"];
     const kpisData = [
-        ['Total de Minutas', processedData.totalMinutas],
-        ['Média por Usuário', processedData.mediaUsuario > 0 ? Math.round(processedData.mediaUsuario * 10) / 10 : 0],
-        ['Usuários Ativos', processedData.usuariosAtivos],
-        ['Dia Mais Produtivo', processedData.diaProdutivo]
+        ["Total de Minutas", processedData.totalMinutas],
+        [
+            "Média por Usuário",
+            processedData.mediaUsuario > 0
+                ? Math.round(processedData.mediaUsuario * 10) / 10
+                : 0,
+        ],
+        ["Usuários Ativos", processedData.usuariosAtivos],
+        ["Dia Mais Produtivo", processedData.diaProdutivo],
     ];
-    
-    ws['A6'] = { v: 'INDICADORES', t: 's', s: { font: { bold: true }, fill: { fgColor: { rgb: "4A90E2" } } } };
-    ws['A7'] = { v: kpisHeaders[0], t: 's', s: { font: { bold: true } } };
-    ws['B7'] = { v: kpisHeaders[1], t: 's', s: { font: { bold: true } } };
-    
+
+    ws["A6"] = {
+        v: "INDICADORES",
+        t: "s",
+        s: { font: { bold: true }, fill: { fgColor: { rgb: "4A90E2" } } },
+    };
+    ws["A7"] = { v: kpisHeaders[0], t: "s", s: { font: { bold: true } } };
+    ws["B7"] = { v: kpisHeaders[1], t: "s", s: { font: { bold: true } } };
+
     kpisData.forEach((row, index) => {
         const rowNum = 8 + index;
-        ws[`A${rowNum}`] = { v: row[0], t: 's' };
-        ws[`B${rowNum}`] = { v: row[1], t: typeof row[1] === 'number' ? 'n' : 's' };
+        ws[`A${rowNum}`] = { v: row[0], t: "s" };
+        ws[`B${rowNum}`] = {
+            v: row[1],
+            t: typeof row[1] === "number" ? "n" : "s",
+        };
     });
-    
+
     const chartData = processedData.usuarios.slice(0, 20);
     const startRow = 14;
-    
-    ws[`A${startRow}`] = { v: 'RANKING DE USUÁRIOS', t: 's', s: { font: { bold: true }, fill: { fgColor: { rgb: "4A90E2" } } } };
-    ws[`A${startRow + 1}`] = { v: '#', t: 's', s: { font: { bold: true } } };
-    ws[`B${startRow + 1}`] = { v: 'Usuário', t: 's', s: { font: { bold: true } } };
-    ws[`C${startRow + 1}`] = { v: 'Minutas', t: 's', s: { font: { bold: true } } };
-    
+
+    ws[`A${startRow}`] = {
+        v: "RANKING DE USUÁRIOS",
+        t: "s",
+        s: { font: { bold: true }, fill: { fgColor: { rgb: "4A90E2" } } },
+    };
+    ws[`A${startRow + 1}`] = { v: "#", t: "s", s: { font: { bold: true } } };
+    ws[`B${startRow + 1}`] = {
+        v: "Usuário",
+        t: "s",
+        s: { font: { bold: true } },
+    };
+    ws[`C${startRow + 1}`] = {
+        v: "Minutas",
+        t: "s",
+        s: { font: { bold: true } },
+    };
+
     chartData.forEach((usuario, index) => {
         const rowNum = startRow + 2 + index;
-        ws[`A${rowNum}`] = { v: index + 1, t: 'n' };
-        ws[`B${rowNum}`] = { v: usuario.nome, t: 's' };
-        ws[`C${rowNum}`] = { v: Math.round(usuario.minutas), t: 'n' };
+        ws[`A${rowNum}`] = { v: index + 1, t: "n" };
+        ws[`B${rowNum}`] = { v: usuario.nome, t: "s" };
+        ws[`C${rowNum}`] = { v: Math.round(usuario.minutas), t: "n" };
     });
-    
+
     const lastRow = startRow + 2 + chartData.length;
-    ws['!ref'] = `A1:C${lastRow}`;
-    
-    ws['!cols'] = [
-        { wch: 20 }, { wch: 30 }, { wch: 15 }
-    ];
-    
-    ws['!merges'] = [
+    ws["!ref"] = `A1:C${lastRow}`;
+
+    ws["!cols"] = [{ wch: 20 }, { wch: 30 }, { wch: 15 }];
+
+    ws["!merges"] = [
         { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
         { s: { r: 5, c: 0 }, e: { r: 5, c: 2 } },
-        { s: { r: startRow - 1, c: 0 }, e: { r: startRow - 1, c: 2 } }
+        { s: { r: startRow - 1, c: 0 }, e: { r: startRow - 1, c: 2 } },
     ];
-    
+
     XLSX.utils.book_append_sheet(wb, ws, "Dashboard");
     XLSX.writeFile(wb, `dashboard_${timestamp}.xlsx`);
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    const savedTheme = localStorage.getItem('theme');
+document.addEventListener("DOMContentLoaded", function () {
+    const savedTheme = localStorage.getItem("theme");
     if (savedTheme) {
-        isDarkTheme = savedTheme === 'dark';
+        isDarkTheme = savedTheme === "dark";
     }
-    
+
     initializeApp();
-    
-    const filtroUsuarios = document.getElementById('filtro-usuarios');
+
+    const filtroUsuarios = document.getElementById("filtro-usuarios");
     if (filtroUsuarios) {
-        filtroUsuarios.addEventListener('input', function() {
+        filtroUsuarios.addEventListener("input", function () {
             renderizarListaUsuarios();
         });
     }
-    
-    const filtroSemana = document.getElementById('filtro-semana');
+
+    const filtroSemana = document.getElementById("filtro-semana");
     if (filtroSemana) {
-        filtroSemana.addEventListener('input', function() {
+        filtroSemana.addEventListener("input", function () {
             renderizarTabelaSemana();
         });
     }
 
-    const filtroMes = document.getElementById('filtro-mes');
+    const filtroMes = document.getElementById("filtro-mes");
     if (filtroMes) {
-        filtroMes.addEventListener('input', function() {
+        filtroMes.addEventListener("input", function () {
             renderizarTabelaMes();
         });
     }
 
-    const filtroAssuntos = document.getElementById('filtro-assuntos');
+    const filtroAssuntos = document.getElementById("filtro-assuntos");
     if (filtroAssuntos) {
-        filtroAssuntos.addEventListener('input', function() {
-            const container = document.getElementById('tabela-assuntos');
+        filtroAssuntos.addEventListener("input", function () {
+            const container = document.getElementById("tabela-assuntos");
             if (container) {
-                container.setAttribute('data-expandido', 'false');
+                container.setAttribute("data-expandido", "false");
             }
             renderizarTabelaAssuntos();
         });
@@ -4198,111 +5111,134 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function carregarConfiguracoes() {
-    const configSalvas = localStorage.getItem('aprod-configuracoes');
+    const configSalvas = localStorage.getItem("aprod-configuracoes");
     if (configSalvas) {
         const configCarregadas = JSON.parse(configSalvas);
         if (!configCarregadas.iaToken) {
-            configCarregadas.iaToken = '6f76bea40d73b6ff291fd29780ca51cc6e12d00c';
+            configCarregadas.iaToken =
+                "6f76bea40d73b6ff291fd29780ca51cc6e12d00c";
         }
         configuracoes = { ...configuracoes, ...configCarregadas };
     }
-    
-    document.getElementById('nome-gabinete').value = configuracoes.nomeGabinete;
-    document.getElementById('incluir-logo').checked = configuracoes.incluirLogo;
-    document.getElementById('incluir-data').checked = configuracoes.incluirData;
-    document.getElementById('formato-data').value = configuracoes.formatoData;
-    document.getElementById('tema-inicial').value = configuracoes.temaInicial;
-    document.getElementById('itens-grafico').value = configuracoes.itensGrafico;
-    document.getElementById('peso-padrao').value = configuracoes.pesoPadrao;
-    document.getElementById('auto-aplicar-pesos').checked = configuracoes.autoAplicarPesos;
-    document.getElementById('ia-habilitada').checked = configuracoes.iaHabilitada;
-    document.getElementById('ia-token').value = configuracoes.iaToken;
-    document.getElementById('ia-modelo').value = configuracoes.iaModelo;
-    
+
+    document.getElementById("nome-gabinete").value = configuracoes.nomeGabinete;
+    document.getElementById("incluir-logo").checked = configuracoes.incluirLogo;
+    document.getElementById("incluir-data").checked = configuracoes.incluirData;
+    document.getElementById("formato-data").value = configuracoes.formatoData;
+    document.getElementById("tema-inicial").value = configuracoes.temaInicial;
+    document.getElementById("itens-grafico").value = configuracoes.itensGrafico;
+    document.getElementById("peso-padrao").value = configuracoes.pesoPadrao;
+    document.getElementById("auto-aplicar-pesos").checked =
+        configuracoes.autoAplicarPesos;
+    document.getElementById("ia-habilitada").checked =
+        configuracoes.iaHabilitada;
+    document.getElementById("ia-token").value = configuracoes.iaToken;
+    document.getElementById("ia-modelo").value = configuracoes.iaModelo;
+
     atualizarDisplayGabinete();
 }
 
 function salvarNomeGabinete() {
-    const nomeGabinete = document.getElementById('nome-gabinete').value.trim();
+    const nomeGabinete = document.getElementById("nome-gabinete").value.trim();
     configuracoes.nomeGabinete = nomeGabinete;
-    localStorage.setItem('aprod-configuracoes', JSON.stringify(configuracoes));
+    localStorage.setItem("aprod-configuracoes", JSON.stringify(configuracoes));
     atualizarDisplayGabinete();
-    alert('Nome do gabinete salvo com sucesso!');
+    alert("Nome do gabinete salvo com sucesso!");
 }
 
 function salvarTodasConfiguracoes() {
-    configuracoes.nomeGabinete = document.getElementById('nome-gabinete').value.trim();
-    configuracoes.incluirLogo = document.getElementById('incluir-logo').checked;
-    configuracoes.incluirData = document.getElementById('incluir-data').checked;
-    configuracoes.formatoData = document.getElementById('formato-data').value;
-    configuracoes.temaInicial = document.getElementById('tema-inicial').value;
-    configuracoes.itensGrafico = parseInt(document.getElementById('itens-grafico').value);
-    configuracoes.pesoPadrao = parseFloat(document.getElementById('peso-padrao').value);
-    configuracoes.autoAplicarPesos = document.getElementById('auto-aplicar-pesos').checked;
-    configuracoes.iaHabilitada = document.getElementById('ia-habilitada').checked;
-    configuracoes.iaToken = document.getElementById('ia-token').value.trim();
-    configuracoes.iaModelo = document.getElementById('ia-modelo').value;
-    
-    const modeloDireto = document.getElementById('ia-modelo-direto');
+    configuracoes.nomeGabinete = document
+        .getElementById("nome-gabinete")
+        .value.trim();
+    configuracoes.incluirLogo = document.getElementById("incluir-logo").checked;
+    configuracoes.incluirData = document.getElementById("incluir-data").checked;
+    configuracoes.formatoData = document.getElementById("formato-data").value;
+    configuracoes.temaInicial = document.getElementById("tema-inicial").value;
+    configuracoes.itensGrafico = parseInt(
+        document.getElementById("itens-grafico").value
+    );
+    configuracoes.pesoPadrao = parseFloat(
+        document.getElementById("peso-padrao").value
+    );
+    configuracoes.autoAplicarPesos =
+        document.getElementById("auto-aplicar-pesos").checked;
+    configuracoes.iaHabilitada =
+        document.getElementById("ia-habilitada").checked;
+    configuracoes.iaToken = document.getElementById("ia-token").value.trim();
+    configuracoes.iaModelo = document.getElementById("ia-modelo").value;
+
+    const modeloDireto = document.getElementById("ia-modelo-direto");
     if (modeloDireto) {
         modeloDireto.value = configuracoes.iaModelo;
-        
-        const modeloAtual = document.getElementById('modelo-atual');
+
+        const modeloAtual = document.getElementById("modelo-atual");
         if (modeloAtual) {
-            modeloAtual.textContent = modeloDireto.options[modeloDireto.selectedIndex].text;
+            modeloAtual.textContent =
+                modeloDireto.options[modeloDireto.selectedIndex].text;
         }
     }
-    
-    localStorage.setItem('aprod-configuracoes', JSON.stringify(configuracoes));
+
+    localStorage.setItem("aprod-configuracoes", JSON.stringify(configuracoes));
     atualizarDisplayGabinete();
-    alert('Todas as configurações foram salvas com sucesso!');
+    alert("Todas as configurações foram salvas com sucesso!");
 }
 
 function atualizarDisplayGabinete() {
-    let displayElement = document.getElementById('gabinete-display');
-    
+    let displayElement = document.getElementById("gabinete-display");
+
     if (!displayElement) {
-        displayElement = document.createElement('div');
-        displayElement.id = 'gabinete-display';
-        displayElement.className = 'gabinete-display';
+        displayElement = document.createElement("div");
+        displayElement.id = "gabinete-display";
+        displayElement.className = "gabinete-display";
         document.body.appendChild(displayElement);
     }
-    
+
     if (configuracoes.nomeGabinete) {
         displayElement.textContent = configuracoes.nomeGabinete;
-        displayElement.style.display = 'block';
+        displayElement.style.display = "block";
     } else {
-        displayElement.style.display = 'none';
+        displayElement.style.display = "none";
     }
 }
 
 function restaurarConfiguracoesPadrao() {
-    if (confirm('Tem certeza que deseja restaurar todas as configurações para o padrão?')) {
+    if (
+        confirm(
+            "Tem certeza que deseja restaurar todas as configurações para o padrão?"
+        )
+    ) {
         configuracoes = {
-            nomeGabinete: '',
+            nomeGabinete: "",
             incluirLogo: true,
             incluirData: true,
-            formatoData: 'br',
-            temaInicial: 'dark',
+            formatoData: "br",
+            temaInicial: "dark",
             itensGrafico: 20,
             pesoPadrao: 1.0,
             autoAplicarPesos: false,
             iaHabilitada: true,
-            iaToken: '6f76bea40d73b6ff291fd29780ca51cc6e12d00c',
-            iaModelo: 'finetuned-gpt-neox-20b'
+            iaToken: "6f76bea40d73b6ff291fd29780ca51cc6e12d00c",
+            iaModelo: "finetuned-gpt-neox-20b",
         };
-        localStorage.setItem('aprod-configuracoes', JSON.stringify(configuracoes));
+        localStorage.setItem(
+            "aprod-configuracoes",
+            JSON.stringify(configuracoes)
+        );
         carregarConfiguracoes();
-        alert('Configurações restauradas para o padrão!');
+        alert("Configurações restauradas para o padrão!");
     }
 }
 
 function exportarConfiguracoes() {
-    const blob = new Blob([JSON.stringify(configuracoes, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(configuracoes, null, 2)], {
+        type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.download = `aprod_configuracoes_${new Date().toISOString().slice(0, 10)}.json`;
+    link.download = `aprod_configuracoes_${new Date()
+        .toISOString()
+        .slice(0, 10)}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -4312,17 +5248,22 @@ function exportarConfiguracoes() {
 function importarConfiguracoes(event) {
     const file = event.target.files[0];
     if (!file) return;
-    
+
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         try {
             const configImportadas = JSON.parse(e.target.result);
             configuracoes = { ...configuracoes, ...configImportadas };
-            localStorage.setItem('aprod-configuracoes', JSON.stringify(configuracoes));
+            localStorage.setItem(
+                "aprod-configuracoes",
+                JSON.stringify(configuracoes)
+            );
             carregarConfiguracoes();
-            alert('Configurações importadas com sucesso!');
+            alert("Configurações importadas com sucesso!");
         } catch (error) {
-            alert('Erro ao importar configurações. Verifique se o arquivo é válido.');
+            alert(
+                "Erro ao importar configurações. Verifique se o arquivo é válido."
+            );
         }
     };
     reader.readAsText(file);
@@ -4330,67 +5271,86 @@ function importarConfiguracoes(event) {
 
 function gerarRelatorioIA() {
     if (!configuracoes.iaHabilitada || !configuracoes.iaToken) {
-        alert('Configure primeiro a IA nas configurações!');
+        alert("Configure primeiro a IA nas configurações!");
         return;
     }
 
     if (!processedData.usuarios || processedData.usuarios.length === 0) {
-        alert('Nenhum dado disponível para análise!');
+        alert("Nenhum dado disponível para análise!");
         return;
     }
 
-    const btnIA = document.getElementById('btn-ia');
-    const container = document.getElementById('relatorio-ia-container');
-    const conteudo = document.getElementById('relatorio-ia-conteudo');
-    const modeloSelect = document.getElementById('ia-modelo-direto');
+    const btnIA = document.getElementById("btn-ia");
+    const container = document.getElementById("relatorio-ia-container");
+    const conteudo = document.getElementById("relatorio-ia-conteudo");
+    const modeloSelect = document.getElementById("ia-modelo-direto");
 
     btnIA.disabled = true;
-    btnIA.classList.add('loading');
-    btnIA.innerHTML = '<div class="loading-animation"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><span class="loading-text">Gerando relatório</span>';
-    
-    container.style.display = 'block';
-    conteudo.innerHTML = '<div class="loading-ia">🤖 Analisando dados... Isso pode levar alguns minutos.</div>';
+    btnIA.classList.add("loading");
+    btnIA.innerHTML =
+        '<div class="loading-animation"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><span class="loading-text">Gerando relatório</span>';
+
+    container.style.display = "block";
+    conteudo.innerHTML =
+        '<div class="loading-ia">🤖 Analisando dados... Isso pode levar alguns minutos.</div>';
 
     try {
         const dadosParaIA = prepararDadosParaIA();
-        
+
         chamarHuggingFaceAPI(criarPromptAnalise(dadosParaIA))
-            .then(relatorio => {
-                conteudo.innerHTML = relatorio.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                conteudo.style.whiteSpace = 'pre-wrap';
-                conteudo.style.maxHeight = 'none';
+            .then((relatorio) => {
+                conteudo.innerHTML = relatorio
+                    .replace(/\n/g, "<br>")
+                    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+                conteudo.style.whiteSpace = "pre-wrap";
+                conteudo.style.maxHeight = "none";
                 btnIA.disabled = false;
-                btnIA.classList.remove('loading');
-                btnIA.innerHTML = '<img src="assets/icons/ai.png" alt="IA"> Relatório IA';
+                btnIA.classList.remove("loading");
+                btnIA.innerHTML =
+                    '<img src="assets/icons/ai.png" alt="IA"> Relatório IA';
             })
-            .catch(error => {
-                console.error('Erro na API, usando fallback local:', error);
-                conteudo.innerHTML = gerarRelatorioLocalFallback(dadosParaIA).replace(/\n/g, '<br>');
-                conteudo.style.whiteSpace = 'pre-wrap';
-                conteudo.style.maxHeight = 'none';
+            .catch((error) => {
+                console.error("Erro na API, usando fallback local:", error);
+                conteudo.innerHTML = gerarRelatorioLocalFallback(
+                    dadosParaIA
+                ).replace(/\n/g, "<br>");
+                conteudo.style.whiteSpace = "pre-wrap";
+                conteudo.style.maxHeight = "none";
                 btnIA.disabled = false;
-                btnIA.innerHTML = '<img src="assets/icons/ai.png" alt="IA"> Relatório IA';
+                btnIA.innerHTML =
+                    '<img src="assets/icons/ai.png" alt="IA"> Relatório IA';
             });
     } catch (error) {
-        console.error('Erro ao gerar relatório IA:', error);
+        console.error("Erro ao gerar relatório IA:", error);
         conteudo.innerHTML = `❌ Erro ao gerar relatório: ${error.message}`;
         btnIA.disabled = false;
-        btnIA.innerHTML = '<img src="assets/icons/ai.png" alt="IA"> Relatório IA';
+        btnIA.innerHTML =
+            '<img src="assets/icons/ai.png" alt="IA"> Relatório IA';
     }
 }
 
 function gerarRelatorioLocalFallback(dados) {
     const topUser = dados.topUsuarios[0];
-    const totalTop3 = dados.topUsuarios.slice(0, 3).reduce((sum, user) => sum + user.minutas, 0);
+    const totalTop3 = dados.topUsuarios
+        .slice(0, 3)
+        .reduce((sum, user) => sum + user.minutas, 0);
     const percentualTop3 = Math.round((totalTop3 / dados.totalMinutas) * 100);
-    
+
     return `ANÁLISE DE PRODUTIVIDADE
 
 RESUMO EXECUTIVO:
-Foram analisados dados de ${dados.totalUsuarios} usuários ativos, totalizando ${dados.totalMinutas} minutas. A média de produtividade por usuário foi de ${Math.round(dados.mediaUsuario)} minutas. O dia da semana com maior volume de produção foi ${dados.diaMaisProdutivo}.
+Foram analisados dados de ${dados.totalUsuarios} usuários ativos, totalizando ${
+        dados.totalMinutas
+    } minutas. A média de produtividade por usuário foi de ${Math.round(
+        dados.mediaUsuario
+    )} minutas. O dia da semana com maior volume de produção foi ${
+        dados.diaMaisProdutivo
+    }.
 
 ANÁLISE DE PERFORMANCE:
-- O usuário mais produtivo (${topUser.nome}) contribuiu com ${topUser.minutas} minutas, representando ${topUser.percentual}% do total.
+- O usuário mais produtivo (${topUser.nome}) contribuiu com ${
+        topUser.minutas
+    } minutas, representando ${topUser.percentual}% do total.
 - Os três usuários mais produtivos representam ${percentualTop3}% da produção total.
 - A distribuição de produtividade apresenta variação significativa entre os usuários.
 
@@ -4411,18 +5371,18 @@ function prepararDadosParaIA() {
     const top10 = processedData.usuarios.slice(0, 10);
     const totalGeral = processedData.totalMinutas;
     const mediaGeral = processedData.mediaUsuario;
-    
+
     const dadosResumidos = {
         totalUsuarios: processedData.usuariosAtivos,
         totalMinutas: totalGeral,
         mediaUsuario: mediaGeral,
         diaMaisProdutivo: processedData.diaProdutivo,
         mesesAnalisados: processedData.mesesAtivos,
-        topUsuarios: top10.map(u => ({
+        topUsuarios: top10.map((u) => ({
             nome: u.nome,
             minutas: Math.round(u.minutas),
-            percentual: Math.round((u.minutas / totalGeral) * 100)
-        }))
+            percentual: Math.round((u.minutas / totalGeral) * 100),
+        })),
     };
 
     return dadosResumidos;
@@ -4436,7 +5396,9 @@ Dados:
 - Total de minutas produzidas: ${dados.totalMinutas}
 - Média de minutas por usuário: ${Math.round(dados.mediaUsuario)}
 - Dia da semana mais produtivo: ${dados.diaMaisProdutivo}
-- Usuário mais produtivo: ${dados.topUsuarios[0]?.nome} com ${dados.topUsuarios[0]?.minutas} minutas (${dados.topUsuarios[0]?.percentual}% do total)
+- Usuário mais produtivo: ${dados.topUsuarios[0]?.nome} com ${
+        dados.topUsuarios[0]?.minutas
+    } minutas (${dados.topUsuarios[0]?.percentual}% do total)
 
 Elabore um relatório completo com:
 1. Resumo executivo
@@ -4447,31 +5409,34 @@ Elabore um relatório completo com:
 
 async function chamarHuggingFaceAPI(prompt) {
     try {
-        if (!configuracoes.iaToken || configuracoes.iaToken.trim() === '') {
+        if (!configuracoes.iaToken || configuracoes.iaToken.trim() === "") {
             throw new Error("Token não configurado");
         }
-        
+
         console.log(`Tentando usar NLP Cloud API`);
         console.log(`Token usado: ${configuracoes.iaToken.substring(0, 5)}...`);
-        
+
         // Usar um proxy CORS para evitar problemas de CORS
         const corsProxy = "https://corsproxy.io/?";
-        const modelo = configuracoes.iaModelo || "meta-llama/llama-3-70b-instruct";
-        
+        const modelo =
+            configuracoes.iaModelo || "meta-llama/llama-3-70b-instruct";
+
         // Formatar o modelo corretamente para a API
         let modeloFormatado = modelo;
         if (modelo.includes("/")) {
             const partes = modelo.split("/");
             modeloFormatado = `${partes[0]}/${partes[1]}`;
         }
-        
-        const apiURL = encodeURIComponent(`https://api.nlpcloud.io/v1/gpu/${modeloFormatado}/generation`);
-        
+
+        const apiURL = encodeURIComponent(
+            `https://api.nlpcloud.io/v1/gpu/${modeloFormatado}/generation`
+        );
+
         const response = await fetch(`${corsProxy}${apiURL}`, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Authorization': `Bearer ${configuracoes.iaToken}`,
-                'Content-Type': 'application/json',
+                Authorization: `Bearer ${configuracoes.iaToken}`,
+                "Content-Type": "application/json",
             },
             body: JSON.stringify({
                 text: prompt,
@@ -4481,20 +5446,22 @@ async function chamarHuggingFaceAPI(prompt) {
                 temperature: 0.5,
                 top_p: 0.9,
                 num_beams: 1,
-                return_full_text: false
-            })
+                return_full_text: false,
+            }),
         });
-        
+
         if (!response.ok) {
             if (response.status === 429) {
-                throw new Error(`Limite de requisições excedido. Aguarde alguns segundos antes de tentar novamente.`);
+                throw new Error(
+                    `Limite de requisições excedido. Aguarde alguns segundos antes de tentar novamente.`
+                );
             }
             throw new Error(`API NLP Cloud retornou erro ${response.status}`);
         }
-        
+
         const result = await response.json();
         console.log("Resposta da API:", result);
-        
+
         if (result.generated_text) {
             return result.generated_text.trim();
         } else {
@@ -4518,124 +5485,147 @@ COMO OBTER TOKEN NLP CLOUD:
 
 IMPORTANTE: O plano gratuito oferece 3 chamadas por minuto.
     `;
-    
+
     alert(instrucoes);
-    window.open('https://nlpcloud.io/home/token', '_blank');
+    window.open("https://nlpcloud.io/home/token", "_blank");
 }
 
 function exportarRelatorioIA() {
-    const conteudo = document.getElementById('relatorio-ia-conteudo').textContent;
-    
-    if (!conteudo || conteudo.includes('Clique em')) {
-        alert('Gere primeiro um relatório IA!');
+    const conteudo = document.getElementById(
+        "relatorio-ia-conteudo"
+    ).textContent;
+
+    if (!conteudo || conteudo.includes("Clique em")) {
+        alert("Gere primeiro um relatório IA!");
         return;
     }
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    
+
     doc.setFillColor(74, 144, 226);
-    doc.rect(0, 0, doc.internal.pageSize.width, 25, 'F');
-    
+    doc.rect(0, 0, doc.internal.pageSize.width, 25, "F");
+
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    
-    let titulo = 'APROD - Relatório de IA';
+    doc.setFont("helvetica", "bold");
+
+    let titulo = "APROD - Relatório de IA";
     if (configuracoes.nomeGabinete) {
         titulo = `${configuracoes.nomeGabinete} - ${titulo}`;
     }
     doc.text(titulo, 15, 16);
-    
+
     doc.setTextColor(74, 144, 226);
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 15, 35);
-    
-    const textoLimpo = conteudo.replace(/\t/g, '    ').replace(/\n\n+/g, '\n\n');
-    
+    doc.setFont("helvetica", "normal");
+    doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, 15, 35);
+
+    const textoLimpo = conteudo
+        .replace(/\t/g, "    ")
+        .replace(/\n\n+/g, "\n\n");
+
     let y = 45;
     const margemEsquerda = 15;
     const larguraPagina = 180;
-    
-    const linhas = textoLimpo.split('\n');
+
+    const linhas = textoLimpo.split("\n");
     let emLista = false;
-    
+
     for (let i = 0; i < linhas.length; i++) {
         const linha = linhas[i].trim();
-        
+
         if (!linha) {
             y += 5;
             emLista = false;
             continue;
         }
-        
+
         if (y > 270) {
             doc.addPage();
             y = 20;
         }
-        
-        if (linha.startsWith('#') || linha.toUpperCase() === linha && linha.length > 10) {
+
+        if (
+            linha.startsWith("#") ||
+            (linha.toUpperCase() === linha && linha.length > 10)
+        ) {
             emLista = false;
-            doc.setFont('helvetica', 'bold');
+            doc.setFont("helvetica", "bold");
             doc.setFontSize(14);
             doc.setTextColor(74, 144, 226);
-            
-            const textoLinha = linha.replace(/^#+\s*/, '');
-            const linhasQuebradas = doc.splitTextToSize(textoLinha, larguraPagina);
+
+            const textoLinha = linha.replace(/^#+\s*/, "");
+            const linhasQuebradas = doc.splitTextToSize(
+                textoLinha,
+                larguraPagina
+            );
             doc.text(linhasQuebradas, margemEsquerda, y);
             y += 8 + (linhasQuebradas.length - 1) * 7;
-        }
-        else if (/^[0-9]+\.[0-9]*\s/.test(linha) || /^[A-Z]+\.[0-9]*\s/.test(linha)) {
+        } else if (
+            /^[0-9]+\.[0-9]*\s/.test(linha) ||
+            /^[A-Z]+\.[0-9]*\s/.test(linha)
+        ) {
             emLista = false;
-            doc.setFont('helvetica', 'bold');
+            doc.setFont("helvetica", "bold");
             doc.setFontSize(12);
             doc.setTextColor(74, 144, 226);
-            
+
             const linhasQuebradas = doc.splitTextToSize(linha, larguraPagina);
             doc.text(linhasQuebradas, margemEsquerda, y);
             y += 6 + (linhasQuebradas.length - 1) * 6;
-        }
-        else if (linha.startsWith('-') || linha.startsWith('•')) {
-            doc.setFont('helvetica', 'normal');
+        } else if (linha.startsWith("-") || linha.startsWith("•")) {
+            doc.setFont("helvetica", "normal");
             doc.setFontSize(10);
             doc.setTextColor(0, 0, 0);
-            
-            const textoLinha = linha.replace(/^[-•]\s*/, '  • ');
-            const linhasQuebradas = doc.splitTextToSize(textoLinha, larguraPagina - 10);
+
+            const textoLinha = linha.replace(/^[-•]\s*/, "  • ");
+            const linhasQuebradas = doc.splitTextToSize(
+                textoLinha,
+                larguraPagina - 10
+            );
             doc.text(linhasQuebradas, margemEsquerda, y);
             y += 4 + (linhasQuebradas.length - 1) * 5;
             emLista = true;
-        }
-        else {
-            doc.setFont('helvetica', 'normal');
+        } else {
+            doc.setFont("helvetica", "normal");
             doc.setFontSize(10);
             doc.setTextColor(0, 0, 0);
-            
+
             if (emLista) {
-                const linhasQuebradas = doc.splitTextToSize('    ' + linha, larguraPagina - 10);
+                const linhasQuebradas = doc.splitTextToSize(
+                    "    " + linha,
+                    larguraPagina - 10
+                );
                 doc.text(linhasQuebradas, margemEsquerda, y);
                 y += 4 + (linhasQuebradas.length - 1) * 5;
             } else {
-                const linhasQuebradas = doc.splitTextToSize(linha, larguraPagina);
+                const linhasQuebradas = doc.splitTextToSize(
+                    linha,
+                    larguraPagina
+                );
                 doc.text(linhasQuebradas, margemEsquerda, y);
                 y += 4 + (linhasQuebradas.length - 1) * 5;
             }
         }
-        
+
         y += 2;
     }
-    
+
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
         doc.setFontSize(8);
         doc.setTextColor(150, 150, 150);
-        doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.width / 2, 
-                doc.internal.pageSize.height - 10, { align: 'center' });
+        doc.text(
+            `Página ${i} de ${pageCount}`,
+            doc.internal.pageSize.width / 2,
+            doc.internal.pageSize.height - 10,
+            { align: "center" }
+        );
     }
-    
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
     doc.save(`relatorio_ia_${timestamp}.pdf`);
 }
 
@@ -4643,37 +5633,40 @@ function gerarTabelaMes() {
     if (!excelData || excelData.length === 0) return;
 
     extrairAnosDisponiveis();
-    
-    let filteredData = excelData.filter(row => {
-        if (!row['Data criação']) return false;
-        
-        const dataCompleta = new Date(row['Data criação']);
+
+    let filteredData = excelData.filter((row) => {
+        if (!row["Data criação"]) return false;
+
+        const dataCompleta = new Date(row["Data criação"]);
         if (isNaN(dataCompleta.getTime())) return false;
-        
+
         return dataCompleta.getFullYear() === anoSelecionado;
     });
-    
-    if (processedData.mesesAtivos.length > 0 && processedData.mesesAtivos.length < processedData.mesesDisponiveis.length) {
-        filteredData = filteredData.filter(row => {
-            const dataCriacao = row['Data criação'];
+
+    if (
+        processedData.mesesAtivos.length > 0 &&
+        processedData.mesesAtivos.length < processedData.mesesDisponiveis.length
+    ) {
+        filteredData = filteredData.filter((row) => {
+            const dataCriacao = row["Data criação"];
             if (!dataCriacao) return true;
-            
+
             const mesAno = extrairMesAno(dataCriacao);
             return processedData.mesesAtivos.includes(mesAno);
         });
     }
 
     const usuariosMap = new Map();
-    
-    filteredData.forEach(row => {
-        const nroProcesso = row['Nro. processo'];
-        if (!nroProcesso || nroProcesso.trim() === '') return;
-        
-        const usuario = row['Usuário'];
-        if (!usuario || usuario.toString().trim() === '') return;
-        
-        const peso = parseFloat(row['peso']) || 1.0;
-        
+
+    filteredData.forEach((row) => {
+        const nroProcesso = row["Nro. processo"];
+        if (!nroProcesso || nroProcesso.trim() === "") return;
+
+        const usuario = row["Usuário"];
+        if (!usuario || usuario.toString().trim() === "") return;
+
+        const peso = parseFloat(row["peso"]) || 1.0;
+
         if (!usuariosMap.has(usuario)) {
             usuariosMap.set(usuario, {
                 usuario: usuario,
@@ -4688,17 +5681,29 @@ function gerarTabelaMes() {
                 setembro: 0,
                 outubro: 0,
                 novembro: 0,
-                dezembro: 0
+                dezembro: 0,
             });
         }
-        
-        if (row['Data criação']) {
-            const dataCompleta = new Date(row['Data criação']);
+
+        if (row["Data criação"]) {
+            const dataCompleta = new Date(row["Data criação"]);
             if (!isNaN(dataCompleta.getTime())) {
                 const mes = dataCompleta.getMonth();
-                const meses = ['janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho', 
-                              'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
-                
+                const meses = [
+                    "janeiro",
+                    "fevereiro",
+                    "marco",
+                    "abril",
+                    "maio",
+                    "junho",
+                    "julho",
+                    "agosto",
+                    "setembro",
+                    "outubro",
+                    "novembro",
+                    "dezembro",
+                ];
+
                 const nomeMs = meses[mes];
                 usuariosMap.get(usuario)[nomeMs] += peso;
             }
@@ -4710,24 +5715,33 @@ function gerarTabelaMes() {
 }
 
 function renderizarTabelaMes() {
-    const container = document.getElementById('tabela-mes');
+    const container = document.getElementById("tabela-mes");
     if (!container) return;
-    
-    container.innerHTML = '';
-    
-    const filtro = document.getElementById('filtro-mes').value.toLowerCase();
-    const usuariosFiltrados = tabelaMes.filter(usuario => 
+
+    container.innerHTML = "";
+
+    const filtro = document.getElementById("filtro-mes").value.toLowerCase();
+    const usuariosFiltrados = tabelaMes.filter((usuario) =>
         usuario.usuario.toLowerCase().includes(filtro)
     );
 
-    usuariosFiltrados.forEach(usuario => {
-        const row = document.createElement('tr');
-        
-        const total = usuario.janeiro + usuario.fevereiro + usuario.marco + 
-                     usuario.abril + usuario.maio + usuario.junho + usuario.julho +
-                     usuario.agosto + usuario.setembro + usuario.outubro + 
-                     usuario.novembro + usuario.dezembro;
-        
+    usuariosFiltrados.forEach((usuario) => {
+        const row = document.createElement("tr");
+
+        const total =
+            usuario.janeiro +
+            usuario.fevereiro +
+            usuario.marco +
+            usuario.abril +
+            usuario.maio +
+            usuario.junho +
+            usuario.julho +
+            usuario.agosto +
+            usuario.setembro +
+            usuario.outubro +
+            usuario.novembro +
+            usuario.dezembro;
+
         row.innerHTML = `
             <td class="usuario-cell">${usuario.usuario}</td>
             <td class="mes-cell">${Math.round(usuario.janeiro)}</td>
@@ -4744,7 +5758,7 @@ function renderizarTabelaMes() {
             <td class="mes-cell">${Math.round(usuario.dezembro)}</td>
             <td class="total-cell">${Math.round(total)}</td>
         `;
-        
+
         container.appendChild(row);
     });
 
@@ -4754,31 +5768,46 @@ function renderizarTabelaMes() {
 
 function calcularERenderizarRankingMeses() {
     if (!excelData || excelData.length === 0) {
-        const container = document.getElementById('ranking-meses');
+        const container = document.getElementById("ranking-meses");
         if (container) {
-            container.innerHTML = '<div class="ranking-item">Nenhum dado disponível</div>';
+            container.innerHTML =
+                '<div class="ranking-item">Nenhum dado disponível</div>';
         }
         return;
     }
 
     const mesesTotais = {};
-    
-    excelData.forEach(row => {
-        const nroProcesso = row['Nro. processo'];
-        if (!nroProcesso || nroProcesso.trim() === '') return;
-        
-        const usuario = row['Usuário'];
-        if (!usuario || usuario.toString().trim() === '') return;
-        
-        const peso = parseFloat(row['peso']) || 1.0;
-        
-        if (row['Data criação']) {
-            const dataCompleta = new Date(row['Data criação']);
+
+    excelData.forEach((row) => {
+        const nroProcesso = row["Nro. processo"];
+        if (!nroProcesso || nroProcesso.trim() === "") return;
+
+        const usuario = row["Usuário"];
+        if (!usuario || usuario.toString().trim() === "") return;
+
+        const peso = parseFloat(row["peso"]) || 1.0;
+
+        if (row["Data criação"]) {
+            const dataCompleta = new Date(row["Data criação"]);
             if (!isNaN(dataCompleta.getTime())) {
-                const mesNomes = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-                const mesAno = `${mesNomes[dataCompleta.getMonth()]}/${dataCompleta.getFullYear()}`;
-                
+                const mesNomes = [
+                    "Janeiro",
+                    "Fevereiro",
+                    "Março",
+                    "Abril",
+                    "Maio",
+                    "Junho",
+                    "Julho",
+                    "Agosto",
+                    "Setembro",
+                    "Outubro",
+                    "Novembro",
+                    "Dezembro",
+                ];
+                const mesAno = `${
+                    mesNomes[dataCompleta.getMonth()]
+                }/${dataCompleta.getFullYear()}`;
+
                 if (!mesesTotais[mesAno]) {
                     mesesTotais[mesAno] = 0;
                 }
@@ -4790,7 +5819,7 @@ function calcularERenderizarRankingMeses() {
     const rankingOrdenado = Object.entries(mesesTotais)
         .map(([mesAno, total]) => ({
             mes: mesAno,
-            total: Math.round(total * 10) / 10
+            total: Math.round(total * 10) / 10,
         }))
         .sort((a, b) => b.total - a.total);
 
@@ -4798,135 +5827,197 @@ function calcularERenderizarRankingMeses() {
 }
 
 function renderizarRankingMeses(rankingData) {
-    const container = document.getElementById('ranking-meses');
+    const container = document.getElementById("ranking-meses");
     if (!container) return;
 
-    container.innerHTML = '';
+    container.innerHTML = "";
 
     if (rankingData.length === 0) {
-        container.innerHTML = '<div class="ranking-item">Nenhum dado disponível</div>';
+        container.innerHTML =
+            '<div class="ranking-item">Nenhum dado disponível</div>';
         return;
     }
 
     const coresRanking = [
-        '#FFD700', '#C0C0C0', '#CD7F32', '#4a90e2', '#4a90e2', '#4a90e2',
-        '#4a90e2', '#4a90e2', '#4a90e2', '#4a90e2', '#4a90e2', '#4a90e2'
+        "#FFD700",
+        "#C0C0C0",
+        "#CD7F32",
+        "#4a90e2",
+        "#4a90e2",
+        "#4a90e2",
+        "#4a90e2",
+        "#4a90e2",
+        "#4a90e2",
+        "#4a90e2",
+        "#4a90e2",
+        "#4a90e2",
     ];
 
-    const iconesRanking = ['🏆', '🥈', '🥉', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+    const iconesRanking = [
+        "🏆",
+        "🥈",
+        "🥉",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+    ];
 
     rankingData.slice(0, 12).forEach((item, index) => {
-        const rankingDiv = document.createElement('div');
-        rankingDiv.className = 'ranking-item';
+        const rankingDiv = document.createElement("div");
+        rankingDiv.className = "ranking-item";
         rankingDiv.style.borderLeftColor = coresRanking[Math.min(index, 11)];
-        
-        const porcentagem = rankingData[0].total > 0 ? 
-            Math.round((item.total / rankingData[0].total) * 100) : 0;
 
-        const icone = index < iconesRanking.length ? 
-            iconesRanking[index] : 
-            `#${index + 1}`;
+        const porcentagem =
+            rankingData[0].total > 0
+                ? Math.round((item.total / rankingData[0].total) * 100)
+                : 0;
+
+        const icone =
+            index < iconesRanking.length
+                ? iconesRanking[index]
+                : `#${index + 1}`;
 
         rankingDiv.innerHTML = `
             <div class="ranking-posicao">
-                <div class="ranking-medal ${index < 3 ? 'medal-' + (index + 1) : ''}">${icone}</div>
+                <div class="ranking-medal ${
+                    index < 3 ? "medal-" + (index + 1) : ""
+                }">${icone}</div>
                 <span class="ranking-numero">#${index + 1}</span>
             </div>
             <div class="ranking-dia">${item.mes}</div>
             <div class="ranking-total">${item.total} minutas</div>
             <div class="ranking-porcentagem">${porcentagem}%</div>
             <div class="ranking-barra">
-                <div class="ranking-barra-preenchida" style="width: ${porcentagem}%; background-color: ${coresRanking[Math.min(index, 11)]};"></div>
+                <div class="ranking-barra-preenchida" style="width: ${porcentagem}%; background-color: ${
+            coresRanking[Math.min(index, 11)]
+        };"></div>
             </div>
         `;
-        
+
         container.appendChild(rankingDiv);
     });
 }
 
 function ordenarTabelaMes(coluna) {
     if (!tabelaMes) return;
-    
+
     const isAscending = sortColumnMes === coluna ? !sortAscendingMes : true;
     sortColumnMes = coluna;
     sortAscendingMes = isAscending;
-    
+
     tabelaMes.sort((a, b) => {
         let valueA, valueB;
-        
-        if (coluna === 'usuario') {
+
+        if (coluna === "usuario") {
             valueA = a.usuario.toLowerCase();
             valueB = b.usuario.toLowerCase();
-        } else if (coluna === 'total') {
-            valueA = a.janeiro + a.fevereiro + a.marco + a.abril + a.maio + a.junho +
-                    a.julho + a.agosto + a.setembro + a.outubro + a.novembro + a.dezembro;
-            valueB = b.janeiro + b.fevereiro + b.marco + b.abril + b.maio + b.junho +
-                    b.julho + b.agosto + b.setembro + b.outubro + b.novembro + b.dezembro;
+        } else if (coluna === "total") {
+            valueA =
+                a.janeiro +
+                a.fevereiro +
+                a.marco +
+                a.abril +
+                a.maio +
+                a.junho +
+                a.julho +
+                a.agosto +
+                a.setembro +
+                a.outubro +
+                a.novembro +
+                a.dezembro;
+            valueB =
+                b.janeiro +
+                b.fevereiro +
+                b.marco +
+                b.abril +
+                b.maio +
+                b.junho +
+                b.julho +
+                b.agosto +
+                b.setembro +
+                b.outubro +
+                b.novembro +
+                b.dezembro;
         } else {
             valueA = a[coluna] || 0;
             valueB = b[coluna] || 0;
         }
-        
+
         if (valueA < valueB) return isAscending ? -1 : 1;
         if (valueA > valueB) return isAscending ? 1 : -1;
         return 0;
     });
-    
+
     renderizarTabelaMes();
 }
 
 function mostrarPopupExportacaoMes() {
-    document.getElementById('popup-exportacao-mes').style.display = 'flex';
+    document.getElementById("popup-exportacao-mes").style.display = "flex";
 }
 
 function fecharPopupExportacaoMes() {
-    document.getElementById('popup-exportacao-mes').style.display = 'none';
+    document.getElementById("popup-exportacao-mes").style.display = "none";
 }
 
 function exportarTabelaMes(formato) {
     if (!tabelaMes || tabelaMes.length === 0) {
-        alert('Não há dados para exportar!');
+        alert("Não há dados para exportar!");
         return;
     }
-    
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-    
-    if (formato === 'pdf') {
+
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
+
+    if (formato === "pdf") {
         exportarMesPDF(timestamp);
-    } else if (formato === 'xlsx') {
+    } else if (formato === "xlsx") {
         exportarMesExcel(timestamp);
     }
-    
+
     fecharPopupExportacaoMes();
 }
 
 function exportarMesPDF(timestamp) {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('landscape');
-    
+    const doc = new jsPDF("landscape");
+
     doc.setFillColor(74, 144, 226);
-    doc.rect(0, 0, doc.internal.pageSize.width, 25, 'F');
-    
+    doc.rect(0, 0, doc.internal.pageSize.width, 25, "F");
+
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    
-    let titulo = 'APROD - Produtividade por Mês';
+    doc.setFont("helvetica", "bold");
+
+    let titulo = "APROD - Produtividade por Mês";
     if (configuracoes.nomeGabinete) {
         titulo = `${configuracoes.nomeGabinete} - APROD - Produtividade por Mês`;
     }
     doc.text(titulo, 15, 16);
-    
+
     doc.setTextColor(74, 144, 226);
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 15, 35);
-    
-    const tableData = tabelaMes.map(usuario => {
-        const total = usuario.janeiro + usuario.fevereiro + usuario.marco + 
-                     usuario.abril + usuario.maio + usuario.junho + usuario.julho +
-                     usuario.agosto + usuario.setembro + usuario.outubro + 
-                     usuario.novembro + usuario.dezembro;
+    doc.setFont("helvetica", "normal");
+    doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, 15, 35);
+
+    const tableData = tabelaMes.map((usuario) => {
+        const total =
+            usuario.janeiro +
+            usuario.fevereiro +
+            usuario.marco +
+            usuario.abril +
+            usuario.maio +
+            usuario.junho +
+            usuario.julho +
+            usuario.agosto +
+            usuario.setembro +
+            usuario.outubro +
+            usuario.novembro +
+            usuario.dezembro;
         return [
             usuario.usuario,
             Math.round(usuario.janeiro),
@@ -4941,12 +6032,29 @@ function exportarMesPDF(timestamp) {
             Math.round(usuario.outubro),
             Math.round(usuario.novembro),
             Math.round(usuario.dezembro),
-            Math.round(total)
+            Math.round(total),
         ];
     });
-    
+
     doc.autoTable({
-        head: [['Usuário', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez', 'Total']],
+        head: [
+            [
+                "Usuário",
+                "Jan",
+                "Fev",
+                "Mar",
+                "Abr",
+                "Mai",
+                "Jun",
+                "Jul",
+                "Ago",
+                "Set",
+                "Out",
+                "Nov",
+                "Dez",
+                "Total",
+            ],
+        ],
         body: tableData,
         startY: 45,
         styles: {
@@ -4954,69 +6062,117 @@ function exportarMesPDF(timestamp) {
             cellPadding: 2,
             textColor: [35, 41, 70],
             lineColor: [74, 144, 226],
-            lineWidth: 0.5
+            lineWidth: 0.5,
         },
         headStyles: {
             fillColor: [74, 144, 226],
             textColor: [255, 255, 255],
-            fontStyle: 'bold',
-            fontSize: 8
+            fontStyle: "bold",
+            fontSize: 8,
         },
         alternateRowStyles: {
-            fillColor: [248, 249, 250]
+            fillColor: [248, 249, 250],
         },
         columnStyles: {
-            0: { cellWidth: 25, fontStyle: 'bold' },
-            13: { fillColor: [227, 242, 253], fontStyle: 'bold' }
+            0: { cellWidth: 25, fontStyle: "bold" },
+            13: { fillColor: [227, 242, 253], fontStyle: "bold" },
         },
-        margin: { left: 15, right: 15 }
+        margin: { left: 15, right: 15 },
     });
-    
+
     doc.save(`tabela_mes_${timestamp}.pdf`);
 }
 
 function exportarMesExcel(timestamp) {
     const wb = XLSX.utils.book_new();
     const ws = {};
-    
-    let titulo = 'APROD - Produtividade por Mês';
+
+    let titulo = "APROD - Produtividade por Mês";
     if (configuracoes.nomeGabinete) {
         titulo = `${configuracoes.nomeGabinete} - APROD - Produtividade por Mês`;
     }
-    
-    ws['A1'] = { 
-        v: titulo, 
-        t: 's',
+
+    ws["A1"] = {
+        v: titulo,
+        t: "s",
         s: {
-            font: { name: "Calibri", sz: 18, bold: true, color: { rgb: "FFFFFF" } },
+            font: {
+                name: "Calibri",
+                sz: 18,
+                bold: true,
+                color: { rgb: "FFFFFF" },
+            },
             fill: { fgColor: { rgb: "4A90E2" } },
-            alignment: { horizontal: "center", vertical: "center" }
-        }
+            alignment: { horizontal: "center", vertical: "center" },
+        },
     };
-    
-    const headers = ['Usuário', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro', 'Total'];
-    const headerCells = ['A3', 'B3', 'C3', 'D3', 'E3', 'F3', 'G3', 'H3', 'I3', 'J3', 'K3', 'L3', 'M3', 'N3'];
-    
+
+    const headers = [
+        "Usuário",
+        "Janeiro",
+        "Fevereiro",
+        "Março",
+        "Abril",
+        "Maio",
+        "Junho",
+        "Julho",
+        "Agosto",
+        "Setembro",
+        "Outubro",
+        "Novembro",
+        "Dezembro",
+        "Total",
+    ];
+    const headerCells = [
+        "A3",
+        "B3",
+        "C3",
+        "D3",
+        "E3",
+        "F3",
+        "G3",
+        "H3",
+        "I3",
+        "J3",
+        "K3",
+        "L3",
+        "M3",
+        "N3",
+    ];
+
     headers.forEach((header, index) => {
         ws[headerCells[index]] = {
             v: header,
-            t: 's',
+            t: "s",
             s: {
-                font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "FFFFFF" } },
+                font: {
+                    name: "Calibri",
+                    sz: 12,
+                    bold: true,
+                    color: { rgb: "FFFFFF" },
+                },
                 fill: { fgColor: { rgb: "4A90E2" } },
-                alignment: { horizontal: "center", vertical: "center" }
-            }
+                alignment: { horizontal: "center", vertical: "center" },
+            },
         };
     });
-    
+
     let row = 4;
-    tabelaMes.forEach(usuario => {
-        const total = usuario.janeiro + usuario.fevereiro + usuario.marco + 
-                     usuario.abril + usuario.maio + usuario.junho + usuario.julho +
-                     usuario.agosto + usuario.setembro + usuario.outubro + 
-                     usuario.novembro + usuario.dezembro;
-        
+    tabelaMes.forEach((usuario) => {
+        const total =
+            usuario.janeiro +
+            usuario.fevereiro +
+            usuario.marco +
+            usuario.abril +
+            usuario.maio +
+            usuario.junho +
+            usuario.julho +
+            usuario.agosto +
+            usuario.setembro +
+            usuario.outubro +
+            usuario.novembro +
+            usuario.dezembro;
+
         const rowData = [
             usuario.usuario,
             Math.round(usuario.janeiro),
@@ -5031,113 +6187,147 @@ function exportarMesExcel(timestamp) {
             Math.round(usuario.outubro),
             Math.round(usuario.novembro),
             Math.round(usuario.dezembro),
-            Math.round(total)
+            Math.round(total),
         ];
-        
-        const columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'];
-        
+
+        const columns = [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F",
+            "G",
+            "H",
+            "I",
+            "J",
+            "K",
+            "L",
+            "M",
+            "N",
+        ];
+
         rowData.forEach((value, colIndex) => {
             const cellAddress = `${columns[colIndex]}${row}`;
             ws[cellAddress] = {
                 v: value,
-                t: colIndex === 0 ? 's' : 'n',
+                t: colIndex === 0 ? "s" : "n",
                 s: {
                     font: { name: "Calibri", sz: 11 },
-                    alignment: { horizontal: colIndex === 0 ? "left" : "center", vertical: "center" }
-                }
+                    alignment: {
+                        horizontal: colIndex === 0 ? "left" : "center",
+                        vertical: "center",
+                    },
+                },
             };
         });
-        
+
         row++;
     });
-    
-    ws['!ref'] = `A1:N${row - 1}`;
-    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 13 } }];
-    
+
+    ws["!ref"] = `A1:N${row - 1}`;
+    ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 13 } }];
+
     XLSX.utils.book_append_sheet(wb, ws, "Produtividade Mensal");
     XLSX.writeFile(wb, `tabela_mes_${timestamp}.xlsx`);
 }
 
 function alterarModeloIA(valor) {
     configuracoes.iaModelo = valor;
-    
-    const modeloAtual = document.getElementById('modelo-atual');
-    const modeloDireto = document.getElementById('ia-modelo-direto');
-    const modeloConfig = document.getElementById('ia-modelo');
-    
+
+    const modeloAtual = document.getElementById("modelo-atual");
+    const modeloDireto = document.getElementById("ia-modelo-direto");
+    const modeloConfig = document.getElementById("ia-modelo");
+
     if (modeloAtual) {
-        modeloAtual.textContent = modeloDireto.options[modeloDireto.selectedIndex].text;
+        modeloAtual.textContent =
+            modeloDireto.options[modeloDireto.selectedIndex].text;
     }
-    
+
     if (modeloConfig && modeloConfig.value !== valor) {
         modeloConfig.value = valor;
     }
-    
-    localStorage.setItem('aprod-configuracoes', JSON.stringify(configuracoes));
+
+    localStorage.setItem("aprod-configuracoes", JSON.stringify(configuracoes));
 }
 
 function verificarMesesComDados() {
     if (!excelData || excelData.length === 0) return [];
-    
+
     const mesesComDados = new Set();
-    
-    excelData.forEach(row => {
-        if (row['Data criação']) {
-            const dataCompleta = new Date(row['Data criação']);
+
+    excelData.forEach((row) => {
+        if (row["Data criação"]) {
+            const dataCompleta = new Date(row["Data criação"]);
             if (!isNaN(dataCompleta.getTime())) {
                 mesesComDados.add(dataCompleta.getMonth());
             }
         }
     });
-    
+
     return Array.from(mesesComDados);
 }
 
 function verificarMesesComDadosAno() {
     if (!excelData || excelData.length === 0) return [];
-    
+
     const mesesComDados = new Set();
-    
-    excelData.forEach(row => {
-        if (row['Data criação']) {
-            const dataCompleta = new Date(row['Data criação']);
-            if (!isNaN(dataCompleta.getTime()) && dataCompleta.getFullYear() === anoSelecionado) {
+
+    excelData.forEach((row) => {
+        if (row["Data criação"]) {
+            const dataCompleta = new Date(row["Data criação"]);
+            if (
+                !isNaN(dataCompleta.getTime()) &&
+                dataCompleta.getFullYear() === anoSelecionado
+            ) {
                 mesesComDados.add(dataCompleta.getMonth());
             }
         }
     });
-    
+
     return Array.from(mesesComDados);
 }
 
 function aplicarEstiloMesesVazios() {
     const mesesComDados = verificarMesesComDadosAno();
-    const meses = ['janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho', 
-                  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
-    
+    const meses = [
+        "janeiro",
+        "fevereiro",
+        "marco",
+        "abril",
+        "maio",
+        "junho",
+        "julho",
+        "agosto",
+        "setembro",
+        "outubro",
+        "novembro",
+        "dezembro",
+    ];
+
     meses.forEach((mes, index) => {
         const th = document.querySelector(`th[onclick*="${mes}"]`);
         if (th) {
             if (mesesComDados.includes(index)) {
-                th.classList.remove('mes-vazio');
+                th.classList.remove("mes-vazio");
             } else {
-                th.classList.add('mes-vazio');
+                th.classList.add("mes-vazio");
             }
         }
     });
-    
-    const tbody = document.getElementById('tabela-mes');
+
+    const tbody = document.getElementById("tabela-mes");
     if (tbody) {
-        tbody.querySelectorAll('tr').forEach(row => {
-            const cells = row.querySelectorAll('td');
+        tbody.querySelectorAll("tr").forEach((row) => {
+            const cells = row.querySelectorAll("td");
             cells.forEach((cell, cellIndex) => {
                 if (cellIndex > 0 && cellIndex < 13) {
                     const mesIndex = cellIndex - 1;
                     if (mesesComDados.includes(mesIndex)) {
-                        cell.classList.remove('mes-vazio');
+                        cell.classList.remove("mes-vazio");
                     } else {
-                        cell.classList.add('mes-vazio');
-                        cell.textContent = '';
+                        cell.classList.add("mes-vazio");
+                        cell.textContent = "";
                     }
                 }
             });
@@ -5150,43 +6340,48 @@ function extrairAnosDisponiveis() {
         anosDisponiveis = [];
         return;
     }
-    
+
     const anos = new Set();
-    
-    excelData.forEach(row => {
-        if (row['Data criação']) {
-            const dataCompleta = new Date(row['Data criação']);
+
+    excelData.forEach((row) => {
+        if (row["Data criação"]) {
+            const dataCompleta = new Date(row["Data criação"]);
             if (!isNaN(dataCompleta.getTime())) {
                 anos.add(dataCompleta.getFullYear());
             }
         }
     });
-    
+
     anosDisponiveis = Array.from(anos).sort((a, b) => b - a);
-    
-    if (anosDisponiveis.length > 0 && !anosDisponiveis.includes(anoSelecionado)) {
+
+    if (
+        anosDisponiveis.length > 0 &&
+        !anosDisponiveis.includes(anoSelecionado)
+    ) {
         anoSelecionado = anosDisponiveis[0];
     }
-    
+
     renderizarSeletorAno();
 }
 
 function renderizarSeletorAno() {
-    const container = document.getElementById('seletor-ano');
+    const container = document.getElementById("seletor-ano");
     if (!container) return;
-    
-    container.innerHTML = '';
-    
+
+    container.innerHTML = "";
+
     if (anosDisponiveis.length <= 1) {
-        container.style.display = 'none';
+        container.style.display = "none";
         return;
     }
-    
-    container.style.display = 'flex';
-    
-    anosDisponiveis.forEach(ano => {
-        const anoButton = document.createElement('button');
-        anoButton.className = `ano-chip ${ano === anoSelecionado ? 'active' : ''}`;
+
+    container.style.display = "flex";
+
+    anosDisponiveis.forEach((ano) => {
+        const anoButton = document.createElement("button");
+        anoButton.className = `ano-chip ${
+            ano === anoSelecionado ? "active" : ""
+        }`;
         anoButton.textContent = ano;
         anoButton.onclick = () => selecionarAno(ano);
         container.appendChild(anoButton);
@@ -5195,20 +6390,20 @@ function renderizarSeletorAno() {
 
 function selecionarAno(novoAno) {
     if (anoSelecionado === novoAno) return;
-    
+
     anoSelecionado = novoAno;
-    
-    const tabela = document.querySelector('.mes-table tbody');
+
+    const tabela = document.querySelector(".mes-table tbody");
     if (tabela) {
-        tabela.style.opacity = '0.3';
-        tabela.style.transform = 'scale(0.95)';
-        
+        tabela.style.opacity = "0.3";
+        tabela.style.transform = "scale(0.95)";
+
         setTimeout(() => {
             gerarTabelaMes();
             renderizarSeletorAno();
-            
-            tabela.style.opacity = '1';
-            tabela.style.transform = 'scale(1)';
+
+            tabela.style.opacity = "1";
+            tabela.style.transform = "scale(1)";
         }, 300);
     } else {
         gerarTabelaMes();
@@ -5218,51 +6413,62 @@ function selecionarAno(novoAno) {
 
 async function gerarDadosAssuntos() {
     if (!excelData || excelData.length === 0) {
-        alert('Nenhum dado foi importado ainda. Por favor, importe um arquivo Excel primeiro.');
+        alert(
+            "Nenhum dado foi importado ainda. Por favor, importe um arquivo Excel primeiro."
+        );
         return;
     }
 
-    console.log('Iniciando processamento de assuntos...');
-    
+    console.log("Iniciando processamento de assuntos...");
+
     assuntosProcessados = {
         minutasPorAssunto: new Map(),
         processosPorAssunto: new Map(),
         codigosAssuntos: new Map(),
         totalMinutasAssuntos: 0,
         totalProcessosAssuntos: 0,
-        assuntosPorMes: new Map()
+        assuntosPorMes: new Map(),
     };
 
     let filteredData = excelData;
-    
-    if (processedData.mesesAtivos.length > 0 && processedData.mesesAtivos.length < processedData.mesesDisponiveis.length) {
+
+    if (
+        processedData.mesesAtivos.length > 0 &&
+        processedData.mesesAtivos.length < processedData.mesesDisponiveis.length
+    ) {
         const mesesAtivosSet = new Set(processedData.mesesAtivos);
-        filteredData = excelData.filter(row => {
-            const data = row['Data criação'];
+        filteredData = excelData.filter((row) => {
+            const data = row["Data criação"];
             if (!data) return false;
             const mesAno = extrairMesAno(data);
             return mesAno && mesesAtivosSet.has(mesAno);
         });
     }
 
-    filteredData.forEach(row => {
-        const codigoAssunto = row['Cod. assunto'];
-        const usuario = row['Usuário'];
-        const data = row['Data criação'];
-        
+    filteredData.forEach((row) => {
+        const codigoAssunto = row["Cod. assunto"];
+        const usuario = row["Usuário"];
+        const data = row["Data criação"];
+
         if (!codigoAssunto || !usuario) return;
 
-        const peso = pesosAtivos && pesosAtuais[row['Tipo']] ? pesosAtuais[row['Tipo']] : 1;
+        const peso =
+            pesosAtivos && pesosAtuais[row["Tipo"]]
+                ? pesosAtuais[row["Tipo"]]
+                : 1;
         const minutas = peso;
 
         if (!assuntosProcessados.minutasPorAssunto.has(codigoAssunto)) {
             assuntosProcessados.minutasPorAssunto.set(codigoAssunto, 0);
-            assuntosProcessados.processosPorAssunto.set(codigoAssunto, new Set());
+            assuntosProcessados.processosPorAssunto.set(
+                codigoAssunto,
+                new Set()
+            );
             assuntosProcessados.codigosAssuntos.set(codigoAssunto, {
                 codigo: codigoAssunto,
                 descricao: obterDescricaoAssunto(codigoAssunto),
                 usuarios: new Map(),
-                porMes: new Map()
+                porMes: new Map(),
             });
         }
 
@@ -5271,90 +6477,118 @@ async function gerarDadosAssuntos() {
             assuntosProcessados.minutasPorAssunto.get(codigoAssunto) + minutas
         );
 
-        assuntosProcessados.processosPorAssunto.get(codigoAssunto).add(row['Nro. processo']);
+        assuntosProcessados.processosPorAssunto
+            .get(codigoAssunto)
+            .add(row["Nro. processo"]);
 
-        const dadosAssunto = assuntosProcessados.codigosAssuntos.get(codigoAssunto);
+        const dadosAssunto =
+            assuntosProcessados.codigosAssuntos.get(codigoAssunto);
         if (!dadosAssunto.usuarios.has(usuario)) {
             dadosAssunto.usuarios.set(usuario, 0);
         }
-        dadosAssunto.usuarios.set(usuario, dadosAssunto.usuarios.get(usuario) + minutas);
+        dadosAssunto.usuarios.set(
+            usuario,
+            dadosAssunto.usuarios.get(usuario) + minutas
+        );
 
         const mesAno = extrairMesAno(data);
         if (mesAno) {
             if (!dadosAssunto.porMes.has(mesAno)) {
                 dadosAssunto.porMes.set(mesAno, 0);
             }
-            dadosAssunto.porMes.set(mesAno, dadosAssunto.porMes.get(mesAno) + minutas);
+            dadosAssunto.porMes.set(
+                mesAno,
+                dadosAssunto.porMes.get(mesAno) + minutas
+            );
         }
 
         assuntosProcessados.totalMinutasAssuntos += minutas;
     });
 
-    assuntosProcessados.totalProcessosAssuntos = new Set(filteredData.map(row => row['Nro. processo'])).size;
+    assuntosProcessados.totalProcessosAssuntos = new Set(
+        filteredData.map((row) => row["Nro. processo"])
+    ).size;
 
     assuntosData = Array.from(assuntosProcessados.minutasPorAssunto.entries())
         .map(([codigo, minutas]) => {
-            const dadosAssunto = assuntosProcessados.codigosAssuntos.get(codigo);
+            const dadosAssunto =
+                assuntosProcessados.codigosAssuntos.get(codigo);
             return {
                 codigo,
                 descricao: dadosAssunto.descricao,
                 minutas,
-                processos: assuntosProcessados.processosPorAssunto.get(codigo).size,
-                percentualMinutas: (minutas / assuntosProcessados.totalMinutasAssuntos) * 100,
-                percentualProcessos: (assuntosProcessados.processosPorAssunto.get(codigo).size / assuntosProcessados.totalProcessosAssuntos) * 100,
+                processos:
+                    assuntosProcessados.processosPorAssunto.get(codigo).size,
+                percentualMinutas:
+                    (minutas / assuntosProcessados.totalMinutasAssuntos) * 100,
+                percentualProcessos:
+                    (assuntosProcessados.processosPorAssunto.get(codigo).size /
+                        assuntosProcessados.totalProcessosAssuntos) *
+                    100,
                 topUsuarios: Array.from(dadosAssunto.usuarios.entries())
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 3),
-                porMes: dadosAssunto.porMes
+                porMes: dadosAssunto.porMes,
             };
         })
         .sort((a, b) => b.minutas - a.minutas);
 
-    console.log('Dados de assuntos processados:', assuntosData);
+    console.log("Dados de assuntos processados:", assuntosData);
 }
 
 async function carregarAssuntosJSON() {
     try {
-        const response = await fetch('assets/data/assuntos.json');
+        const response = await fetch("assets/data/assuntos.json");
         if (!response.ok) {
-            console.warn('Arquivo assuntos.json não encontrado, usando modo básico');
+            console.warn(
+                "Arquivo assuntos.json não encontrado, usando modo básico"
+            );
             assuntosJSON = null;
             return;
         }
         assuntosJSON = await response.json();
-        console.log('Arquivo assuntos.json carregado com sucesso');
+        console.log("Arquivo assuntos.json carregado com sucesso");
     } catch (error) {
-        console.warn('Não foi possível carregar assuntos.json, usando modo básico:', error.message);
+        console.warn(
+            "Não foi possível carregar assuntos.json, usando modo básico:",
+            error.message
+        );
         assuntosJSON = null;
     }
 }
 
 function obterDescricaoAssunto(codigo) {
     if (!codigo) {
-        return 'Assunto não informado';
+        return "Assunto não informado";
     }
 
     codigo = codigo.toString().trim();
 
-    if (codigo.includes(',')) {
-        const codigos = codigo.split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
-        const descricoes = codigos.map(c => {
+    if (codigo.includes(",")) {
+        const codigos = codigo
+            .split(",")
+            .map((c) => c.trim().replace(/^["']|["']$/g, ""));
+        const descricoes = codigos.map((c) => {
             if (assuntosJSON && assuntosJSON["Assunto Judicial"]) {
-                const assunto = assuntosJSON["Assunto Judicial"].find(item => 
-                    item["Cod. Assunto"] && item["Cod. Assunto"].toString().trim() === c
+                const assunto = assuntosJSON["Assunto Judicial"].find(
+                    (item) =>
+                        item["Cod. Assunto"] &&
+                        item["Cod. Assunto"].toString().trim() === c
                 );
                 return assunto ? assunto.Assunto : `Assunto ${c}`;
             }
             return `Assunto ${c}`;
         });
-        return descricoes.join(' + ');
+        return descricoes.join(" + ");
     }
 
-    codigo = codigo.replace(/^["']|["']$/g, '');
-    
+    codigo = codigo.replace(/^["']|["']$/g, "");
+
     if (assuntosJSON && assuntosJSON["Assunto Judicial"]) {
-        const assunto = assuntosJSON["Assunto Judicial"].find(item => 
-            item["Cod. Assunto"] && item["Cod. Assunto"].toString().trim() === codigo
+        const assunto = assuntosJSON["Assunto Judicial"].find(
+            (item) =>
+                item["Cod. Assunto"] &&
+                item["Cod. Assunto"].toString().trim() === codigo
         );
         return assunto ? assunto.Assunto : `Assunto ${codigo}`;
     }
@@ -5374,7 +6608,7 @@ function initializeApp() {
 
 function gerarTabelaAssuntos() {
     if (!assuntosData || assuntosData.length === 0) {
-        document.getElementById('tabela-assuntos').innerHTML = 
+        document.getElementById("tabela-assuntos").innerHTML =
             '<tr><td colspan="5" style="text-align: center; padding: 40px; color: var(--text-secondary);">Nenhum dado de assuntos encontrado.</td></tr>';
         return;
     }
@@ -5383,50 +6617,62 @@ function gerarTabelaAssuntos() {
 }
 
 function renderizarTabelaAssuntos() {
-    const container = document.getElementById('tabela-assuntos');
+    const container = document.getElementById("tabela-assuntos");
     if (!container || !assuntosData) return;
-    
-    container.innerHTML = '';
-    
-    const filtro = document.getElementById('filtro-assuntos')?.value.toLowerCase() || '';
+
+    container.innerHTML = "";
+
+    const filtro =
+        document.getElementById("filtro-assuntos")?.value.toLowerCase() || "";
     let assuntosFiltrados = assuntosData;
-    
+
     if (filtro) {
-        assuntosFiltrados = assuntosData.filter(assunto => 
-            assunto.descricao.toLowerCase().includes(filtro) ||
-            assunto.codigo.toString().toLowerCase().includes(filtro)
+        assuntosFiltrados = assuntosData.filter(
+            (assunto) =>
+                assunto.descricao.toLowerCase().includes(filtro) ||
+                assunto.codigo.toString().toLowerCase().includes(filtro)
         );
     }
 
     const limitePadrao = 20;
-    const mostrarTodos = container.getAttribute('data-expandido') === 'true';
-    const assuntosParaMostrar = mostrarTodos ? assuntosFiltrados : assuntosFiltrados.slice(0, limitePadrao);
+    const mostrarTodos = container.getAttribute("data-expandido") === "true";
+    const assuntosParaMostrar = mostrarTodos
+        ? assuntosFiltrados
+        : assuntosFiltrados.slice(0, limitePadrao);
 
     assuntosParaMostrar.forEach((assunto, index) => {
-        const posicaoReal = assuntosFiltrados.findIndex(a => a === assunto) + 1;
-        const row = document.createElement('tr');
+        const posicaoReal =
+            assuntosFiltrados.findIndex((a) => a === assunto) + 1;
+        const row = document.createElement("tr");
         row.innerHTML = `
             <td class="posicao-cell">${posicaoReal}</td>
-            <td class="descricao-cell" title="${assunto.descricao}">${assunto.descricao}</td>
+            <td class="descricao-cell" title="${assunto.descricao}">${
+            assunto.descricao
+        }</td>
             <td class="minutas-cell">${Math.round(assunto.minutas)}</td>
             <td class="processos-cell">${assunto.processos}</td>
             <td class="percentuais-cell">
-                <div class="percentual-minutas">${assunto.percentualMinutas.toFixed(1)}%</div>
-                <div class="percentual-processos">${assunto.percentualProcessos.toFixed(1)}%</div>
+                <div class="percentual-minutas">${assunto.percentualMinutas.toFixed(
+                    1
+                )}%</div>
+                <div class="percentual-processos">${assunto.percentualProcessos.toFixed(
+                    1
+                )}%</div>
             </td>
         `;
         container.appendChild(row);
     });
 
     if (assuntosFiltrados.length > limitePadrao && !filtro) {
-        const expandirRow = document.createElement('tr');
-        expandirRow.className = 'expandir-row';
+        const expandirRow = document.createElement("tr");
+        expandirRow.className = "expandir-row";
         expandirRow.innerHTML = `
             <td colspan="5" class="expandir-cell">
                 <button class="btn-expandir" onclick="toggleExpandirTabela()">
-                    ${mostrarTodos ? 
-                        `🔼 Mostrar apenas top ${limitePadrao}` : 
-                        `🔽 Mostrar todos os ${assuntosFiltrados.length} assuntos`
+                    ${
+                        mostrarTodos
+                            ? `🔼 Mostrar apenas top ${limitePadrao}`
+                            : `🔽 Mostrar todos os ${assuntosFiltrados.length} assuntos`
                     }
                 </button>
             </td>
@@ -5434,18 +6680,22 @@ function renderizarTabelaAssuntos() {
         container.appendChild(expandirRow);
     }
 
-    atualizarIconesOrdenacao(document.querySelector('.assuntos-table'), sortColumnAssuntos, sortAscendingAssuntos);
+    atualizarIconesOrdenacao(
+        document.querySelector(".assuntos-table"),
+        sortColumnAssuntos,
+        sortAscendingAssuntos
+    );
 }
 
 function toggleExpandirTabela() {
-    const container = document.getElementById('tabela-assuntos');
-    const expandido = container.getAttribute('data-expandido') === 'true';
-    container.setAttribute('data-expandido', !expandido);
+    const container = document.getElementById("tabela-assuntos");
+    const expandido = container.getAttribute("data-expandido") === "true";
+    container.setAttribute("data-expandido", !expandido);
     renderizarTabelaAssuntos();
 }
 
 function renderizarResumoAssuntos() {
-    const container = document.getElementById('resumo-assuntos');
+    const container = document.getElementById("resumo-assuntos");
     if (!container || !assuntosData || assuntosData.length === 0) return;
 
     const top5Assuntos = assuntosData.slice(0, 5);
@@ -5455,33 +6705,57 @@ function renderizarResumoAssuntos() {
         <div class="resumo-item top-assuntos">
             <div class="resumo-label">Top 5 Assuntos</div>
             <div class="top-list">
-                ${top5Assuntos.map((assunto, index) => `
+                ${top5Assuntos
+                    .map(
+                        (assunto, index) => `
                     <div class="top-item">
                         <span class="top-posicao">${index + 1}º</span>
-                        <span class="top-nome" title="${assunto.descricao}">${assunto.descricao}</span>
-                        <span class="top-minutas">${Math.round(assunto.minutas)}</span>
+                        <span class="top-nome" title="${assunto.descricao}">${
+                            assunto.descricao
+                        }</span>
+                        <span class="top-minutas">${Math.round(
+                            assunto.minutas
+                        )}</span>
                     </div>
-                `).join('')}
+                `
+                    )
+                    .join("")}
             </div>
         </div>
 
         <div class="resumo-item top-usuarios">
             <div class="resumo-label">Top 3 Usuários por Assunto</div>
             <div class="usuarios-list">
-                ${topUsuarios.slice(0, 3).map(usuario => `
+                ${topUsuarios
+                    .slice(0, 3)
+                    .map(
+                        (usuario) => `
                     <div class="usuario-assunto-item">
                         <div class="usuario-nome-assunto">${usuario.nome}</div>
                         <div class="usuario-top-assuntos">
-                            ${usuario.topAssuntos.slice(0, 3).map((assunto, index) => `
+                            ${usuario.topAssuntos
+                                .slice(0, 3)
+                                .map(
+                                    (assunto, index) => `
                                 <div class="assunto-item-linha">
-                                    <span class="assunto-posicao-badge">${index + 1}</span>
-                                    <span class="assunto-nome-mini" title="${assunto.descricao}">${assunto.descricao}</span>
-                                    <span class="assunto-minutas-mini">${Math.round(assunto.minutas)}</span>
+                                    <span class="assunto-posicao-badge">${
+                                        index + 1
+                                    }</span>
+                                    <span class="assunto-nome-mini" title="${
+                                        assunto.descricao
+                                    }">${assunto.descricao}</span>
+                                    <span class="assunto-minutas-mini">${Math.round(
+                                        assunto.minutas
+                                    )}</span>
                                 </div>
-                            `).join('')}
+                            `
+                                )
+                                .join("")}
                         </div>
                     </div>
-                `).join('')}
+                `
+                    )
+                    .join("")}
             </div>
         </div>
 
@@ -5502,23 +6776,29 @@ function gerarTopUsuariosPorAssunto() {
     const usuariosAssuntos = new Map();
 
     let filteredData = excelData;
-    if (processedData.mesesAtivos.length > 0 && processedData.mesesAtivos.length < processedData.mesesDisponiveis.length) {
+    if (
+        processedData.mesesAtivos.length > 0 &&
+        processedData.mesesAtivos.length < processedData.mesesDisponiveis.length
+    ) {
         const mesesAtivosSet = new Set(processedData.mesesAtivos);
-        filteredData = excelData.filter(row => {
-            const data = row['Data criação'];
+        filteredData = excelData.filter((row) => {
+            const data = row["Data criação"];
             if (!data) return false;
             const mesAno = extrairMesAno(data);
             return mesAno && mesesAtivosSet.has(mesAno);
         });
     }
 
-    filteredData.forEach(row => {
-        const usuario = row['Usuário'];
-        const codigoAssunto = row['Cod. assunto'];
-        
+    filteredData.forEach((row) => {
+        const usuario = row["Usuário"];
+        const codigoAssunto = row["Cod. assunto"];
+
         if (!usuario || !codigoAssunto) return;
 
-        const peso = pesosAtivos && pesosAtuais[row['Tipo']] ? pesosAtuais[row['Tipo']] : 1;
+        const peso =
+            pesosAtivos && pesosAtuais[row["Tipo"]]
+                ? pesosAtuais[row["Tipo"]]
+                : 1;
 
         if (!usuariosAssuntos.has(usuario)) {
             usuariosAssuntos.set(usuario, new Map());
@@ -5529,7 +6809,7 @@ function gerarTopUsuariosPorAssunto() {
             assuntosUsuario.set(codigoAssunto, {
                 codigo: codigoAssunto,
                 descricao: obterDescricaoAssunto(codigoAssunto),
-                minutas: 0
+                minutas: 0,
             });
         }
 
@@ -5540,42 +6820,54 @@ function gerarTopUsuariosPorAssunto() {
     return Array.from(usuariosAssuntos.entries())
         .map(([nome, assuntos]) => ({
             nome,
-            totalMinutas: Array.from(assuntos.values()).reduce((sum, a) => sum + a.minutas, 0),
-            topAssuntos: Array.from(assuntos.values()).sort((a, b) => b.minutas - a.minutas)
+            totalMinutas: Array.from(assuntos.values()).reduce(
+                (sum, a) => sum + a.minutas,
+                0
+            ),
+            topAssuntos: Array.from(assuntos.values()).sort(
+                (a, b) => b.minutas - a.minutas
+            ),
         }))
         .sort((a, b) => b.totalMinutas - a.totalMinutas);
 }
 
 function toggleTodosAssuntos(checked) {
-    const checkboxes = document.querySelectorAll('#assuntos-checkboxes input[type="checkbox"]:not(#todos-assuntos)');
-    checkboxes.forEach(checkbox => {
+    const checkboxes = document.querySelectorAll(
+        '#assuntos-checkboxes input[type="checkbox"]:not(#todos-assuntos)'
+    );
+    checkboxes.forEach((checkbox) => {
         checkbox.checked = checked;
     });
     atualizarGraficoAssuntos();
 }
 
 function atualizarGraficoAssuntos() {
-    const checkboxesTodos = document.getElementById('todos-assuntos');
-    const checkboxes = document.querySelectorAll('#assuntos-checkboxes input[type="checkbox"]:not(#todos-assuntos)');
-    const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
-    
+    const checkboxesTodos = document.getElementById("todos-assuntos");
+    const checkboxes = document.querySelectorAll(
+        '#assuntos-checkboxes input[type="checkbox"]:not(#todos-assuntos)'
+    );
+    const checkedCount = Array.from(checkboxes).filter(
+        (cb) => cb.checked
+    ).length;
+
     if (checkboxesTodos) {
         checkboxesTodos.checked = checkedCount === checkboxes.length;
-        checkboxesTodos.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+        checkboxesTodos.indeterminate =
+            checkedCount > 0 && checkedCount < checkboxes.length;
     }
-    
+
     criarGraficoVariacaoAssuntos();
 }
 
 function criarGraficoVariacaoAssuntos() {
-    const container = document.querySelector('.grafico-assuntos-container');
+    const container = document.querySelector(".grafico-assuntos-container");
     if (!container || !assuntosData || assuntosData.length === 0) return;
 
     if (chartAssuntos) {
         chartAssuntos.destroy();
     }
 
-    const canvasId = 'chart-variacao-assuntos';
+    const canvasId = "chart-variacao-assuntos";
     container.innerHTML = `
         <div class="grafico-header">
             <h3>Variação de Minutas por Assunto ao Longo dos Meses</h3>
@@ -5590,134 +6882,151 @@ function criarGraficoVariacaoAssuntos() {
 
     const top6Assuntos = assuntosData.slice(0, 6);
     const mesesOrdenados = processedData.mesesDisponiveis.sort((a, b) => {
-        const [mesA, anoA] = a.split('/');
-        const [mesB, anoB] = b.split('/');
+        const [mesA, anoA] = a.split("/");
+        const [mesB, anoB] = b.split("/");
         const dataA = new Date(parseInt(anoA), obterNumeroMes(mesA), 1);
         const dataB = new Date(parseInt(anoB), obterNumeroMes(mesB), 1);
         return dataA - dataB;
     });
 
     const cores = [
-        '#1565c0', '#43a047', '#e53935', '#8e24aa', '#fb8c00', '#00acc1'
+        "#1565c0",
+        "#43a047",
+        "#e53935",
+        "#8e24aa",
+        "#fb8c00",
+        "#00acc1",
     ];
 
     const datasets = top6Assuntos.map((assunto, index) => {
-        const dados = mesesOrdenados.map(mes => {
+        const dados = mesesOrdenados.map((mes) => {
             const minutas = assunto.porMes.get(mes) || 0;
             return Math.round(minutas);
         });
 
         return {
-            label: assunto.descricao.length > 30 ? 
-                   assunto.descricao.substring(0, 30) + '...' : 
-                   assunto.descricao,
+            label:
+                assunto.descricao.length > 30
+                    ? assunto.descricao.substring(0, 30) + "..."
+                    : assunto.descricao,
             data: dados,
             borderColor: cores[index],
-            backgroundColor: cores[index] + '20',
+            backgroundColor: cores[index] + "20",
             borderWidth: 3,
             fill: false,
             tension: 0.4,
             pointRadius: 6,
             pointHoverRadius: 8,
             pointBackgroundColor: cores[index],
-            pointBorderColor: '#ffffff',
-            pointBorderWidth: 2
+            pointBorderColor: "#ffffff",
+            pointBorderWidth: 2,
         };
     });
 
-    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    const isDark =
+        document.documentElement.getAttribute("data-theme") !== "light";
 
     chartAssuntos = new Chart(ctx, {
-        type: 'line',
+        type: "line",
         data: {
             labels: mesesOrdenados,
-            datasets: datasets
+            datasets: datasets,
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             interaction: {
-                mode: 'index',
-                intersect: false
+                mode: "index",
+                intersect: false,
             },
             plugins: {
                 title: {
-                    display: false
+                    display: false,
                 },
                 legend: {
                     display: true,
-                    position: 'bottom',
+                    position: "bottom",
                     labels: {
-                        color: isDark ? '#ffffff' : '#232946',
+                        color: isDark ? "#ffffff" : "#232946",
                         font: {
-                            size: 12
+                            size: 12,
                         },
                         padding: 20,
                         usePointStyle: true,
-                        pointStyle: 'circle'
-                    }
+                        pointStyle: "circle",
+                    },
                 },
                 tooltip: {
-                    backgroundColor: isDark ? '#2d2d2d' : '#ffffff',
-                    titleColor: isDark ? '#ffffff' : '#232946',
-                    bodyColor: isDark ? '#ffffff' : '#232946',
-                    borderColor: isDark ? '#4a90e2' : '#3cb3e6',
+                    backgroundColor: isDark ? "#2d2d2d" : "#ffffff",
+                    titleColor: isDark ? "#ffffff" : "#232946",
+                    bodyColor: isDark ? "#ffffff" : "#232946",
+                    borderColor: isDark ? "#4a90e2" : "#3cb3e6",
                     borderWidth: 1,
                     cornerRadius: 8,
                     displayColors: true,
                     callbacks: {
-                        title: function(context) {
+                        title: function (context) {
                             return `Mês: ${context[0].label}`;
                         },
-                        label: function(context) {
+                        label: function (context) {
                             return `${context.dataset.label}: ${context.parsed.y} minutas`;
-                        }
-                    }
-                }
+                        },
+                    },
+                },
             },
             scales: {
                 x: {
                     grid: {
-                        color: isDark ? '#404040' : '#e0e0e0',
-                        drawBorder: false
+                        color: isDark ? "#404040" : "#e0e0e0",
+                        drawBorder: false,
                     },
                     ticks: {
-                        color: isDark ? '#ffffff' : '#232946',
+                        color: isDark ? "#ffffff" : "#232946",
                         font: {
-                            size: 11
+                            size: 11,
                         },
-                        maxRotation: 45
-                    }
+                        maxRotation: 45,
+                    },
                 },
                 y: {
                     beginAtZero: true,
                     grid: {
-                        color: isDark ? '#404040' : '#e0e0e0',
-                        drawBorder: false
+                        color: isDark ? "#404040" : "#e0e0e0",
+                        drawBorder: false,
                     },
                     ticks: {
-                        color: isDark ? '#ffffff' : '#232946',
+                        color: isDark ? "#ffffff" : "#232946",
                         font: {
-                            size: 11
+                            size: 11,
                         },
-                        callback: function(value) {
+                        callback: function (value) {
                             return Math.round(value);
-                        }
-                    }
-                }
+                        },
+                    },
+                },
             },
             animation: {
                 duration: 1500,
-                easing: 'easeInOutQuart'
-            }
-        }
+                easing: "easeInOutQuart",
+            },
+        },
     });
 }
 
 function obterNumeroMes(nomeAbreviado) {
     const meses = {
-        'jan': 0, 'fev': 1, 'mar': 2, 'abr': 3, 'mai': 4, 'jun': 5,
-        'jul': 6, 'ago': 7, 'set': 8, 'out': 9, 'nov': 10, 'dez': 11
+        jan: 0,
+        fev: 1,
+        mar: 2,
+        abr: 3,
+        mai: 4,
+        jun: 5,
+        jul: 6,
+        ago: 7,
+        set: 8,
+        out: 9,
+        nov: 10,
+        dez: 11,
     };
     return meses[nomeAbreviado] || 0;
 }
@@ -5725,189 +7034,211 @@ function obterNumeroMes(nomeAbreviado) {
 function gerarDadosVariacaoMensal(assuntosSelecionados) {
     const mesesDisponiveis = processedData.mesesDisponiveis || [];
     const dadosPorAssunto = {};
-    
-    assuntosSelecionados.forEach(assunto => {
+
+    assuntosSelecionados.forEach((assunto) => {
         dadosPorAssunto[assunto] = {};
-        mesesDisponiveis.forEach(mes => {
+        mesesDisponiveis.forEach((mes) => {
             dadosPorAssunto[assunto][mes] = 0;
         });
     });
-    
+
     if (!excelData || excelData.length === 0) {
         return { labels: mesesDisponiveis, dados: dadosPorAssunto };
     }
 
-    excelData.forEach(row => {
-        const codigoAssunto = row['Cod. assunto'];
-        const tipo = row['Tipo'];
-        const dataRow = row['Data criação'];
-        
+    excelData.forEach((row) => {
+        const codigoAssunto = row["Cod. assunto"];
+        const tipo = row["Tipo"];
+        const dataRow = row["Data criação"];
+
         if (!codigoAssunto || !tipo || !dataRow) return;
-        
+
         const descricaoAssunto = obterDescricaoAssunto(codigoAssunto);
         const chaveAssunto = `${codigoAssunto} - ${descricaoAssunto}`;
-        
+
         if (!assuntosSelecionados.includes(chaveAssunto)) return;
-        
+
         const data = new Date(dataRow);
         if (isNaN(data.getTime())) return;
-        
-        const mesAno = `${String(data.getMonth() + 1).padStart(2, '0')}/${data.getFullYear()}`;
-        
+
+        const mesAno = `${String(data.getMonth() + 1).padStart(
+            2,
+            "0"
+        )}/${data.getFullYear()}`;
+
         if (mesesDisponiveis.includes(mesAno)) {
-            const peso = pesosAtivos && pesosAtuais[tipo] ? pesosAtuais[tipo] : 1;
+            const peso =
+                pesosAtivos && pesosAtuais[tipo] ? pesosAtuais[tipo] : 1;
             dadosPorAssunto[chaveAssunto][mesAno] += peso;
         }
     });
-    
+
     return { labels: mesesDisponiveis, dados: dadosPorAssunto };
 }
 
 function ordenarTabelaAssuntos(coluna) {
     if (!assuntosData) return;
-    
-    const isAscending = sortColumnAssuntos === coluna ? !sortAscendingAssuntos : false;
+
+    const isAscending =
+        sortColumnAssuntos === coluna ? !sortAscendingAssuntos : false;
     sortColumnAssuntos = coluna;
     sortAscendingAssuntos = isAscending;
-    
-    const filtro = document.getElementById('filtro-assuntos')?.value.toLowerCase() || '';
+
+    const filtro =
+        document.getElementById("filtro-assuntos")?.value.toLowerCase() || "";
     let dadosParaOrdenar = assuntosData;
-    
+
     if (filtro) {
-        dadosParaOrdenar = assuntosData.filter(assunto => 
-            assunto.descricao.toLowerCase().includes(filtro) ||
-            assunto.codigo.toString().toLowerCase().includes(filtro)
+        dadosParaOrdenar = assuntosData.filter(
+            (assunto) =>
+                assunto.descricao.toLowerCase().includes(filtro) ||
+                assunto.codigo.toString().toLowerCase().includes(filtro)
         );
     }
-    
+
     dadosParaOrdenar.sort((a, b) => {
         let valorA, valorB;
-        
-        switch(coluna) {
-            case 'posicao':
+
+        switch (coluna) {
+            case "posicao":
                 return isAscending ? 1 : -1;
-            case 'descricao':
+            case "descricao":
                 valorA = a.descricao.toLowerCase();
                 valorB = b.descricao.toLowerCase();
                 break;
-            case 'minutas':
+            case "minutas":
                 valorA = a.minutas;
                 valorB = b.minutas;
                 break;
-            case 'processos':
+            case "processos":
                 valorA = a.processos;
                 valorB = b.processos;
                 break;
             default:
                 return 0;
         }
-        
-        if (typeof valorA === 'string') {
-            return isAscending ? valorA.localeCompare(valorB) : valorB.localeCompare(valorA);
+
+        if (typeof valorA === "string") {
+            return isAscending
+                ? valorA.localeCompare(valorB)
+                : valorB.localeCompare(valorA);
         } else {
             return isAscending ? valorA - valorB : valorB - valorA;
         }
     });
-    
+
     if (filtro) {
         assuntosData = dadosParaOrdenar.concat(
-            assuntosData.filter(assunto => 
-                !assunto.descricao.toLowerCase().includes(filtro) &&
-                !assunto.codigo.toString().toLowerCase().includes(filtro)
+            assuntosData.filter(
+                (assunto) =>
+                    !assunto.descricao.toLowerCase().includes(filtro) &&
+                    !assunto.codigo.toString().toLowerCase().includes(filtro)
             )
         );
     } else {
         assuntosData = dadosParaOrdenar;
     }
-    
+
     renderizarTabelaAssuntos();
 }
 
 function atualizarIconesOrdenacao(tabela, colunaAtiva, ascending) {
     if (!tabela) return;
-    
-    const headers = tabela.querySelectorAll('th.sortable');
-    headers.forEach(header => {
-        const icon = header.querySelector('.sort-icon');
+
+    const headers = tabela.querySelectorAll("th.sortable");
+    headers.forEach((header) => {
+        const icon = header.querySelector(".sort-icon");
         if (icon) {
-            icon.textContent = '↕';
-            icon.style.opacity = '0.5';
+            icon.textContent = "↕";
+            icon.style.opacity = "0.5";
         }
     });
-    
+
     const activeHeader = tabela.querySelector(`th[onclick*="${colunaAtiva}"]`);
     if (activeHeader) {
-        const icon = activeHeader.querySelector('.sort-icon');
+        const icon = activeHeader.querySelector(".sort-icon");
         if (icon) {
-            icon.textContent = ascending ? '↑' : '↓';
-            icon.style.opacity = '1';
+            icon.textContent = ascending ? "↑" : "↓";
+            icon.style.opacity = "1";
         }
     }
 }
 
 function mostrarPopupExportacaoAssuntos() {
-    document.getElementById('popup-exportacao-assuntos').style.display = 'flex';
+    document.getElementById("popup-exportacao-assuntos").style.display = "flex";
 }
 
 function fecharPopupExportacaoAssuntos() {
-    document.getElementById('popup-exportacao-assuntos').style.display = 'none';
+    document.getElementById("popup-exportacao-assuntos").style.display = "none";
 }
 
 function exportarTabelaAssuntos(formato) {
     if (!assuntosData || assuntosData.length === 0) {
-        alert('Não há dados para exportar!');
+        alert("Não há dados para exportar!");
         return;
     }
-    
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-    
-    if (formato === 'pdf') {
+
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
+
+    if (formato === "pdf") {
         exportarAssuntosPDF(timestamp);
-    } else if (formato === 'xlsx') {
+    } else if (formato === "xlsx") {
         exportarAssuntosExcel(timestamp);
     }
-    
+
     fecharPopupExportacaoAssuntos();
 }
 
 function exportarAssuntosPDF(timestamp) {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('landscape');
-    
+    const doc = new jsPDF("landscape");
+
     doc.setFillColor(74, 144, 226);
-    doc.rect(0, 0, doc.internal.pageSize.width, 25, 'F');
-    
+    doc.rect(0, 0, doc.internal.pageSize.width, 25, "F");
+
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    
-    let titulo = 'APROD - Produtividade por Assunto';
+    doc.setFont("helvetica", "bold");
+
+    let titulo = "APROD - Produtividade por Assunto";
     if (configuracoes.nomeGabinete) {
         titulo = `${configuracoes.nomeGabinete} - APROD - Produtividade por Assunto`;
     }
     doc.text(titulo, 15, 16);
-    
+
     doc.setTextColor(74, 144, 226);
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 15, 35);
-    
-    let mesesTexto = `Meses: ${processedData.mesesAtivos.join(', ')}`;
+    doc.setFont("helvetica", "normal");
+    doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, 15, 35);
+
+    let mesesTexto = `Meses: ${processedData.mesesAtivos.join(", ")}`;
     if (processedData.mesesAtivos.length === 0) {
-        mesesTexto = 'Meses: Todos os meses disponíveis';
+        mesesTexto = "Meses: Todos os meses disponíveis";
     }
     doc.text(mesesTexto, 15, 42);
-    
+
     const tableData = assuntosData.map((assunto, index) => [
         index + 1,
-        assunto.descricao.length > 70 ? assunto.descricao.substring(0, 67) + '...' : assunto.descricao,
+        assunto.descricao.length > 70
+            ? assunto.descricao.substring(0, 67) + "..."
+            : assunto.descricao,
         Math.round(assunto.minutas),
         assunto.processos,
-        `${assunto.percentualMinutas.toFixed(1)}% / ${assunto.percentualProcessos.toFixed(1)}%`
+        `${assunto.percentualMinutas.toFixed(
+            1
+        )}% / ${assunto.percentualProcessos.toFixed(1)}%`,
     ]);
-    
+
     doc.autoTable({
-        head: [['#', 'Descrição do Assunto', 'Minutas', 'Processos', '% Min / % Proc']],
+        head: [
+            [
+                "#",
+                "Descrição do Assunto",
+                "Minutas",
+                "Processos",
+                "% Min / % Proc",
+            ],
+        ],
         body: tableData,
         startY: 52,
         styles: {
@@ -5915,111 +7246,132 @@ function exportarAssuntosPDF(timestamp) {
             cellPadding: 3,
             textColor: [35, 41, 70],
             lineColor: [74, 144, 226],
-            lineWidth: 0.5
+            lineWidth: 0.5,
         },
         headStyles: {
             fillColor: [74, 144, 226],
             textColor: [255, 255, 255],
-            fontStyle: 'bold',
-            fontSize: 9
+            fontStyle: "bold",
+            fontSize: 9,
         },
         alternateRowStyles: {
-            fillColor: [248, 249, 250]
+            fillColor: [248, 249, 250],
         },
         columnStyles: {
-            0: { cellWidth: 15, halign: 'center' },
+            0: { cellWidth: 15, halign: "center" },
             1: { cellWidth: 110 },
-            2: { cellWidth: 25, halign: 'center', fontStyle: 'bold' },
-            3: { cellWidth: 25, halign: 'center' },
-            4: { cellWidth: 35, halign: 'center', fontSize: 7 }
+            2: { cellWidth: 25, halign: "center", fontStyle: "bold" },
+            3: { cellWidth: 25, halign: "center" },
+            4: { cellWidth: 35, halign: "center", fontSize: 7 },
         },
-        margin: { left: 15, right: 15 }
+        margin: { left: 15, right: 15 },
     });
-    
+
     const totalGeral = Math.round(assuntosProcessados.totalMinutasAssuntos);
     const totalProcessos = assuntosProcessados.totalProcessosAssuntos;
-    
+
     const finalY = doc.previousAutoTable.finalY + 10;
     doc.setFillColor(227, 242, 253);
-    doc.rect(15, finalY, doc.internal.pageSize.width - 30, 15, 'F');
-    
+    doc.rect(15, finalY, doc.internal.pageSize.width - 30, 15, "F");
+
     doc.setTextColor(74, 144, 226);
     doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Totais: ${totalGeral} minutas • ${totalProcessos} processos • ${assuntosData.length} assuntos`, 20, finalY + 10);
-    
+    doc.setFont("helvetica", "bold");
+    doc.text(
+        `Totais: ${totalGeral} minutas • ${totalProcessos} processos • ${assuntosData.length} assuntos`,
+        20,
+        finalY + 10
+    );
+
     doc.save(`assuntos_${timestamp}.pdf`);
 }
 
 function exportarAssuntosExcel(timestamp) {
-    let mesesTexto = `Meses: ${processedData.mesesAtivos.join(', ')}`;
+    let mesesTexto = `Meses: ${processedData.mesesAtivos.join(", ")}`;
     if (processedData.mesesAtivos.length === 0) {
-        mesesTexto = 'Período: Todos os meses disponíveis';
+        mesesTexto = "Período: Todos os meses disponíveis";
     }
-    
+
     const wb = XLSX.utils.book_new();
     const ws = {};
-    
-    let titulo = 'APROD - Produtividade por Assunto';
+
+    let titulo = "APROD - Produtividade por Assunto";
     if (configuracoes.nomeGabinete) {
         titulo = `${configuracoes.nomeGabinete} - ${titulo}`;
     }
-    
-    ws['A1'] = { 
-        v: titulo, 
-        t: 's',
+
+    ws["A1"] = {
+        v: titulo,
+        t: "s",
         s: {
-            font: { name: "Calibri", sz: 18, bold: true, color: { rgb: "FFFFFF" } },
+            font: {
+                name: "Calibri",
+                sz: 18,
+                bold: true,
+                color: { rgb: "FFFFFF" },
+            },
             fill: { fgColor: { rgb: "4A90E2" } },
             alignment: { horizontal: "center", vertical: "center" },
             border: {
                 top: { style: "thick", color: { rgb: "4A90E2" } },
                 bottom: { style: "thick", color: { rgb: "4A90E2" } },
                 left: { style: "thick", color: { rgb: "4A90E2" } },
-                right: { style: "thick", color: { rgb: "4A90E2" } }
-            }
-        }
+                right: { style: "thick", color: { rgb: "4A90E2" } },
+            },
+        },
     };
-    
-    ws['A3'] = { 
-        v: `Gerado em: ${new Date().toLocaleString('pt-BR')}`, 
-        t: 's',
+
+    ws["A3"] = {
+        v: `Gerado em: ${new Date().toLocaleString("pt-BR")}`,
+        t: "s",
         s: {
             font: { name: "Calibri", sz: 11, color: { rgb: "4A90E2" } },
-            alignment: { horizontal: "left", vertical: "center" }
-        }
+            alignment: { horizontal: "left", vertical: "center" },
+        },
     };
-    
-    ws['A4'] = { 
-        v: mesesTexto, 
-        t: 's',
+
+    ws["A4"] = {
+        v: mesesTexto,
+        t: "s",
         s: {
             font: { name: "Calibri", sz: 11, color: { rgb: "4A90E2" } },
-            alignment: { horizontal: "left", vertical: "center" }
-        }
+            alignment: { horizontal: "left", vertical: "center" },
+        },
     };
-    
-    const headers = ['Posição', 'Descrição do Assunto', 'Minutas', 'Processos', '% Minutas', '% Processos'];
-    const headerCells = ['A6', 'B6', 'C6', 'D6', 'E6', 'F6'];
-    
+
+    const headers = [
+        "Posição",
+        "Descrição do Assunto",
+        "Minutas",
+        "Processos",
+        "% Minutas",
+        "% Processos",
+    ];
+    const headerCells = ["A6", "B6", "C6", "D6", "E6", "F6"];
+
     headers.forEach((header, index) => {
         ws[headerCells[index]] = {
             v: header,
-            t: 's',
+            t: "s",
             s: {
-                font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "FFFFFF" } },
+                font: {
+                    name: "Calibri",
+                    sz: 12,
+                    bold: true,
+                    color: { rgb: "FFFFFF" },
+                },
                 fill: { fgColor: { rgb: "4A90E2" } },
                 alignment: { horizontal: "center", vertical: "center" },
                 border: {
                     top: { style: "medium", color: { rgb: "4A90E2" } },
                     bottom: { style: "medium", color: { rgb: "4A90E2" } },
                     left: { style: "medium", color: { rgb: "4A90E2" } },
-                    right: { style: "medium", color: { rgb: "4A90E2" } }
-                }
-            }
+                    right: { style: "medium", color: { rgb: "4A90E2" } },
+                },
+            },
         };
     });
-    
+
     let row = 7;
     assuntosData.forEach((assunto, index) => {
         const rowData = [
@@ -6028,89 +7380,124 @@ function exportarAssuntosExcel(timestamp) {
             Math.round(assunto.minutas),
             assunto.processos,
             `${assunto.percentualMinutas.toFixed(1)}%`,
-            `${assunto.percentualProcessos.toFixed(1)}%`
+            `${assunto.percentualProcessos.toFixed(1)}%`,
         ];
-        
-        const columns = ['A', 'B', 'C', 'D', 'E', 'F'];
-        
+
+        const columns = ["A", "B", "C", "D", "E", "F"];
+
         rowData.forEach((value, colIndex) => {
             const cellAddress = `${columns[colIndex]}${row}`;
             ws[cellAddress] = {
                 v: value,
-                t: colIndex === 1 ? 's' : (colIndex === 4 || colIndex === 5 ? 's' : 'n'),
+                t:
+                    colIndex === 1
+                        ? "s"
+                        : colIndex === 4 || colIndex === 5
+                        ? "s"
+                        : "n",
                 s: {
                     font: { name: "Calibri", sz: 11 },
-                    alignment: { horizontal: colIndex === 1 ? "left" : "center", vertical: "center" },
+                    alignment: {
+                        horizontal: colIndex === 1 ? "left" : "center",
+                        vertical: "center",
+                    },
                     border: {
                         top: { style: "thin", color: { rgb: "E0E0E0" } },
                         bottom: { style: "thin", color: { rgb: "E0E0E0" } },
                         left: { style: "thin", color: { rgb: "E0E0E0" } },
-                        right: { style: "thin", color: { rgb: "E0E0E0" } }
-                    }
-                }
+                        right: { style: "thin", color: { rgb: "E0E0E0" } },
+                    },
+                },
             };
         });
-        
+
         row++;
     });
-    
+
     const totalGeral = Math.round(assuntosProcessados.totalMinutasAssuntos);
     const totalProcessos = assuntosProcessados.totalProcessosAssuntos;
-    
+
     row += 1;
-    const totalColumns = ['A', 'B', 'C', 'D', 'E', 'F'];
-    const totalValues = ['TOTAIS:', `${assuntosData.length} assuntos`, totalGeral, totalProcessos, '100%', '100%'];
-    
+    const totalColumns = ["A", "B", "C", "D", "E", "F"];
+    const totalValues = [
+        "TOTAIS:",
+        `${assuntosData.length} assuntos`,
+        totalGeral,
+        totalProcessos,
+        "100%",
+        "100%",
+    ];
+
     totalValues.forEach((value, colIndex) => {
         const cellAddress = `${totalColumns[colIndex]}${row}`;
         ws[cellAddress] = {
             v: value,
-            t: colIndex === 1 ? 's' : (colIndex === 4 || colIndex === 5 ? 's' : 'n'),
+            t:
+                colIndex === 1
+                    ? "s"
+                    : colIndex === 4 || colIndex === 5
+                    ? "s"
+                    : "n",
             s: {
-                font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "4A90E2" } },
+                font: {
+                    name: "Calibri",
+                    sz: 12,
+                    bold: true,
+                    color: { rgb: "4A90E2" },
+                },
                 fill: { fgColor: { rgb: "E3F2FD" } },
-                alignment: { horizontal: colIndex === 1 ? "left" : "center", vertical: "center" },
+                alignment: {
+                    horizontal: colIndex === 1 ? "left" : "center",
+                    vertical: "center",
+                },
                 border: {
                     top: { style: "thick", color: { rgb: "4A90E2" } },
                     bottom: { style: "thick", color: { rgb: "4A90E2" } },
                     left: { style: "thick", color: { rgb: "4A90E2" } },
-                    right: { style: "thick", color: { rgb: "4A90E2" } }
-                }
-            }
+                    right: { style: "thick", color: { rgb: "4A90E2" } },
+                },
+            },
         };
     });
-    
+
     const lastRow = row;
-    ws['!ref'] = `A1:F${lastRow}`;
-    
-    ws['!cols'] = [
-        { wch: 10 }, { wch: 60 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }
+    ws["!ref"] = `A1:F${lastRow}`;
+
+    ws["!cols"] = [
+        { wch: 10 },
+        { wch: 60 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
     ];
-    
-    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }];
-    
-    ws['!rows'] = [
+
+    ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }];
+
+    ws["!rows"] = [
         { hpt: 30 },
         { hpt: 15 },
         { hpt: 18 },
         { hpt: 18 },
         { hpt: 15 },
-        { hpt: 25 }
+        { hpt: 25 },
     ];
-    
+
     for (let i = 6; i < lastRow; i++) {
         ws[`!rows`][i] = { hpt: 20 };
     }
-    
+
     XLSX.utils.book_append_sheet(wb, ws, "Produtividade por Assunto");
     XLSX.writeFile(wb, `assuntos_${timestamp}.xlsx`);
 }
 
-window.onclick = function(event) {
-    const popup = document.getElementById('popup-exportacao');
-    const popupDashboard = document.getElementById('popup-exportacao-dashboard');
-    const popupMes = document.getElementById('popup-exportacao-mes');
-    const popupAssuntos = document.getElementById('popup-exportacao-assuntos');
+window.onclick = function (event) {
+    const popup = document.getElementById("popup-exportacao");
+    const popupDashboard = document.getElementById(
+        "popup-exportacao-dashboard"
+    );
+    const popupMes = document.getElementById("popup-exportacao-mes");
+    const popupAssuntos = document.getElementById("popup-exportacao-assuntos");
     if (event.target === popup) {
         fecharPopupExportacao();
     }
@@ -6123,9 +7510,9 @@ window.onclick = function(event) {
     if (event.target === popupAssuntos) {
         fecharPopupExportacaoAssuntos();
     }
-}
+};
 
-window.addEventListener('resize', function() {
+window.addEventListener("resize", function () {
     if (chartInstance) {
         chartInstance.resize();
     }
